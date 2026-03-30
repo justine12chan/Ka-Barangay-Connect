@@ -9,120 +9,198 @@
     <link rel="icon" href="img/logo.png" type="image/x-icon">
 
     <style>
-        html {
-            scroll-behavior: smooth;
+        :root {
+            --primary-blue: #07008c;
+            --accent-yellow: #fbd907;
         }
 
-        body {
+        html, body {
+            height: 100%;
             margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            /* Prevents the 'double scroll' feeling */
+            overflow: hidden; 
         }
 
+        /* Nav Bar - Consistent Height */
+        .header {
+            background: var(--primary-blue) !important;
+            padding: 0 20px;
+            color: white;
+            border-bottom: 3px solid var(--accent-yellow);
+            height: 60px;
+            display: flex;
+            align-items: center;
+            flex-shrink: 0; /* Keeps nav from squishing */
+        }
+
+        /* Main Container - Fills the rest of the screen */
         .snap-container {
-            height: 100vh;
-            overflow-y: scroll;
+            height: calc(100vh - 60px);
+            overflow-y: auto;
             scroll-snap-type: y mandatory;
         }
 
         .snap-section {
-            height: 100vh;
+            min-height: 100%;
             scroll-snap-align: start;
             display: flex;
-            align-items: center;
+            flex-direction: column;
+            justify-content: center;
+            padding: 2rem 0;
         }
 
-        .header {
-            background: #e9ecef;
-            padding: 10px 20px;
+        /* --- THE POLISHED ESTABLISHMENT BOX --- */
+        .info-box-wrapper {
+            width: 100%;
+            max-width: 1100px; /* Limits width on XL screens for polish */
+            margin: 0 auto 2rem auto;
+            padding: 0 15px;
         }
 
         .info-box {
-            background: #e6a8a8;
-            height: 250px;
+            background: #dee2e6;
+            width: 100%;
+            /* This maintains the 16:9 ratio (1920x1080) automatically */
+            aspect-ratio: 16 / 9; 
+            max-height: 70vh; /* Prevents it from being too tall on vertical screens */
+            margin: 0 auto; 
+            border-radius: 12px;
+            overflow: hidden;
             display: flex;
-            align-items: center;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+        }
+
+        .info-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* Crops edges slightly to fit the 16:9 frame perfectly */
+            display: block;
+        }
+
+        /* Mission & Vision Cards */
+        .card-custom {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            height: 100%;
+            min-height: 180px;
+            transition: transform 0.3s ease, border-color 0.3s ease;
+            border: 1px solid #ddd;
+            border-bottom: 5px solid var(--primary-blue);
+            display: flex;
+            flex-direction: column;
             justify-content: center;
         }
 
-        .card-custom {
-            background: #ddd;
-            border-radius: 10px;
-            padding: 20px;
-            height: 180px;
+        .card-custom:hover {
+            transform: translateY(-8px);
+            border-bottom-color: var(--accent-yellow);
+            box-shadow: 0 12px 20px rgba(7, 0, 140, 0.1);
         }
 
+        .card-custom h5 {
+            color: var(--primary-blue);
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+        }
+
+        /* Action Boxes Section 2 */
         .box {
-            background: #ddd;
+            background: white;
+            border: 1px solid #dee2e6;
+            border-left: 5px solid var(--primary-blue);
             border-radius: 10px;
-            height: 150px;
-            padding: 15px;
+            min-height: 140px;
+            padding: 20px;
             position: relative;
+            transition: 0.3s ease;
+        }
+
+        .box:hover {
+            border-left-color: var(--accent-yellow);
+            background-color: #fff;
         }
 
         .box span {
             position: absolute;
-            bottom: 10px;
-            right: 10px;
-            font-size: 12px;
+            bottom: 15px;
+            right: 15px;
+            font-size: 11px;
+            color: var(--primary-blue);
+            font-weight: bold;
+            letter-spacing: 1px;
         }
 
-
+        /* Floating Button */
         .floating-btn {
             position: fixed;
-            bottom: 30px;
-            right: 30px;
-            width: 60px;
-            height: 60px;
-            background: #ff7b7b;
-            color: white;
-            font-size: 30px;
+            bottom: 25px;
+            right: 25px;
+            width: 55px;
+            height: 55px;
+            background: var(--primary-blue);
+            color: var(--accent-yellow);
+            font-size: 28px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-            cursor: pointer;
-            z-index: 999;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            border: 2px solid var(--accent-yellow);
+            text-decoration: none;
         }
 
+        /* Responsive Fixes for Small Devices */
         @media (max-width: 768px) {
-            .info-box {
-                height: 200px;
+            .snap-container {
+                scroll-snap-type: none; /* Disabling snap on mobile for smoother feel */
+                overflow-y: scroll;
             }
-
+            .snap-section {
+                height: auto;
+                min-height: auto;
+                padding: 1.5rem 0;
+            }
+            .info-box {
+                max-height: 35vh; /* Keep image smaller on phones */
+            }
             .card-custom {
-                margin-bottom: 15px;
+                margin-bottom: 1rem;
             }
         }
     </style>
-
 </head>
 
 <body>
 
-    <div class="header d-flex align-items-center sticky-top" style="z-index: 1000; border-bottom: 1px solid #dee2e6;">
-        <img src="img/logo.png" width="40" class="me-2">
+    <nav class="header">
+        <img src="img/logo.png" width="35" class="me-2" alt="Logo">
         <h6 class="mb-0">Ka-Barangay Connect: San Bartolome</h6>
-    </div>
+    </nav>
 
     <div class="snap-container">
         <section class="snap-section">
-            <div class="container-fluid">
-                <div class="info-box my-3">
-                    <p>info about brgy</p>
+            <div class="container">
+                <div class="info-box-wrapper">
+                    <div class="info-box">
+                        <img src="img/barangay_header.jpg" alt="Barangay Establishment">
+                    </div>
                 </div>
-                <div class="container">
-                    <div class="row text-center">
-                        <div class="col-12 col-md-6">
-                            <div class="card-custom">
-                                <h5>Vision</h5>
-                                <p>A progressive, orderly and safe barangay Where every citizen help one another, stay united, shows compassion for others in order to achieved a high quality for life. </p>
-                            </div>
+                
+                <div class="row text-center g-3 justify-content-center">
+                    <div class="col-12 col-md-5">
+                        <div class="card-custom">
+                            <h5>Vision</h5>
+                            <p class="mb-0 small">A progressive, orderly and safe barangay where every citizen helps one another, stays united, and shows compassion for others to achieve a high quality of life.</p>
                         </div>
-                        <div class="col-12 col-md-6">
-                            <div class="card-custom">
-                                <h5>Mission</h5>
-                                <p>To provide  efficient and fair services, to all resident, promote the development and orderliness of the barangay through active community participation, and ensure the safety and well being of every individual through innovative and effective governance.</p>
-                            </div>
+                    </div>
+                    <div class="col-12 col-md-5">
+                        <div class="card-custom">
+                            <h5>Mission</h5>
+                            <p class="mb-0 small">To provide efficient and fair services to all residents, promote development and orderliness through active community participation, and ensure the safety and well-being of every individual.</p>
                         </div>
                     </div>
                 </div>
@@ -133,18 +211,18 @@
             <div class="container">
                 <div class="row g-3">
                     <div class="col-12 col-md-4">
-                        <div class="box mb-3">Announcement <span>More</span></div>
-                        <div class="box">Project <span>More</span></div>
+                        <div class="box mb-3">Announcement <span>MORE</span></div>
+                        <div class="box">Project <span>MORE</span></div>
                     </div>
                     <div class="col-12 col-md-8">
-                        <div class="box h-100">Community Issue <span>More</span></div>
+                        <div class="box h-100">Community Issue <span>MORE</span></div>
                     </div>
                 </div>
             </div>
         </section>
     </div>
 
-    <a href="report.html" class="floating-btn" style="text-decoration: none;">+</a>
+    <a href="report.html" class="floating-btn">+</a>
 
 </body>
 
