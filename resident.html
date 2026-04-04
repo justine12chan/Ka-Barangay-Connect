@@ -1,229 +1,228 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="en" class="page-resident-html">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Resident</title>
+    <title>Ka-Barangay Connect</title>
+    <link rel="icon" href="assets/img/logo.png" type="image/x-icon">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="icon" href="img/logo.png" type="image/x-icon">
-
-    <style>
-        :root {
-            --primary-blue: #07008c;
-            --accent-yellow: #fbd907;
-        }
-
-        html, body {
-            height: 100%;
-            margin: 0;
-            padding: 0;
-            background-color: #f8f9fa;
-            /* Prevents the 'double scroll' feeling */
-            overflow: hidden; 
-        }
-
-        /* Nav Bar - Consistent Height */
-        .header {
-            background: var(--primary-blue) !important;
-            padding: 0 20px;
-            color: white;
-            border-bottom: 3px solid var(--accent-yellow);
-            height: 60px;
-            display: flex;
-            align-items: center;
-            flex-shrink: 0; /* Keeps nav from squishing */
-        }
-
-        /* Main Container - Fills the rest of the screen */
-        .snap-container {
-            height: calc(100vh - 60px);
-            overflow-y: auto;
-            scroll-snap-type: y mandatory;
-        }
-
-        .snap-section {
-            min-height: 100%;
-            scroll-snap-align: start;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            padding: 2rem 0;
-        }
-
-        /* --- THE POLISHED ESTABLISHMENT BOX --- */
-        .info-box-wrapper {
-            width: 100%;
-            max-width: 1100px; /* Limits width on XL screens for polish */
-            margin: 0 auto 2rem auto;
-            padding: 0 15px;
-        }
-
-        .info-box {
-            background: #dee2e6;
-            width: 100%;
-            /* This maintains the 16:9 ratio (1920x1080) automatically */
-            aspect-ratio: 16 / 9; 
-            max-height: 70vh; /* Prevents it from being too tall on vertical screens */
-            margin: 0 auto; 
-            border-radius: 12px;
-            overflow: hidden;
-            display: flex;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
-        }
-
-        .info-box img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover; /* Crops edges slightly to fit the 16:9 frame perfectly */
-            display: block;
-        }
-
-        /* Mission & Vision Cards */
-        .card-custom {
-            background: white;
-            border-radius: 12px;
-            padding: 1.5rem;
-            height: 100%;
-            min-height: 180px;
-            transition: transform 0.3s ease, border-color 0.3s ease;
-            border: 1px solid #ddd;
-            border-bottom: 5px solid var(--primary-blue);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-
-        .card-custom:hover {
-            transform: translateY(-8px);
-            border-bottom-color: var(--accent-yellow);
-            box-shadow: 0 12px 20px rgba(7, 0, 140, 0.1);
-        }
-
-        .card-custom h5 {
-            color: var(--primary-blue);
-            font-weight: 700;
-            margin-bottom: 0.75rem;
-        }
-
-        /* Action Boxes Section 2 */
-        .box {
-            background: white;
-            border: 1px solid #dee2e6;
-            border-left: 5px solid var(--primary-blue);
-            border-radius: 10px;
-            min-height: 140px;
-            padding: 20px;
-            position: relative;
-            transition: 0.3s ease;
-        }
-
-        .box:hover {
-            border-left-color: var(--accent-yellow);
-            background-color: #fff;
-        }
-
-        .box span {
-            position: absolute;
-            bottom: 15px;
-            right: 15px;
-            font-size: 11px;
-            color: var(--primary-blue);
-            font-weight: bold;
-            letter-spacing: 1px;
-        }
-
-        /* Floating Button */
-        .floating-btn {
-            position: fixed;
-            bottom: 25px;
-            right: 25px;
-            width: 55px;
-            height: 55px;
-            background: var(--primary-blue);
-            color: var(--accent-yellow);
-            font-size: 28px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-            z-index: 1000;
-            border: 2px solid var(--accent-yellow);
-            text-decoration: none;
-        }
-
-        /* Responsive Fixes for Small Devices */
-        @media (max-width: 768px) {
-            .snap-container {
-                scroll-snap-type: none; /* Disabling snap on mobile for smoother feel */
-                overflow-y: scroll;
-            }
-            .snap-section {
-                height: auto;
-                min-height: auto;
-                padding: 1.5rem 0;
-            }
-            .info-box {
-                max-height: 35vh; /* Keep image smaller on phones */
-            }
-            .card-custom {
-                margin-bottom: 1rem;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="assets/css/style.css">
 </head>
+<body class="page-resident">
 
-<body>
-
-    <nav class="header">
-        <img src="img/logo.png" width="35" class="me-2" alt="Logo">
-        <h6 class="mb-0">Ka-Barangay Connect: San Bartolome</h6>
+    <!-- HEADER -->
+    <nav class="header" style="height:64px; padding:0 28px;">
+        <div class="header-logo lg">
+            <img src="assets/img/logo.png" alt="Logo" onerror="this.style.display='none';this.parentElement.textContent='SB'">
+        </div>
+        <div>
+            <div class="header-title">Ka-Barangay Connect</div>
+            <div class="header-sub">San Bartolome</div>
+        </div>
+        <div class="header-right">
+            <div class="nav-dot"></div>
+            <span class="header-pill">Official Portal</span>
+            <a href="index.html" class="back-btn" style="margin-left:0;">&#8592; Back</a>
+        </div>
     </nav>
 
     <div class="snap-container">
+
+        <!-- SECTION 1 — Hero + Vision / Mission -->
         <section class="snap-section">
             <div class="container">
+
                 <div class="info-box-wrapper">
                     <div class="info-box">
-                        <img src="img/barangay_header.jpg" alt="Barangay Establishment">
+                        <img src="assets/img/barangay_header.jpg" alt="Barangay San Bartolome">
+                        <div class="info-box-overlay"></div>
+                        <div class="info-box-content">
+                            <div class="info-box-label">
+                                <div class="label-dot"></div>
+                                Official Barangay Portal
+                            </div>
+                            <h2 class="info-box-heading">Barangay San Bartolome</h2>
+                        </div>
                     </div>
                 </div>
-                
-                <div class="row text-center g-3 justify-content-center">
+
+                <div class="row g-3 justify-content-center">
                     <div class="col-12 col-md-5">
-                        <div class="card-custom">
-                            <h5>Vision</h5>
-                            <p class="mb-0 small">A progressive, orderly and safe barangay where every citizen helps one another, stays united, and shows compassion for others to achieve a high quality of life.</p>
+                        <div class="vm-card">
+                            <div class="vm-bg"></div>
+                            <div class="vm-strip"></div>
+                            <div class="vm-circle1"></div>
+                            <div class="vm-circle2"></div>
+                            <div class="vm-inner">
+                                <div class="vm-header">
+                                    <div class="vm-icon">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="#f5cc00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                            <circle cx="12" cy="12" r="3"/>
+                                        </svg>
+                                    </div>
+                                    <p class="vm-label">Vision</p>
+                                </div>
+                                <div class="vm-divider"></div>
+                                <p class="vm-text">A progressive, orderly and safe barangay where every citizen helps one another, stays united, and shows compassion for others to achieve a high quality of life.</p>
+                            </div>
                         </div>
                     </div>
                     <div class="col-12 col-md-5">
-                        <div class="card-custom">
-                            <h5>Mission</h5>
-                            <p class="mb-0 small">To provide efficient and fair services to all residents, promote development and orderliness through active community participation, and ensure the safety and well-being of every individual.</p>
+                        <div class="vm-card">
+                            <div class="vm-bg"></div>
+                            <div class="vm-strip"></div>
+                            <div class="vm-circle1"></div>
+                            <div class="vm-circle2"></div>
+                            <div class="vm-inner">
+                                <div class="vm-header">
+                                    <div class="vm-icon">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="#f5cc00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                                        </svg>
+                                    </div>
+                                    <p class="vm-label">Mission</p>
+                                </div>
+                                <div class="vm-divider"></div>
+                                <p class="vm-text">To provide efficient and fair services to all residents, promote development through active community participation, and ensure the safety and well-being of every individual.</p>
+                            </div>
                         </div>
                     </div>
+                </div>
+
+                <div class="scroll-hint">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+                    Scroll for more
                 </div>
             </div>
         </section>
 
+        <!-- SECTION 2 — Community Board -->
         <section class="snap-section">
             <div class="container">
+
+                <div class="section-header">
+                    <span class="section-eyebrow">Community Board</span>
+                    <div class="section-line"></div>
+                </div>
+
                 <div class="row g-3">
-                    <div class="col-12 col-md-4">
-                        <div class="box mb-3">Announcement <span>MORE</span></div>
-                        <div class="box">Project <span>MORE</span></div>
+
+                    <!-- Left: Announcements + Projects -->
+                    <div class="col-12 col-md-4 d-flex flex-column gap-3">
+
+                        <div class="panel-card">
+                            <div class="panel-top">
+                                <div class="panel-top-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="#f5cc00" stroke-width="2" stroke-linecap="round">
+                                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                                        <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <p class="panel-top-title">Announcements</p>
+                                    <p class="panel-top-sub">Latest official notices</p>
+                                </div>
+                            </div>
+                            <div class="panel-body">
+                                <div class="ph"></div>
+                                <div class="ph s"></div>
+                                <div class="ph"></div>
+                                <div class="ph xs"></div>
+                            </div>
+                            <div class="panel-footer">
+                                <span class="panel-count">3 new today</span>
+                                <a href="#" class="panel-cta">View All</a>
+                            </div>
+                        </div>
+
+                        <div class="panel-card">
+                            <div class="panel-top">
+                                <div class="panel-top-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="#f5cc00" stroke-width="2" stroke-linecap="round">
+                                        <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+                                        <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <p class="panel-top-title">Projects</p>
+                                    <p class="panel-top-sub">Ongoing programs</p>
+                                </div>
+                            </div>
+                            <div class="panel-body">
+                                <div class="ph s"></div>
+                                <div class="ph"></div>
+                                <div class="ph xs"></div>
+                                <div class="ph s"></div>
+                            </div>
+                            <div class="panel-footer">
+                                <span class="panel-count">5 active</span>
+                                <a href="#" class="panel-cta">View All</a>
+                            </div>
+                        </div>
+
                     </div>
+
+                    <!-- Right: Community Issues -->
                     <div class="col-12 col-md-8">
-                        <div class="box h-100">Community Issue <span>MORE</span></div>
+                        <div class="issues-card">
+
+                            <div class="issues-top">
+                                <p class="issues-eyebrow">Resident Reports</p>
+                                <h3 class="issues-title">Community Issues</h3>
+                                <p class="issues-subtitle">Browse or submit concerns raised by residents</p>
+                            </div>
+
+                            <div class="issues-stats">
+                                <div class="i-stat">
+                                    <span class="i-stat-num">12</span>
+                                    <span class="i-stat-label">Open</span>
+                                </div>
+                                <div class="i-stat">
+                                    <span class="i-stat-num">5</span>
+                                    <span class="i-stat-label">In Progress</span>
+                                </div>
+                                <div class="i-stat">
+                                    <span class="i-stat-num">38</span>
+                                    <span class="i-stat-label">Resolved</span>
+                                </div>
+                            </div>
+
+                            <div class="issues-body">
+                                <div class="issue-row">
+                                    <div class="i-dot open"></div>
+                                    <span class="issue-text">Damaged streetlight on Rizal St. near the covered court</span>
+                                    <span class="i-badge b-open">Open</span>
+                                </div>
+                                <div class="issue-row">
+                                    <div class="i-dot progress"></div>
+                                    <span class="issue-text">Clogged drainage along Mabini Ave. flooding during rain</span>
+                                    <span class="i-badge b-progress">In Progress</span>
+                                </div>
+                                <div class="issue-row">
+                                    <div class="i-dot done"></div>
+                                    <span class="issue-text">Potholes on Bonifacio road — repaired by DPWH</span>
+                                    <span class="i-badge b-done">Resolved</span>
+                                </div>
+                            </div>
+
+                            <div class="issues-footer">
+                                <span class="issues-footer-text">Last updated: today</span>
+                                <a href="#" class="issues-cta">See All Issues</a>
+                            </div>
+
+                        </div>
                     </div>
+
                 </div>
             </div>
         </section>
+
     </div>
 
-    <a href="report.html" class="floating-btn">+</a>
+    <a href="report.html" class="floating-btn" title="Submit a report">+</a>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="assets/js/main.js"></script>
 </body>
-
 </html>

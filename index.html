@@ -1,117 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ka-Barangay Connect</title>
-
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-<link rel="icon" href="img/logo.png" type="image/x-icon"> 
-
-<style>
-    :root {
-        --primary-blue: #07008c;
-        --accent-yellow: #fbd907;
-    }
-
-    /* 1. Fix Body & Background */
-    body {
-        background-color: var(--primary-blue);
-        /* Subtle gradient to give the glass something to "blur" */
-        background: radial-gradient(circle at top right, #161890, var(--primary-blue));
-        margin: 0;
-        padding: 0;
-        height: 100vh;
-        width: 100vw;
-        overflow-x: hidden;
-        /* Custom scrollbar for a cleaner look */
-        overflow-y: auto; 
-    }
-
-    /* 2. Responsive Flex Container */
-    .main-wrapper {
-        min-height: 100vh;
-        display: flex;
-        align-items: safe center; /* Prevents cutting off top on small screens */
-        justify-content: center;
-        padding: 2rem 1rem;
-    }
-
-    /* 3. Glassmorphism Card */
-    .card-glass {
-        background: rgba(255, 255, 255, 0.1);
-        backdrop-filter: blur(15px);
-        -webkit-backdrop-filter: blur(15px);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        border-radius: 30px;
-        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
-        color: white;
-        width: 100%;
-        max-width: 1000px; /* Limits width on XL screens like the previous one */
-        transition: transform 0.3s ease;
-    }
-
-    /* 4. Image Handling */
-    .logo-container img {
-        width: 100%;
-        max-width: 350px;
-        height: auto;
-        filter: drop-shadow(0 10px 15px rgba(0,0,0,0.3));
-    }
-
-    /* 5. Buttons with Glass Style */
-    .btn-custom {
-        background: rgba(255, 255, 255, 0.15);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        color: white;
-        border-radius: 15px;
-        padding: 15px;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-        backdrop-filter: blur(5px);
-    }
-
-    .btn-custom:hover {
-        background: var(--accent-yellow);
-        color: var(--primary-blue);
-        transform: translateY(-5px);
-        box-shadow: 0 10px 20px rgba(251, 217, 7, 0.3);
-        border-color: var(--accent-yellow);
-    }
-
-    .sub-text {
-        color: rgba(255, 255, 255, 0.7);
-        font-size: 1.1rem;
-    }
-
-    /* Decorative Background Elements */
-    .blob {
-        position: fixed;
-        width: 400px;
-        height: 400px;
-        background: rgba(251, 217, 7, 0.1);
-        filter: blur(80px);
-        border-radius: 50%;
-        z-index: -1;
-    }
-    .blob-1 { top: -100px; left: -100px; }
-    .blob-2 { bottom: -100px; right: -100px; }
-
-    /* 6. Tablet/Mobile Tweaks */
-    @media (max-width: 991px) {
-        .card-glass {
-            padding: 2rem !important;
-        }
-        .logo-container img {
-            max-width: 180px;
-            margin-bottom: 2rem;
-        }
-    }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ka-Barangay Connect</title>
+    <link rel="icon" href="assets/img/logo.png" type="image/x-icon">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/style.css">
 </head>
-<body>
+<body class="page-index">
 
     <div class="blob blob-1"></div>
     <div class="blob blob-2"></div>
@@ -119,10 +16,10 @@
     <div class="main-wrapper">
         <div class="card-glass p-4 p-lg-5">
             <div class="row align-items-center g-5">
-                
+
                 <div class="col-12 col-lg-6 text-center">
                     <div class="logo-container">
-                        <img src="img/logo.png" alt="Barangay Logo">
+                        <img src="assets/img/logo.png" alt="Barangay Logo">
                     </div>
                 </div>
 
@@ -144,5 +41,6 @@
         </div>
     </div>
 
+    <script src="assets/js/main.js"></script>
 </body>
 </html>
