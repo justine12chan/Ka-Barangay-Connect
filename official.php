@@ -29,7 +29,7 @@
                     </div>
 
                     <div class="sidebar-nav">
-                        <a href="official.html" class="sidebar-nav-item active">
+                        <a href="official.php" class="sidebar-nav-item active">
                             <i class="fa fa-tachometer"></i> Dashboard
                         </a>
                         <a href="#" class="sidebar-nav-item">
@@ -68,7 +68,7 @@
                             <a href="#" class="nav-pill">Report</a>
                             <a href="#" class="nav-pill">Community Issue</a>
                             <a href="#" class="nav-pill">Projects</a>
-                            <a href="official.html" class="nav-pill active">Dashboard</a>
+                            <a href="official.php" class="nav-pill active">Dashboard</a>
                         </div>
                     </div>
 

@@ -20,7 +20,7 @@
             <div class="header-name">Ka-Barangay Connect</div>
             <div class="header-loc">San Bartolome</div>
         </div>
-        <a href="resident.html" class="back-btn">&#8592; Back</a>
+        <a href="resident.php" class="back-btn">&#8592; Back</a>
     </nav>
 
     <div class="page-body">
