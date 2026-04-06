@@ -17,7 +17,7 @@
     <div class="login-card">
 
         <!-- Back button -->
-        <a href="index.html" class="back-btn">
+        <a href="index.html" class="back-btn" style="margin-left:0; display:inline-flex; width:fit-content;">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13">
                 <polyline points="15 18 9 12 15 6"/>
             </svg>

@@ -7,85 +7,6 @@
     <link rel="icon" href="assets/img/logo.png" type="image/x-icon">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="assets/css/style.css">
-     <link rel="icon" href="assets/img/logo.png" type="image/x-icon">
-    <style>
-        .name-label-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 6px;
-        }
-        .name-label-row .field-label { margin-bottom: 0; }
-
-        .anon-toggle {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            background: var(--blue-faint, #ededff);
-            border: 1.5px solid var(--border, #e2e3f0);
-            color: var(--blue-main, #0800a0);
-            font-family: 'Sora', sans-serif;
-            font-size: 10.5px;
-            font-weight: 700;
-            letter-spacing: 0.03em;
-            padding: 4px 10px 4px 8px;
-            border-radius: 20px;
-            cursor: pointer;
-            transition: background 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s;
-            -webkit-tap-highlight-color: transparent;
-            white-space: nowrap;
-        }
-        .anon-toggle svg {
-            width: 13px; height: 13px;
-            flex-shrink: 0;
-            transition: stroke 0.2s;
-        }
-        .anon-toggle:hover {
-            background: var(--blue-light, #ededff);
-            border-color: var(--blue-main, #0800a0);
-            box-shadow: 0 2px 8px rgba(8,0,160,0.1);
-        }
-        .anon-toggle.active {
-            background: var(--blue-main, #0800a0);
-            border-color: var(--blue-main, #0800a0);
-            color: var(--yellow, #f5cc00);
-            box-shadow: 0 4px 14px rgba(8,0,160,0.25);
-        }
-        .anon-toggle.active svg { stroke: var(--yellow, #f5cc00); }
-
-        #nameInputWrap {
-            transition: opacity 0.25s, transform 0.25s;
-        }
-        #nameInputWrap.hidden {
-            opacity: 0;
-            pointer-events: none;
-            transform: translateY(-4px);
-            height: 0;
-            overflow: hidden;
-            margin: 0;
-        }
-
-        .anon-badge {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background: rgba(8,0,160,0.06);
-            border: 1.5px dashed rgba(8,0,160,0.2);
-            color: var(--blue-main, #0800a0);
-            font-size: 12.5px;
-            font-weight: 500;
-            border-radius: 10px;
-            padding: 10px 14px;
-            margin-top: 2px;
-            animation: fadein 0.25s ease;
-        }
-        .anon-badge svg { width: 15px; height: 15px; flex-shrink: 0; opacity: 0.7; }
-
-        @keyframes fadein {
-            from { opacity: 0; transform: translateY(-4px); }
-            to   { opacity: 1; transform: translateY(0); }
-        }
-    </style>
 </head>
 <body class="page-report">
 
@@ -98,7 +19,7 @@
             <div class="header-name">Ka-Barangay Connect</div>
             <div class="header-loc">San Bartolome</div>
         </div>
-        <a href="resident.php" class="back-btn">&#8592; Back</a>
+        <a href="resident.php" class="back-btn" style="margin-left:auto; margin-bottom:0;">&#8592; Back</a>
     </nav>
 
     <div class="page-body">
@@ -250,12 +171,12 @@
 
         function toggleAnonymous() {
             isAnonymous = !isAnonymous;
-            const toggle   = document.getElementById('anonToggle');
-            const label    = document.getElementById('anonLabel');
-            const icon     = document.getElementById('anonIcon');
-            const nameWrap = document.getElementById('nameInputWrap');
-            const badge    = document.getElementById('anonBadge');
-            const nameInput= document.getElementById('nameInput');
+            const toggle    = document.getElementById('anonToggle');
+            const label     = document.getElementById('anonLabel');
+            const icon      = document.getElementById('anonIcon');
+            const nameWrap  = document.getElementById('nameInputWrap');
+            const badge     = document.getElementById('anonBadge');
+            const nameInput = document.getElementById('nameInput');
 
             if (isAnonymous) {
                 toggle.classList.add('active');
