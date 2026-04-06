@@ -21,8 +21,6 @@
             <div class="header-sub">San Bartolome</div>
         </div>
         <div class="header-right">
-            <div class="nav-dot"></div>
-            <span class="header-pill">Official Portal</span>
             <a href="index.html" class="back-btn" style="margin-left:0;">&#8592; Back</a>
         </div>
     </nav>

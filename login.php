@@ -7,7 +7,10 @@
     <link rel="icon" href="assets/img/logo.png" type="image/x-icon">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="assets/css/style.css">
+<<<<<<< HEAD
     <link rel="icon" href="assets/img/logo.png" type="image/x-icon">
+=======
+>>>>>>> 5be9a51 (anonymous report)
 </head>
 <body class="page-login">
 
@@ -17,7 +20,11 @@
     <div class="login-card">
 
         <!-- Back button -->
+<<<<<<< HEAD
         <a href="index.html" class="back-btn">
+=======
+        <a href="index.html" class="back-btn" style="display:inline-flex; margin-bottom: 1.25rem; margin-left:0;">
+>>>>>>> 5be9a51 (anonymous report)
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13">
                 <polyline points="15 18 9 12 15 6"/>
             </svg>
@@ -26,7 +33,11 @@
 
         <!-- Header -->
         <div class="login-header">
+<<<<<<< HEAD
             <div class="login-logo">
+=======
+            <div class="login-logo" style="background: transparent; box-shadow: none;">
+>>>>>>> 5be9a51 (anonymous report)
                 <img src="assets/img/logo.png" alt="Barangay Logo">
             </div>
             <div>
@@ -77,18 +88,29 @@
                 </div>
             </div>
 
+<<<<<<< HEAD
             <div class="form-extras">
                 <label class="remember-label">
                     <input type="checkbox" id="rememberMe"> Remember me
                 </label>
                 <a href="#" class="forgot-link">Forgot password?</a>
+=======
+            <div class="form-extras" style="justify-content: flex-start; margin-bottom: 1.5rem;">
+                <label class="remember-label">
+                    <input type="checkbox" id="rememberMe"> Remember me
+                </label>
+>>>>>>> 5be9a51 (anonymous report)
             </div>
 
             <button type="submit" class="btn-login">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/>
                 </svg>
+<<<<<<< HEAD
                 Sign In
+=======
+                Log in
+>>>>>>> 5be9a51 (anonymous report)
             </button>
 
         </form>
@@ -113,7 +135,11 @@
             eyeIcon.innerHTML = isHidden ? eyeClosed : eyeOpen;
         });
 
+<<<<<<< HEAD
         // Form submit — replace DEMO_USER/DEMO_PASS with real auth logic
+=======
+        // Form submit
+>>>>>>> 5be9a51 (anonymous report)
         const form     = document.getElementById('loginForm');
         const errorMsg = document.getElementById('errorMsg');
         const errorTxt = document.getElementById('errorText');
