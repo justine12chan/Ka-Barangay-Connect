@@ -1,3 +1,32 @@
+<?php
+session_start();
+require_once 'connection.php';
+
+$php_error = '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $username = trim($_POST['username'] ?? '');
+    $password = $_POST['password'] ?? '';
+
+    if ($username === '' || $password === '') {
+        $php_error = 'Please fill in all fields.';
+    } else {
+        $u = mysqli_real_escape_string($conn, $username);
+        $res = executeQuery("SELECT * FROM officials WHERE username='$u' LIMIT 1");
+        $official = $res ? mysqli_fetch_assoc($res) : null;
+
+        if ($official && $password === $official['password']) {
+            $_SESSION['admin_user']      = $official['username'];
+            $_SESSION['admin_full_name'] = $official['full_name'];
+            $_SESSION['admin_position']  = $official['position'];
+            header("Location: official.php");
+            exit;
+        } else {
+            $php_error = 'Invalid username or password.';
+        }
+    }
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,8 +35,7 @@
     <title>Official Login — Ka-Barangay Connect</title>
     <link rel="icon" href="assets/img/logo.png" type="image/x-icon">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="assets/css/style.css">
-    <link rel="icon" href="assets/img/logo.png" type="image/x-icon">
+    <link rel="stylesheet" href="assets/css/admin.css">
 </head>
 <body class="page-login">
 
@@ -37,16 +65,16 @@
 
         <div class="login-divider"></div>
 
-        <!-- Error message -->
-        <div class="login-error" id="errorMsg">
+        <!-- Error message (PHP-driven) -->
+        <div class="login-error <?= $php_error ? 'show' : '' ?>" id="errorMsg">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
             </svg>
-            <span id="errorText">Invalid username or password.</span>
+            <span id="errorText"><?= htmlspecialchars($php_error) ?></span>
         </div>
 
-        <!-- Form -->
-        <form id="loginForm" novalidate>
+        <!-- Form — actual POST to self -->
+        <form id="loginForm" method="POST" action="login.php" novalidate>
 
             <div class="form-group-login">
                 <label class="form-label-custom" for="username">Username</label>
@@ -56,7 +84,7 @@
                             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
                         </svg>
                     </span>
-                    <input type="text" id="username" class="form-input" placeholder="Enter your username" autocomplete="username" required>
+                    <input type="text" id="username" name="username" class="form-input" placeholder="Enter your username" autocomplete="username" required value="<?= htmlspecialchars($_POST['username'] ?? '') ?>">
                 </div>
             </div>
 
@@ -68,7 +96,7 @@
                             <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                         </svg>
                     </span>
-                    <input type="password" id="password" class="form-input pw-field" placeholder="Enter your password" autocomplete="current-password" required>
+                    <input type="password" id="password" name="password" class="form-input pw-field" placeholder="Enter your password" autocomplete="current-password" required>
                     <button type="button" class="toggle-pw" id="togglePw" aria-label="Show password">
                         <svg id="eyeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
@@ -98,6 +126,7 @@
 
     <script src="assets/js/main.js"></script>
     <script>
+    // Password show/hide toggle
     const togglePw = document.getElementById('togglePw');
     const pwInput  = document.getElementById('password');
     const eyeIcon  = document.getElementById('eyeIcon');
@@ -111,42 +140,18 @@
         eyeIcon.innerHTML = isHidden ? eyeClosed : eyeOpen;
     });
 
-    const form     = document.getElementById('loginForm');
-    const errorMsg = document.getElementById('errorMsg');
-    const errorTxt = document.getElementById('errorText');
+    // Store username in sessionStorage after successful PHP redirect (for sidebar display)
+    <?php if (isset($_SESSION['admin_user'])): ?>
+    sessionStorage.setItem('adminUser', '<?= addslashes($_SESSION['admin_user']) ?>');
+    <?php endif; ?>
 
-    const DEMO_USER = 'admin';
-    const DEMO_PASS = 'barangay123';
-
-    form.addEventListener('submit', (e) => {
-        e.preventDefault();
-        errorMsg.classList.remove('show');
-
-        const user = document.getElementById('username').value.trim();
-        const pass = document.getElementById('password').value;
-
-        if (!user || !pass) {
-            errorTxt.textContent = 'Please fill in all fields.';
-            errorMsg.classList.add('show');
-            return;
-        }
-
-        if (user === DEMO_USER && pass === DEMO_PASS) {
-            window.location.href = 'official.php';
-        } else {
-            errorTxt.textContent = 'Invalid username or password.';
-            errorMsg.classList.add('show');
-            document.getElementById('password').value = '';
-            document.getElementById('password').focus();
-        }
-    });
-
+    // Hide error on input
     ['username', 'password'].forEach(id => {
         document.getElementById(id).addEventListener('input', () => {
-            errorMsg.classList.remove('show');
+            document.getElementById('errorMsg').classList.remove('show');
         });
     });
-</script>
+    </script>
 
 </body>
 </html>

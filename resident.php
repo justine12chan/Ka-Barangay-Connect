@@ -6,10 +6,26 @@
     <title>Ka-Barangay Connect</title>
     <link rel="icon" href="assets/img/logo.png" type="image/x-icon">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="assets/css/style.css">
-     <link rel="icon" href="assets/img/logo.png" type="image/x-icon">
+    <link rel="stylesheet" href="assets/css/resident.css">
 </head>
 <body class="page-resident">
+
+<?php
+require_once 'connection.php';
+
+// Live stats from DB
+$r_open     = mysqli_fetch_row(executeQuery("SELECT COUNT(*) FROM reports WHERE status='pending'"))[0]     ?? 0;
+$r_progress = mysqli_fetch_row(executeQuery("SELECT COUNT(*) FROM reports WHERE status='in-progress'"))[0] ?? 0;
+$r_resolved = mysqli_fetch_row(executeQuery("SELECT COUNT(*) FROM reports WHERE status='resolved'"))[0]    ?? 0;
+$ann_today  = mysqli_fetch_row(executeQuery("SELECT COUNT(*) FROM announcements WHERE DATE(created_at)=CURDATE()"))[0] ?? 0;
+$prog_active= mysqli_fetch_row(executeQuery("SELECT COUNT(*) FROM programs WHERE status IN ('ongoing','planned')"))[0]  ?? 0;
+
+// Latest 3 issues for the preview
+$latest_issues = executeQuery("SELECT * FROM reports ORDER BY created_at DESC LIMIT 3");
+
+// Latest announcement count (for panel badge)
+$ann_count = mysqli_fetch_row(executeQuery("SELECT COUNT(*) FROM announcements"))[0] ?? 0;
+?>
 
     <!-- HEADER -->
     <nav class="header" style="height:64px; padding:0 28px;">
@@ -130,8 +146,8 @@
                                 <div class="ph xs"></div>
                             </div>
                             <div class="panel-footer">
-                                <span class="panel-count">3 new today</span>
-                                <a href="#" class="panel-cta">View All</a>
+                                <span class="panel-count"><?= $ann_count ?> total</span>
+                                <a href="announcement.php" class="panel-cta">View All</a>
                             </div>
                         </div>
 
@@ -155,8 +171,8 @@
                                 <div class="ph s"></div>
                             </div>
                             <div class="panel-footer">
-                                <span class="panel-count">5 active</span>
-                                <a href="#" class="panel-cta">View All</a>
+                                <span class="panel-count"><?= $prog_active ?> active</span>
+                                <a href="project.php" class="panel-cta">View All</a>
                             </div>
                         </div>
 
@@ -174,40 +190,50 @@
 
                             <div class="issues-stats">
                                 <div class="i-stat">
-                                    <span class="i-stat-num">12</span>
+                                    <span class="i-stat-num"><?= $r_open ?></span>
                                     <span class="i-stat-label">Open</span>
                                 </div>
                                 <div class="i-stat">
-                                    <span class="i-stat-num">5</span>
+                                    <span class="i-stat-num"><?= $r_progress ?></span>
                                     <span class="i-stat-label">In Progress</span>
                                 </div>
                                 <div class="i-stat">
-                                    <span class="i-stat-num">38</span>
+                                    <span class="i-stat-num"><?= $r_resolved ?></span>
                                     <span class="i-stat-label">Resolved</span>
                                 </div>
                             </div>
 
                             <div class="issues-body">
+<?php
+$badge_map = [
+    'pending'     => ['label' => 'Open',        'class' => 'b-open'],
+    'in-progress' => ['label' => 'In Progress',  'class' => 'b-progress'],
+    'resolved'    => ['label' => 'Resolved',     'class' => 'b-done'],
+];
+$dot_map   = ['pending' => 'open', 'in-progress' => 'progress', 'resolved' => 'done'];
+
+if ($latest_issues && mysqli_num_rows($latest_issues) > 0):
+    while ($issue = mysqli_fetch_assoc($latest_issues)):
+        $st  = $issue['status'];
+        $bi  = $badge_map[$st] ?? $badge_map['pending'];
+        $dot = $dot_map[$st]   ?? 'open';
+?>
                                 <div class="issue-row">
-                                    <div class="i-dot open"></div>
-                                    <span class="issue-text">Damaged streetlight on Rizal St. near the covered court</span>
-                                    <span class="i-badge b-open">Open</span>
+                                    <div class="i-dot <?= $dot ?>"></div>
+                                    <span class="issue-text"><?= htmlspecialchars($issue['title']) ?></span>
+                                    <span class="i-badge <?= $bi['class'] ?>"><?= $bi['label'] ?></span>
                                 </div>
-                                <div class="issue-row">
-                                    <div class="i-dot progress"></div>
-                                    <span class="issue-text">Clogged drainage along Mabini Ave. flooding during rain</span>
-                                    <span class="i-badge b-progress">In Progress</span>
-                                </div>
-                                <div class="issue-row">
-                                    <div class="i-dot done"></div>
-                                    <span class="issue-text">Potholes on Bonifacio road — repaired by DPWH</span>
-                                    <span class="i-badge b-done">Resolved</span>
-                                </div>
+<?php
+    endwhile;
+else:
+?>
+                                <div style="padding:12px; font-size:13px; color:#8890b8;">No reports yet.</div>
+<?php endif; ?>
                             </div>
 
                             <div class="issues-footer">
                                 <span class="issues-footer-text">Last updated: today</span>
-                                <a href="#" class="issues-cta">See All Issues</a>
+                                <a href="community-issues.php" class="issues-cta">See All Issues</a>
                             </div>
 
                         </div>
