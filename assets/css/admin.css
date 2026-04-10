@@ -844,7 +844,15 @@ body.page-login {
 }
 .rpt-modal-close:hover { background: rgba(255,255,255,0.22); color: #fff; }
 
-.rpt-modal-body { padding: 20px 20px 8px; }
+.rpt-modal-body {
+    padding: 20px 20px 8px;
+    max-height: 60vh;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+}
+.rpt-modal-body::-webkit-scrollbar { width: 4px; }
+.rpt-modal-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
 
 .rpt-modal-footer {
     padding: 14px 20px 20px;
@@ -884,22 +892,76 @@ body.page-login {
 .rpt-modal-submit i { font-size: 12px; }
 
 /* Category selector buttons in post modal */
-.rpt-cat-row {
-    display: flex; gap: 10px;
-    margin-top: 4px;
+/* ── Modal form fields ── */
+.field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 14px;
 }
 
+.field-label {
+    font-family: 'Sora', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+.field-input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    color: var(--text);
+    background: #fff;
+    outline: none;
+    transition: border-color 0.18s, box-shadow 0.18s;
+    -webkit-appearance: none;
+}
+
+.field-input:focus {
+    border-color: var(--blue-main);
+    box-shadow: 0 0 0 3px rgba(8, 0, 160, 0.08);
+}
+
+.field-input::placeholder { color: var(--muted); }
+
+textarea.field-input {
+    min-height: 88px;
+    resize: vertical;
+    line-height: 1.55;
+}
+
+input[type="date"].field-input {
+    cursor: pointer;
+}
+
+.rpt-cat-row {
+    display: flex; gap: 8px;
+    margin-top: 4px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+}
+.rpt-cat-row::-webkit-scrollbar { display: none; }
+
 .rpt-cat-btn {
-    flex: 1;
-    display: flex; align-items: center; justify-content: center; gap: 8px;
-    padding: 12px 10px;
+    flex: 0 0 auto;
+    min-width: 80px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
+    padding: 10px 12px;
     border-radius: 12px;
     background: var(--faint);
     border: 1.5px solid var(--border);
     color: var(--muted);
     font-family: 'Sora', sans-serif;
-    font-size: 12px; font-weight: 700;
+    font-size: 11px; font-weight: 700;
     cursor: pointer;
+    text-align: center;
     -webkit-tap-highlight-color: transparent;
     transition: background 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s;
 }
@@ -1055,4 +1117,77 @@ body.page-login {
     .rpt-split { flex-direction: column; }
     .rpt-split-detail.has-content { width: 100%; border-top: 2px solid var(--yellow-vivid); }
     .rpt-split-list { max-height: none; border-right: none; }
+}
+
+/* ════════════════════════════════════════════════════════════
+   UNIFIED CREATE MODAL — type picker tiles & back button
+   ════════════════════════════════════════════════════════════ */
+
+/* Type-picker tile */
+.u-type-tile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 22px 14px 18px;
+    border-radius: 14px;
+    border: 2px solid var(--border, #e2e3f0);
+    background: var(--faint, #f4f4ff);
+    cursor: pointer;
+    transition: border-color 0.18s, box-shadow 0.18s, transform 0.15s;
+    text-align: center;
+    font-family: inherit;
+}
+.u-type-tile:hover {
+    border-color: var(--blue-main, #0800a0);
+    box-shadow: 0 4px 18px rgba(8,0,160,0.1);
+    transform: translateY(-2px);
+    background: #fff;
+}
+
+/* Icon circle inside each tile */
+.u-type-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.u-type-label {
+    font-family: 'Sora', sans-serif;
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--text-main, #0d0e2e);
+}
+
+.u-type-sub {
+    font-size: 11.5px;
+    color: var(--muted, #8890b8);
+    line-height: 1.4;
+}
+
+/* Back arrow button inside step-2 header */
+.u-back-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1.5px solid var(--border, #e2e3f0);
+    background: var(--faint, #f4f4ff);
+    color: var(--blue-main, #0800a0);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 13px;
+    flex-shrink: 0;
+    transition: background 0.15s, border-color 0.15s;
+}
+.u-back-btn:hover {
+    background: var(--blue-main, #0800a0);
+    border-color: var(--blue-main, #0800a0);
+    color: #fff;
 }

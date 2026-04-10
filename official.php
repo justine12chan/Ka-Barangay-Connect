@@ -50,16 +50,6 @@ if ($monthly_res) {
     while ($mrow = mysqli_fetch_assoc($monthly_res)) $monthly_data[] = $mrow;
 }
 
-// ── Users table (officials) — safe check first
-$users_list = [];
-$table_check = executeQuery("SHOW TABLES LIKE 'officials'");
-if ($table_check && mysqli_num_rows($table_check) > 0) {
-    $users_res = executeQuery("SELECT * FROM officials ORDER BY created_at DESC");
-    if ($users_res) {
-        while ($urow = mysqli_fetch_assoc($users_res)) $users_list[] = $urow;
-    }
-}
-
 // ── Category breakdown for chart
 $category_data = [];
 $cat_res = executeQuery("SELECT category, COUNT(*) as cnt FROM reports GROUP BY category ORDER BY cnt DESC");
@@ -250,51 +240,163 @@ if ($cat_res) {
                             </div>
                         </div>
 
-                        <!-- USERS TABLE -->
-                        <div style="margin-top:20px;">
-                            <div style="font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; margin-bottom:12px; display:flex; align-items:center; gap:8px;">
-                                <i class="fa fa-users" style="color:#7c3aed;"></i> Officials / Users
-                            </div>
-                            <div style="background:#fff; border:1.5px solid var(--border); border-radius:14px; overflow:hidden;">
-                                <table style="width:100%; border-collapse:collapse; font-size:12.5px;">
-                                    <thead>
-                                        <tr style="background:var(--faint); border-bottom:1.5px solid var(--border);">
-                                            <th style="padding:10px 14px; text-align:left; font-weight:700; color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:.06em;">#</th>
-                                            <th style="padding:10px 14px; text-align:left; font-weight:700; color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:.06em;">Name</th>
-                                            <th style="padding:10px 14px; text-align:left; font-weight:700; color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:.06em;">Position</th>
-                                            <th style="padding:10px 14px; text-align:left; font-weight:700; color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:.06em;">Username</th>
-                                            <th style="padding:10px 14px; text-align:left; font-weight:700; color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:.06em;">Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <?php if (!empty($users_list)): $unum = 1; foreach ($users_list as $u): ?>
-                                        <tr style="border-bottom:1px solid var(--border);">
-                                            <td style="padding:10px 14px; color:var(--muted);"><?= $unum++ ?></td>
-                                            <td style="padding:10px 14px; font-weight:600; color:var(--text);">
-                                                <div style="display:flex; align-items:center; gap:8px;">
-                                                    <div style="width:28px;height:28px;border-radius:50%;background:var(--blue-main);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;">
-                                                        <?= strtoupper(substr($u['full_name'] ?? $u['username'] ?? '?', 0, 1)) ?>
-                                                    </div>
-                                                    <?= htmlspecialchars($u['full_name'] ?? $u['username'] ?? '—') ?>
-                                                </div>
-                                            </td>
-                                            <td style="padding:10px 14px; color:var(--text);"><?= htmlspecialchars($u['position'] ?? '—') ?></td>
-                                            <td style="padding:10px 14px; color:var(--muted); font-family:monospace;"><?= htmlspecialchars($u['username'] ?? '—') ?></td>
-                                            <td style="padding:10px 14px;">
-                                                <span style="font-size:10px;font-weight:700;padding:2px 10px;border-radius:20px;background:#e6faed;color:#128548;">Active</span>
-                                            </td>
-                                        </tr>
-                                        <?php endforeach; else: ?>
-                                        <tr><td colspan="5" style="padding:24px; text-align:center; color:var(--muted); font-size:13px;">No officials found. Create an <code>officials</code> table to populate this list.</td></tr>
-                                        <?php endif; ?>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
+
 
                     </div>
 
                 </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Unified FAB -->
+    <button class="rpt-fab" title="Create New" onclick="openUnifiedModal()">
+        <i class="fa fa-plus"></i>
+    </button>
+
+    <!-- ══ UNIFIED CREATE MODAL ══ -->
+    <div class="rpt-modal-overlay" id="unifiedModal" onclick="if(event.target===this)closeUnifiedModal()">
+        <div class="rpt-modal">
+
+            <!-- ── STEP 1: Type picker ── -->
+            <div id="uStep1">
+                <div class="rpt-modal-header">
+                    <div>
+                        <div class="rpt-modal-eyebrow">Admin Action</div>
+                        <div class="rpt-modal-title">What would you like to create?</div>
+                    </div>
+                    <button type="button" class="rpt-modal-close" onclick="closeUnifiedModal()">
+                        <i class="fa fa-times"></i>
+                    </button>
+                </div>
+                <div class="rpt-modal-body" style="padding-bottom:24px;">
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px;">
+                        <button type="button" class="u-type-tile" onclick="chooseType('announcement')">
+                            <div class="u-type-icon" style="background:#fff3cd;color:#856404;">
+                                <i class="fa fa-bullhorn"></i>
+                            </div>
+                            <div class="u-type-label">Announcement</div>
+                            <div class="u-type-sub">Post an official notice to residents</div>
+                        </button>
+                        <button type="button" class="u-type-tile" onclick="chooseType('program')">
+                            <div class="u-type-icon" style="background:#e8f0fe;color:#1a56db;">
+                                <i class="fa fa-briefcase"></i>
+                            </div>
+                            <div class="u-type-label">Project</div>
+                            <div class="u-type-sub">Add a new barangay project</div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── STEP 2a: Announcement form ── -->
+            <div id="uStep2Ann" style="display:none;">
+                <div class="rpt-modal-header">
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        <button type="button" class="u-back-btn" onclick="backToTypePicker()">
+                            <i class="fa fa-arrow-left"></i>
+                        </button>
+                        <div>
+                            <div class="rpt-modal-eyebrow">Admin Action</div>
+                            <div class="rpt-modal-title">Post Announcement</div>
+                        </div>
+                    </div>
+                    <button type="button" class="rpt-modal-close" onclick="closeUnifiedModal()">
+                        <i class="fa fa-times"></i>
+                    </button>
+                </div>
+                <form method="POST" action="report_admin.php" enctype="multipart/form-data">
+                    <input type="hidden" name="add_announcement" value="1">
+                    <div class="rpt-modal-body">
+                        <div class="field-group">
+                            <label class="field-label">Title</label>
+                            <input type="text" class="field-input" name="ann_title" placeholder="Announcement title..." required>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Message</label>
+                            <textarea class="field-input" name="ann_body" rows="4" placeholder="Write the full announcement here..." required style="resize:vertical;"></textarea>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Posted By</label>
+                            <input type="text" class="field-input" name="posted_by" placeholder="e.g. Barangay Admin" value="Barangay Admin">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Image (optional)</label>
+                            <div class="image-picker-admin" onclick="document.getElementById('annFileInput').click()" style="display:flex;align-items:center;gap:12px;padding:12px 16px;border:1.5px dashed var(--border);border-radius:10px;cursor:pointer;background:var(--faint);">
+                                <i class="fa fa-image" style="font-size:18px;color:var(--muted);"></i>
+                                <span style="font-size:13px;color:var(--muted);" id="annFileLabel">Choose image...</span>
+                            </div>
+                            <input type="file" id="annFileInput" name="ann_image" accept="image/*" style="display:none;"
+                                   onchange="document.getElementById('annFileLabel').textContent = this.files[0] ? '✓ ' + this.files[0].name : 'Choose image...'">
+                        </div>
+                        <div style="display:flex;align-items:center;gap:10px;margin-top:6px;">
+                            <input type="hidden" name="is_urgent" value="0" id="urgentHidden">
+                            <button type="button" id="urgentBtn" onclick="toggleUrgent()"
+                                style="display:flex;align-items:center;gap:7px;padding:8px 14px;border-radius:8px;border:1.5px solid #ffd580;background:#fff3e0;color:#c47200;font-size:12px;font-weight:700;cursor:pointer;">
+                                <i class="fa fa-exclamation-triangle"></i>
+                                <span id="urgentBtnLabel">Mark as Urgent</span>
+                            </button>
+                            <span style="font-size:11.5px;color:var(--muted);">Toggle to flag as urgent</span>
+                        </div>
+                    </div>
+                    <div class="rpt-modal-footer">
+                        <button type="button" class="rpt-modal-cancel" onclick="closeUnifiedModal()">Cancel</button>
+                        <button type="submit" class="rpt-modal-submit"><i class="fa fa-paper-plane"></i> Post Announcement</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- ── STEP 2b: Program form ── -->
+            <div id="uStep2Prog" style="display:none;">
+                <div class="rpt-modal-header">
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        <button type="button" class="u-back-btn" onclick="backToTypePicker()">
+                            <i class="fa fa-arrow-left"></i>
+                        </button>
+                        <div>
+                            <div class="rpt-modal-eyebrow">Admin Action</div>
+                            <div class="rpt-modal-title">Add New Program</div>
+                        </div>
+                    </div>
+                    <button type="button" class="rpt-modal-close" onclick="closeUnifiedModal()">
+                        <i class="fa fa-times"></i>
+                    </button>
+                </div>
+                <form method="POST" action="admin_program.php" enctype="multipart/form-data">
+                    <input type="hidden" name="add_program" value="1">
+                    <div class="rpt-modal-body">
+                        <div class="field-group">
+                            <label class="field-label">Program Title</label>
+                            <input type="text" class="field-input" name="title" placeholder="Enter program title..." required>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Department</label>
+                            <input type="text" class="field-input" name="department" placeholder="e.g. Health Department" required>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Description</label>
+                            <textarea class="field-input" name="description" placeholder="Describe the program and its goals..." required style="resize:vertical;"></textarea>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Start Date</label>
+                            <input type="date" class="field-input" name="start_date">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Image (optional)</label>
+                            <div class="image-picker-admin" onclick="document.getElementById('uProgFileInput').click()" style="display:flex;align-items:center;gap:12px;padding:12px 16px;border:1.5px dashed var(--border);border-radius:10px;cursor:pointer;background:var(--faint);">
+                                <i class="fa fa-image" style="font-size:18px;color:var(--muted);"></i>
+                                <span style="font-size:13px;color:var(--muted);" id="uProgFileLabel">Choose image...</span>
+                            </div>
+                            <input type="file" id="uProgFileInput" name="prog_image" accept="image/*" style="display:none;"
+                                   onchange="document.getElementById('uProgFileLabel').textContent = this.files[0] ? '✓ ' + this.files[0].name : 'Choose image...'">
+                        </div>
+                    </div>
+                    <div class="rpt-modal-footer">
+                        <button type="button" class="rpt-modal-cancel" onclick="closeUnifiedModal()">Cancel</button>
+                        <button type="submit" class="rpt-modal-submit"><i class="fa fa-paper-plane"></i> Add Program</button>
+                    </div>
+                </form>
             </div>
 
         </div>
@@ -328,6 +430,45 @@ if ($cat_res) {
     function confirmLogout() {
         document.getElementById('logoutModal').style.display = 'flex';
         return false;
+    }
+
+    // ── Unified modal logic ──
+    function openUnifiedModal() {
+        document.getElementById('uStep1').style.display     = '';
+        document.getElementById('uStep2Ann').style.display  = 'none';
+        document.getElementById('uStep2Prog').style.display = 'none';
+        document.getElementById('unifiedModal').classList.add('open');
+    }
+    function closeUnifiedModal() {
+        document.getElementById('unifiedModal').classList.remove('open');
+    }
+    function chooseType(type) {
+        document.getElementById('uStep1').style.display = 'none';
+        if (type === 'announcement') {
+            document.getElementById('uStep2Ann').style.display  = '';
+            document.getElementById('uStep2Prog').style.display = 'none';
+        } else {
+            document.getElementById('uStep2Prog').style.display = '';
+            document.getElementById('uStep2Ann').style.display  = 'none';
+        }
+    }
+    function backToTypePicker() {
+        document.getElementById('uStep1').style.display     = '';
+        document.getElementById('uStep2Ann').style.display  = 'none';
+        document.getElementById('uStep2Prog').style.display = 'none';
+    }
+
+    // Urgent toggle
+    let urgentOn = false;
+    function toggleUrgent() {
+        urgentOn = !urgentOn;
+        document.getElementById('urgentHidden').value = urgentOn ? '1' : '0';
+        const btn   = document.getElementById('urgentBtn');
+        const label = document.getElementById('urgentBtnLabel');
+        btn.style.background  = urgentOn ? '#c0001a' : '#fff3e0';
+        btn.style.color       = urgentOn ? '#fff'    : '#c47200';
+        btn.style.borderColor = urgentOn ? '#c0001a' : '#ffd580';
+        label.textContent     = urgentOn ? '⚠ Urgent ON' : 'Mark as Urgent';
     }
 
     // ── Chart data from PHP

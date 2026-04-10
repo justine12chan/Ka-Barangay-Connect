@@ -16,9 +16,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $official = $res ? mysqli_fetch_assoc($res) : null;
 
         if ($official && $password === $official['password']) {
+            session_regenerate_id(true);
             $_SESSION['admin_user']      = $official['username'];
             $_SESSION['admin_full_name'] = $official['full_name'];
             $_SESSION['admin_position']  = $official['position'];
+            $_SESSION['logged_in']       = true;
             header("Location: official.php");
             exit;
         } else {
@@ -35,6 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <title>Official Login — Ka-Barangay Connect</title>
     <link rel="icon" href="assets/img/logo.png" type="image/x-icon">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/shared.css">
     <link rel="stylesheet" href="assets/css/admin.css">
 </head>
 <body class="page-login">
@@ -140,9 +143,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         eyeIcon.innerHTML = isHidden ? eyeClosed : eyeOpen;
     });
 
-    // Store username in sessionStorage after successful PHP redirect (for sidebar display)
+    // Store username in sessionStorage for sidebar display on admin pages
     <?php if (isset($_SESSION['admin_user'])): ?>
-    sessionStorage.setItem('adminUser', '<?= addslashes($_SESSION['admin_user']) ?>');
+    sessionStorage.setItem('adminUser',    '<?= addslashes($_SESSION['admin_user']) ?>');
+    sessionStorage.setItem('adminName',    '<?= addslashes($_SESSION['admin_full_name'] ?? '') ?>');
+    sessionStorage.setItem('adminPosition','<?= addslashes($_SESSION['admin_position'] ?? '') ?>');
     <?php endif; ?>
 
     // Hide error on input

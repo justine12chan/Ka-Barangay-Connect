@@ -2970,3 +2970,73 @@ body.page-projects {
 .status-ongoing-text  { color: #2563eb; }
 .status-planned-text  { color: #7c3aed; }
 .status-completed-text { color: #16a34a; }
+
+/* ════════════════════════════════════════════════════════════
+   PANEL PREVIEW — latest announcement / project snippet
+   ════════════════════════════════════════════════════════════ */
+
+.panel-preview-item {
+    padding: 4px 2px 2px;
+}
+
+.panel-preview-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 5px;
+}
+
+.panel-preview-date {
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 500;
+    letter-spacing: 0.02em;
+}
+
+/* Reuse existing badge styles but as inline pill */
+.panel-preview-badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 20px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    border: 1px solid transparent;
+}
+
+/* Map to existing badge colour classes */
+.panel-preview-badge.b-open     { background: #fff3cd; color: #856404; border-color: #ffc107; }
+.panel-preview-badge.b-progress { background: #e8f0fe; color: #1a56db; border-color: #93b4f7; }
+.panel-preview-badge.b-done     { background: #e6faed; color: #128548; border-color: #6dd98d; }
+.panel-preview-badge.urgent     { background: #fff0f0; color: #c0392b; border-color: #e74c3c; }
+
+.panel-preview-title {
+    font-family: 'Sora', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-main);
+    margin: 0 0 4px 0;
+    line-height: 1.35;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.panel-preview-desc {
+    font-size: 12px;
+    color: var(--gray-600);
+    margin: 0;
+    line-height: 1.55;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.panel-preview-empty {
+    font-size: 12.5px;
+    color: var(--muted);
+    padding: 6px 2px;
+    margin: 0;
+}

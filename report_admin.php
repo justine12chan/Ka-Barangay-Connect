@@ -123,95 +123,38 @@ if ($result) {
                     </div>
 
                     <!-- Content -->
-                    <div class="content-area" style="padding:0;">
-                        <div class="rpt-split">
+                    <div class="content-area" style="padding:16px;">
 
-                            <!-- LEFT: List panel -->
-                            <div class="rpt-split-list" id="splitList">
-                                <div style="padding:16px 16px 10px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;border-bottom:1px solid var(--border);">
-                                    <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;">
-                                        <span class="content-eyebrow">Reports</span>
-                                        <div class="content-line"></div>
-                                    </div>
-                                    <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
-                                        <select class="rpt-filter-select" id="statusFilter" onchange="filterReports()">
-                                            <option value="all">All Status</option>
-                                            <option value="pending">Pending</option>
-                                            <option value="in-progress">In Progress</option>
-                                            <option value="resolved">Resolved</option>
-                                        </select>
-                                        <select class="rpt-filter-select" id="catFilter" onchange="filterReports()">
-                                            <option value="all">All Categories</option>
-                                            <option value="Infrastructure">Infrastructure</option>
-                                            <option value="Kalikasan">Kalikasan</option>
-                                            <option value="Serbisyo Publiko">Serbisyo Publiko</option>
-                                            <option value="Kapayapaan">Kapayapaan</option>
-                                            <option value="Publiko">Publiko</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div style="padding:14px;">
-                                    <div id="reportsList"></div>
-                                    <div class="content-empty" id="emptyState" style="display:none;">
-                                        <div class="content-empty-icon"><i class="fa fa-flag"></i></div>
-                                        <p>No reports match the selected filter.</p>
-                                    </div>
-                                </div>
+                        <!-- Filter bar -->
+                        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+                            <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;">
+                                <span class="content-eyebrow">Reports</span>
+                                <div class="content-line"></div>
                             </div>
-
-                            <!-- RIGHT: Detail panel -->
-                            <div class="rpt-split-detail" id="splitDetail">
-                                <div class="rpt-detail-empty" id="detailEmpty">
-                                    <div class="content-empty-icon" style="width:52px;height:52px;margin:0 auto 12px;">
-                                        <i class="fa fa-hand-o-left" style="font-size:22px;"></i>
-                                    </div>
-                                    <p>Select a report to view details</p>
-                                </div>
-                                <div class="rpt-detail-content" id="detailContent" style="display:none;">
-                                    <div class="rpt-detail-header">
-                                        <div class="rpt-modal-eyebrow" id="detailCategory"></div>
-                                        <div class="rpt-detail-htitle" id="detailTitle"></div>
-                                        <div class="rpt-detail-meta" style="margin-top:8px;">
-                                            <span class="rpt-detail-badge" id="detailStatus"></span>
-                                            <span class="rpt-detail-date" id="detailDate"></span>
-                                        </div>
-                                        <div class="rpt-detail-reporter" id="detailReporter" style="margin-top:4px;font-size:11.5px;color:rgba(255,255,255,0.6);display:flex;align-items:center;gap:5px;"></div>
-                                        <div id="detailPurok" style="margin-top:2px;font-size:11px;color:rgba(255,255,255,0.5);"></div>
-                                    </div>
-                                    <div style="padding:16px;">
-                                        <!-- Image -->
-                                        <div id="detailImageWrap" style="display:none;margin-bottom:14px;">
-                                            <img id="detailImage" src="" alt="Report photo" style="width:100%;border-radius:10px;max-height:220px;object-fit:cover;border:1.5px solid var(--border);">
-                                        </div>
-                                        <div class="field-group">
-                                            <label class="field-label">Description</label>
-                                            <p class="rpt-detail-desc" id="detailDesc"></p>
-                                        </div>
-                                        <!-- Status update -->
-                                        <div class="field-group" style="margin-top:14px;">
-                                            <label class="field-label">Update Status</label>
-                                            <form method="POST" action="report_admin.php" id="statusForm">
-                                                <input type="hidden" name="update_status" value="1">
-                                                <input type="hidden" name="report_id"   id="formReportId" value="">
-                                                <input type="hidden" name="new_status"  id="formNewStatus" value="">
-                                                <div class="rpt-status-row">
-                                                    <button type="button" class="rpt-status-btn pending"     onclick="submitStatus('pending')">
-                                                        <i class="fa fa-clock-o"></i> Pending
-                                                    </button>
-                                                    <button type="button" class="rpt-status-btn in-progress" onclick="submitStatus('in-progress')">
-                                                        <i class="fa fa-spinner"></i> In Progress
-                                                    </button>
-                                                    <button type="button" class="rpt-status-btn resolved"    onclick="submitStatus('resolved')">
-                                                        <i class="fa fa-check"></i> Resolved
-                                                    </button>
-                                                </div>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
+                            <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+                                <select class="rpt-filter-select" id="statusFilter" onchange="filterReports()">
+                                    <option value="all">All Status</option>
+                                    <option value="pending">Pending</option>
+                                    <option value="in-progress">In Progress</option>
+                                    <option value="resolved">Resolved</option>
+                                </select>
+                                <select class="rpt-filter-select" id="catFilter" onchange="filterReports()">
+                                    <option value="all">All Categories</option>
+                                    <option value="Infrastructure">Infrastructure</option>
+                                    <option value="Kalikasan">Kalikasan</option>
+                                    <option value="Serbisyo Publiko">Serbisyo Publiko</option>
+                                    <option value="Kapayapaan">Kapayapaan</option>
+                                    <option value="Publiko">Publiko</option>
+                                </select>
                             </div>
-
                         </div>
+
+                        <div id="reportsList"></div>
+                        <div class="content-empty" id="emptyState" style="display:none;">
+                            <div class="content-empty-icon"><i class="fa fa-flag"></i></div>
+                            <p>No reports match the selected filter.</p>
+                        </div>
+
                     </div>
 
                 </div>
@@ -220,70 +163,157 @@ if ($result) {
         </div>
     </div>
 
-    <!-- FAB: Add Announcement -->
-    <button class="rpt-fab" title="Add Announcement" onclick="document.getElementById('annModal').classList.add('open')">
+    <!-- Unified FAB -->
+    <button class="rpt-fab" title="Create New" onclick="openUnifiedModal()">
         <i class="fa fa-plus"></i>
     </button>
 
-    <!-- Add Announcement Modal -->
-    <div class="rpt-modal-overlay" id="annModal" onclick="if(event.target===this)this.classList.remove('open')">
+    <!-- ══ UNIFIED CREATE MODAL ══ -->
+    <div class="rpt-modal-overlay" id="unifiedModal" onclick="if(event.target===this)closeUnifiedModal()">
         <div class="rpt-modal">
-            <div class="rpt-modal-header">
-                <div>
-                    <div class="rpt-modal-eyebrow">Admin Action</div>
-                    <div class="rpt-modal-title">Post Announcement</div>
+
+            <!-- ── STEP 1: Type picker ── -->
+            <div id="uStep1">
+                <div class="rpt-modal-header">
+                    <div>
+                        <div class="rpt-modal-eyebrow">Admin Action</div>
+                        <div class="rpt-modal-title">What would you like to create?</div>
+                    </div>
+                    <button type="button" class="rpt-modal-close" onclick="closeUnifiedModal()">
+                        <i class="fa fa-times"></i>
+                    </button>
                 </div>
-                <button type="button" class="rpt-modal-close" onclick="document.getElementById('annModal').classList.remove('open')">
-                    <i class="fa fa-times"></i>
-                </button>
-            </div>
-            <form method="POST" action="report_admin.php" enctype="multipart/form-data">
-                <input type="hidden" name="add_announcement" value="1">
-                <div class="rpt-modal-body">
-
-                    <div class="field-group">
-                        <label class="field-label">Title</label>
-                        <input type="text" class="field-input" name="ann_title" placeholder="Announcement title..." required>
-                    </div>
-
-                    <div class="field-group">
-                        <label class="field-label">Message</label>
-                        <textarea class="field-input" name="ann_body" rows="4" placeholder="Write the full announcement here..." required style="resize:vertical;"></textarea>
-                    </div>
-
-                    <div class="field-group">
-                        <label class="field-label">Posted By</label>
-                        <input type="text" class="field-input" name="posted_by" placeholder="e.g. Barangay Admin" value="Barangay Admin">
-                    </div>
-
-                    <div class="field-group">
-                        <label class="field-label">Image (optional)</label>
-                        <div class="image-picker-admin" onclick="document.getElementById('annFileInput').click()" style="display:flex;align-items:center;gap:12px;padding:12px 16px;border:1.5px dashed var(--border);border-radius:10px;cursor:pointer;background:var(--faint);">
-                            <i class="fa fa-image" style="font-size:18px;color:var(--muted);"></i>
-                            <span style="font-size:13px;color:var(--muted);" id="annFileLabel">Choose image...</span>
-                        </div>
-                        <input type="file" id="annFileInput" name="ann_image" accept="image/*" style="display:none;"
-                               onchange="document.getElementById('annFileLabel').textContent = this.files[0] ? '✓ ' + this.files[0].name : 'Choose image...'">
-                    </div>
-
-                    <!-- Urgent toggle -->
-                    <div style="display:flex;align-items:center;gap:10px;margin-top:6px;">
-                        <input type="hidden" name="is_urgent" value="0" id="urgentHidden">
-                        <button type="button" id="urgentBtn"
-                            onclick="toggleUrgent()"
-                            style="display:flex;align-items:center;gap:7px;padding:8px 14px;border-radius:8px;border:1.5px solid #ffd580;background:#fff3e0;color:#c47200;font-size:12px;font-weight:700;cursor:pointer;">
-                            <i class="fa fa-exclamation-triangle"></i>
-                            <span id="urgentBtnLabel">Mark as Urgent</span>
+                <div class="rpt-modal-body" style="padding-bottom:24px;">
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px;">
+                        <!-- Announcement tile -->
+                        <button type="button" class="u-type-tile" onclick="chooseType('announcement')">
+                            <div class="u-type-icon" style="background:#fff3cd;color:#856404;">
+                                <i class="fa fa-bullhorn"></i>
+                            </div>
+                            <div class="u-type-label">Announcement</div>
+                            <div class="u-type-sub">Post an official notice to residents</div>
                         </button>
-                        <span style="font-size:11.5px;color:var(--muted);">Toggle to flag as urgent</span>
+                        <!-- Program tile -->
+                        <button type="button" class="u-type-tile" onclick="chooseType('program')">
+                            <div class="u-type-icon" style="background:#e8f0fe;color:#1a56db;">
+                                <i class="fa fa-briefcase"></i>
+                            </div>
+                            <div class="u-type-label">Project</div>
+                            <div class="u-type-sub">Add a new barangay project</div>
+                        </button>
                     </div>
+                </div>
+            </div>
 
+            <!-- ── STEP 2a: Announcement form ── -->
+            <div id="uStep2Ann" style="display:none;">
+                <div class="rpt-modal-header">
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        <button type="button" class="u-back-btn" onclick="backToTypePicker()">
+                            <i class="fa fa-arrow-left"></i>
+                        </button>
+                        <div>
+                            <div class="rpt-modal-eyebrow">Admin Action</div>
+                            <div class="rpt-modal-title">Post Announcement</div>
+                        </div>
+                    </div>
+                    <button type="button" class="rpt-modal-close" onclick="closeUnifiedModal()">
+                        <i class="fa fa-times"></i>
+                    </button>
                 </div>
-                <div class="rpt-modal-footer">
-                    <button type="button" class="rpt-modal-cancel" onclick="document.getElementById('annModal').classList.remove('open')">Cancel</button>
-                    <button type="submit" class="rpt-modal-submit"><i class="fa fa-paper-plane"></i> Post Announcement</button>
+                <form method="POST" action="report_admin.php" enctype="multipart/form-data">
+                    <input type="hidden" name="add_announcement" value="1">
+                    <div class="rpt-modal-body">
+                        <div class="field-group">
+                            <label class="field-label">Title</label>
+                            <input type="text" class="field-input" name="ann_title" placeholder="Announcement title..." required>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Message</label>
+                            <textarea class="field-input" name="ann_body" rows="4" placeholder="Write the full announcement here..." required style="resize:vertical;"></textarea>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Posted By</label>
+                            <input type="text" class="field-input" name="posted_by" placeholder="e.g. Barangay Admin" value="Barangay Admin">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Image (optional)</label>
+                            <div class="image-picker-admin" onclick="document.getElementById('annFileInput').click()" style="display:flex;align-items:center;gap:12px;padding:12px 16px;border:1.5px dashed var(--border);border-radius:10px;cursor:pointer;background:var(--faint);">
+                                <i class="fa fa-image" style="font-size:18px;color:var(--muted);"></i>
+                                <span style="font-size:13px;color:var(--muted);" id="annFileLabel">Choose image...</span>
+                            </div>
+                            <input type="file" id="annFileInput" name="ann_image" accept="image/*" style="display:none;"
+                                   onchange="document.getElementById('annFileLabel').textContent = this.files[0] ? '✓ ' + this.files[0].name : 'Choose image...'">
+                        </div>
+                        <div style="display:flex;align-items:center;gap:10px;margin-top:6px;">
+                            <input type="hidden" name="is_urgent" value="0" id="urgentHidden">
+                            <button type="button" id="urgentBtn" onclick="toggleUrgent()"
+                                style="display:flex;align-items:center;gap:7px;padding:8px 14px;border-radius:8px;border:1.5px solid #ffd580;background:#fff3e0;color:#c47200;font-size:12px;font-weight:700;cursor:pointer;">
+                                <i class="fa fa-exclamation-triangle"></i>
+                                <span id="urgentBtnLabel">Mark as Urgent</span>
+                            </button>
+                            <span style="font-size:11.5px;color:var(--muted);">Toggle to flag as urgent</span>
+                        </div>
+                    </div>
+                    <div class="rpt-modal-footer">
+                        <button type="button" class="rpt-modal-cancel" onclick="closeUnifiedModal()">Cancel</button>
+                        <button type="submit" class="rpt-modal-submit"><i class="fa fa-paper-plane"></i> Post Announcement</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- ── STEP 2b: Program form ── -->
+            <div id="uStep2Prog" style="display:none;">
+                <div class="rpt-modal-header">
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        <button type="button" class="u-back-btn" onclick="backToTypePicker()">
+                            <i class="fa fa-arrow-left"></i>
+                        </button>
+                        <div>
+                            <div class="rpt-modal-eyebrow">Admin Action</div>
+                            <div class="rpt-modal-title">Add New Program</div>
+                        </div>
+                    </div>
+                    <button type="button" class="rpt-modal-close" onclick="closeUnifiedModal()">
+                        <i class="fa fa-times"></i>
+                    </button>
                 </div>
-            </form>
+                <form method="POST" action="admin_program.php" enctype="multipart/form-data">
+                    <input type="hidden" name="add_program" value="1">
+                    <div class="rpt-modal-body">
+                        <div class="field-group">
+                            <label class="field-label">Program Title</label>
+                            <input type="text" class="field-input" name="title" placeholder="Enter program title..." required>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Department</label>
+                            <input type="text" class="field-input" name="department" id="uProgDept" placeholder="e.g. Health Department" required>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Description</label>
+                            <textarea class="field-input" name="description" placeholder="Describe the program and its goals..." required style="resize:vertical;"></textarea>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Start Date</label>
+                            <input type="date" class="field-input" name="start_date">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Image (optional)</label>
+                            <div class="image-picker-admin" onclick="document.getElementById('uProgFileInput').click()" style="display:flex;align-items:center;gap:12px;padding:12px 16px;border:1.5px dashed var(--border);border-radius:10px;cursor:pointer;background:var(--faint);">
+                                <i class="fa fa-image" style="font-size:18px;color:var(--muted);"></i>
+                                <span style="font-size:13px;color:var(--muted);" id="uProgFileLabel">Choose image...</span>
+                            </div>
+                            <input type="file" id="uProgFileInput" name="prog_image" accept="image/*" style="display:none;"
+                                   onchange="document.getElementById('uProgFileLabel').textContent = this.files[0] ? '✓ ' + this.files[0].name : 'Choose image...'">
+                        </div>
+                    </div>
+                    <div class="rpt-modal-footer">
+                        <button type="button" class="rpt-modal-cancel" onclick="closeUnifiedModal()">Cancel</button>
+                        <button type="submit" class="rpt-modal-submit"><i class="fa fa-paper-plane"></i> Add Program</button>
+                    </div>
+                </form>
+            </div>
+
         </div>
     </div>
 
@@ -329,7 +359,7 @@ if ($result) {
     <script>
     const reports = <?= json_encode(array_values($reports)) ?>;
 
-    let currentDetailId = null;
+    let openDetailId = null;
 
     const catColors = {
         "Infrastructure":   { bg: "#fff3e0", color: "#c47200",  border: "#ffd580" },
@@ -367,71 +397,101 @@ if ($result) {
         list.innerHTML = filtered.map(r => {
             const cat  = catColors[r.category]  || catColors["Infrastructure"];
             const st   = statusConfig[r.status] || statusConfig["pending"];
-            const reporter_disp = parseInt(r.is_anonymous) ? 'Anonymous' : r.reporter;
+            const reporter_disp = parseInt(r.is_anonymous) ? 'Anonymous' : (r.reporter || '');
             const purok_disp = r.purok ? ` · ${r.purok}` : '';
             const has_img = r.image_path ? '&nbsp;<i class="fa fa-image" style="color:var(--muted);font-size:10px;" title="Has image"></i>' : '';
+            const isOpen = openDetailId === parseInt(r.id);
+
+            const detailHtml = isOpen ? buildDetailHtml(r) : '';
+
             return `
-            <div class="rpt-row" data-id="${r.id}" data-status="${r.status}" style="flex-direction:column;align-items:stretch;gap:0;padding:0;overflow:hidden;">
-                <div style="display:flex;align-items:center;gap:8px;padding:12px 14px;cursor:pointer;" onclick="openDetail(${r.id})">
-                    <div class="rpt-row-left" style="flex:1;">
-                        <div class="rpt-row-top">
+            <div class="rpt-inline-card ${isOpen ? 'is-open' : ''}" data-id="${r.id}" data-status="${r.status}" style="margin-bottom:8px;border-radius:12px;border:1.5px solid ${isOpen ? 'var(--blue-main)' : 'var(--border)'};background:#fff;overflow:hidden;transition:border-color 0.2s;">
+                <div style="display:flex;align-items:center;gap:8px;padding:12px 14px;cursor:pointer;" onclick="toggleDetail(${r.id})">
+                    <div style="flex:1;min-width:0;">
+                        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px;">
                             <span class="rpt-cat-badge" style="background:${cat.bg};color:${cat.color};border-color:${cat.border}">${r.category}</span>
                             <span class="rpt-status-badge" style="background:${st.bg};color:${st.color}">${st.label}</span>
                             ${has_img}
                         </div>
-                        <div class="rpt-row-title">${r.title}</div>
-                        <div class="rpt-row-meta">
+                        <div class="rpt-row-title" style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${r.title}</div>
+                        <div class="rpt-row-meta" style="font-size:11px;color:var(--muted);">
                             <i class="fa fa-${parseInt(r.is_anonymous)?'user-secret':'user'}"></i>
                             ${reporter_disp}${purok_disp}
                             &nbsp;·&nbsp;
                             <i class="fa fa-clock-o"></i> ${fmtDate(r.created_at)}
                         </div>
                     </div>
-                    <div class="rpt-row-arrow"><i class="fa fa-chevron-right"></i></div>
+                    <div style="color:var(--muted);font-size:12px;flex-shrink:0;transition:transform 0.25s;transform:rotate(${isOpen?'90deg':'0deg'});">
+                        <i class="fa fa-chevron-right"></i>
+                    </div>
+                </div>
+                <div class="rpt-inline-detail" id="detail-${r.id}" style="display:${isOpen?'block':'none'};">
+                    ${detailHtml}
                 </div>
             </div>`;
         }).join('');
     }
 
-    function openDetail(id) {
-        const r = reports.find(x => parseInt(x.id) === id);
-        if (!r) return;
-        currentDetailId = id;
-
+    function buildDetailHtml(r) {
         const st = statusConfig[r.status] || statusConfig["pending"];
-        const reporter_disp = parseInt(r.is_anonymous) ? 'Anonymous' : r.reporter;
+        const reporter_disp = parseInt(r.is_anonymous) ? 'Anonymous' : (r.reporter || '');
+        const imgHtml = r.image_path
+            ? `<div style="margin-bottom:14px;"><img src="${r.image_path}" alt="Report photo" style="width:100%;border-radius:10px;max-height:240px;object-fit:cover;border:1.5px solid var(--border);"></div>`
+            : '';
+        const purokHtml = r.purok ? `<div style="font-size:11px;color:var(--muted);margin-top:2px;">📍 ${r.purok}</div>` : '';
 
-        document.getElementById('detailCategory').textContent  = r.category;
-        document.getElementById('detailTitle').textContent     = r.title;
-        document.getElementById('detailDesc').textContent      = r.description;
-        document.getElementById('detailDate').textContent      = fmtDate(r.created_at);
-        document.getElementById('detailReporter').innerHTML    = `<i class="fa fa-${parseInt(r.is_anonymous)?'user-secret':'user'}"></i> ${reporter_disp}`;
-        document.getElementById('detailPurok').textContent     = r.purok ? '📍 ' + r.purok : '';
-        document.getElementById('formReportId').value          = r.id;
+        return `
+        <div style="border-top:1.5px solid var(--border);background:var(--faint);">
+            <div style="background:linear-gradient(135deg,var(--blue-deep) 60%,var(--blue-main));padding:16px 18px;">
+                <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,0.6);margin-bottom:4px;">${r.category}</div>
+                <div style="font-family:'Sora',sans-serif;font-size:16px;font-weight:800;color:#fff;margin-bottom:8px;">${r.title}</div>
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                    <span style="font-size:10px;font-weight:700;padding:3px 12px;border-radius:20px;background:rgba(255,255,255,0.15);color:#fff;border:1px solid rgba(255,255,255,0.25);">${st.label}</span>
+                    <span style="font-size:11px;color:rgba(255,255,255,0.6);">${fmtDate(r.created_at)}</span>
+                </div>
+                <div style="font-size:11.5px;color:rgba(255,255,255,0.6);margin-top:5px;display:flex;align-items:center;gap:5px;">
+                    <i class="fa fa-${parseInt(r.is_anonymous)?'user-secret':'user'}"></i> ${reporter_disp}
+                </div>
+                ${purokHtml}
+            </div>
+            <div style="padding:16px 18px;">
+                ${imgHtml}
+                <div class="field-group" style="margin-bottom:14px;">
+                    <label class="field-label">Description</label>
+                    <p style="font-size:13px;color:var(--text);line-height:1.6;margin:0;">${r.description || '—'}</p>
+                </div>
+                <div class="field-group">
+                    <label class="field-label">Update Status</label>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
+                        <button type="button" class="rpt-status-btn pending"     onclick="askStatusChange(${r.id},'pending','${escapeJs(r.title)}')">
+                            <i class="fa fa-clock-o"></i> Pending
+                        </button>
+                        <button type="button" class="rpt-status-btn in-progress" onclick="askStatusChange(${r.id},'in-progress','${escapeJs(r.title)}')">
+                            <i class="fa fa-spinner"></i> In Progress
+                        </button>
+                        <button type="button" class="rpt-status-btn resolved"    onclick="askStatusChange(${r.id},'resolved','${escapeJs(r.title)}')">
+                            <i class="fa fa-check"></i> Resolved
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+    }
 
-        // Image
-        const imgWrap = document.getElementById('detailImageWrap');
-        const imgEl   = document.getElementById('detailImage');
-        if (r.image_path) {
-            imgEl.src = r.image_path;
-            imgWrap.style.display = 'block';
-        } else {
-            imgWrap.style.display = 'none';
+    function escapeJs(str) {
+        return (str || '').replace(/'/g, "\\'").replace(/"/g, '\\"');
+    }
+
+    function toggleDetail(id) {
+        id = parseInt(id);
+        openDetailId = (openDetailId === id) ? null : id;
+        renderReports();
+        if (openDetailId) {
+            setTimeout(() => {
+                const el = document.querySelector(`.rpt-inline-card[data-id="${id}"]`);
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 50);
         }
-
-        const badge = document.getElementById('detailStatus');
-        badge.textContent      = st.label;
-        badge.style.background = 'rgba(255,255,255,0.18)';
-        badge.style.color      = '#fff';
-        badge.style.border     = '1.5px solid rgba(255,255,255,0.3)';
-
-        document.getElementById('detailEmpty').style.display   = 'none';
-        document.getElementById('detailContent').style.display = '';
-        document.getElementById('splitDetail').classList.add('has-content');
-
-        document.querySelectorAll('.rpt-row').forEach(row => row.classList.remove('selected'));
-        const selRow = document.querySelector(`.rpt-row[data-id="${id}"]`);
-        if (selRow) selRow.classList.add('selected');
     }
 
     function filterReports() { renderReports(); }
@@ -448,14 +508,9 @@ if ($result) {
     }
 
     function confirmStatusChange() {
-        document.getElementById('formReportId').value  = pendingStatusId;
-        document.getElementById('formNewStatus').value = pendingStatusVal;
-        document.getElementById('statusForm').submit();
-    }
-
-    function submitStatus(newStatus) {
-        document.getElementById('formNewStatus').value = newStatus;
-        document.getElementById('statusForm').submit();
+        document.getElementById('formReportIdH').value  = pendingStatusId;
+        document.getElementById('formNewStatusH').value = pendingStatusVal;
+        document.getElementById('statusFormHidden').submit();
     }
 
     function confirmLogout() {
@@ -484,6 +539,32 @@ if ($result) {
     }
 
     renderReports();
+
+    // ── Unified modal logic ──
+    function openUnifiedModal() {
+        document.getElementById('uStep1').style.display     = '';
+        document.getElementById('uStep2Ann').style.display  = 'none';
+        document.getElementById('uStep2Prog').style.display = 'none';
+        document.getElementById('unifiedModal').classList.add('open');
+    }
+    function closeUnifiedModal() {
+        document.getElementById('unifiedModal').classList.remove('open');
+    }
+    function chooseType(type) {
+        document.getElementById('uStep1').style.display = 'none';
+        if (type === 'announcement') {
+            document.getElementById('uStep2Ann').style.display  = '';
+            document.getElementById('uStep2Prog').style.display = 'none';
+        } else {
+            document.getElementById('uStep2Prog').style.display = '';
+            document.getElementById('uStep2Ann').style.display  = 'none';
+        }
+    }
+    function backToTypePicker() {
+        document.getElementById('uStep1').style.display     = '';
+        document.getElementById('uStep2Ann').style.display  = 'none';
+        document.getElementById('uStep2Prog').style.display = 'none';
+    }
     </script>
 </body>
 </html>

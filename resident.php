@@ -25,6 +25,27 @@ $latest_issues = executeQuery("SELECT * FROM reports ORDER BY created_at DESC LI
 
 // Latest announcement count (for panel badge)
 $ann_count = mysqli_fetch_row(executeQuery("SELECT COUNT(*) FROM announcements"))[0] ?? 0;
+
+// Latest single announcement for preview
+$ann_result   = executeQuery("SELECT * FROM announcements ORDER BY created_at DESC LIMIT 1");
+$latest_ann   = $ann_result ? mysqli_fetch_assoc($ann_result) : null;
+
+// Latest single project for preview
+$proj_result  = executeQuery("SELECT * FROM programs ORDER BY created_at DESC LIMIT 1");
+$latest_proj  = $proj_result ? mysqli_fetch_assoc($proj_result) : null;
+
+// Helper: truncate text
+function truncate(string $text, int $limit = 80): string {
+    $text = strip_tags($text);
+    return mb_strlen($text) > $limit ? mb_substr($text, 0, $limit) . '…' : $text;
+}
+
+// Project status badge map
+$proj_status_map = [
+    'ongoing'   => ['label' => 'Ongoing',   'class' => 'b-progress'],
+    'planned'   => ['label' => 'Planned',   'class' => 'b-open'],
+    'completed' => ['label' => 'Completed', 'class' => 'b-done'],
+];
 ?>
 
     <!-- HEADER -->
@@ -126,6 +147,7 @@ $ann_count = mysqli_fetch_row(executeQuery("SELECT COUNT(*) FROM announcements")
                     <!-- Left: Announcements + Projects -->
                     <div class="col-12 col-md-4 d-flex flex-column gap-3">
 
+                        <!-- ANNOUNCEMENTS PANEL -->
                         <div class="panel-card">
                             <div class="panel-top">
                                 <div class="panel-top-icon">
@@ -140,10 +162,24 @@ $ann_count = mysqli_fetch_row(executeQuery("SELECT COUNT(*) FROM announcements")
                                 </div>
                             </div>
                             <div class="panel-body">
-                                <div class="ph"></div>
-                                <div class="ph s"></div>
-                                <div class="ph"></div>
-                                <div class="ph xs"></div>
+                                <?php if ($latest_ann): ?>
+                                    <div class="panel-preview-item">
+                                        <div class="panel-preview-meta">
+                                            <span class="panel-preview-date">
+                                                <?= date('M j, Y', strtotime($latest_ann['created_at'])) ?>
+                                            </span>
+                                            <?php if (!empty($latest_ann['is_urgent']) && $latest_ann['is_urgent']): ?>
+                                                <span class="panel-preview-badge urgent">Urgent</span>
+                                            <?php endif; ?>
+                                        </div>
+                                        <p class="panel-preview-title"><?= htmlspecialchars($latest_ann['title']) ?></p>
+                                        <?php if (!empty($latest_ann['content'])): ?>
+                                            <p class="panel-preview-desc"><?= htmlspecialchars(truncate($latest_ann['content'], 80)) ?></p>
+                                        <?php endif; ?>
+                                    </div>
+                                <?php else: ?>
+                                    <p class="panel-preview-empty">No announcements yet.</p>
+                                <?php endif; ?>
                             </div>
                             <div class="panel-footer">
                                 <span class="panel-count"><?= $ann_count ?> total</span>
@@ -151,6 +187,7 @@ $ann_count = mysqli_fetch_row(executeQuery("SELECT COUNT(*) FROM announcements")
                             </div>
                         </div>
 
+                        <!-- PROJECTS PANEL -->
                         <div class="panel-card">
                             <div class="panel-top">
                                 <div class="panel-top-icon">
@@ -165,10 +202,26 @@ $ann_count = mysqli_fetch_row(executeQuery("SELECT COUNT(*) FROM announcements")
                                 </div>
                             </div>
                             <div class="panel-body">
-                                <div class="ph s"></div>
-                                <div class="ph"></div>
-                                <div class="ph xs"></div>
-                                <div class="ph s"></div>
+                                <?php if ($latest_proj): ?>
+                                    <?php
+                                        $proj_st    = strtolower($latest_proj['status'] ?? 'planned');
+                                        $proj_badge = $proj_status_map[$proj_st] ?? $proj_status_map['planned'];
+                                    ?>
+                                    <div class="panel-preview-item">
+                                        <div class="panel-preview-meta">
+                                            <span class="panel-preview-date">
+                                                <?= date('M j, Y', strtotime($latest_proj['created_at'])) ?>
+                                            </span>
+                                            <span class="panel-preview-badge <?= $proj_badge['class'] ?>"><?= $proj_badge['label'] ?></span>
+                                        </div>
+                                        <p class="panel-preview-title"><?= htmlspecialchars($latest_proj['name'] ?? $latest_proj['title'] ?? '') ?></p>
+                                        <?php if (!empty($latest_proj['description'])): ?>
+                                            <p class="panel-preview-desc"><?= htmlspecialchars(truncate($latest_proj['description'], 80)) ?></p>
+                                        <?php endif; ?>
+                                    </div>
+                                <?php else: ?>
+                                    <p class="panel-preview-empty">No projects yet.</p>
+                                <?php endif; ?>
                             </div>
                             <div class="panel-footer">
                                 <span class="panel-count"><?= $prog_active ?> active</span>
