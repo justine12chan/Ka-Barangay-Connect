@@ -3,44 +3,41 @@
    assets/js/main.js
    ============================================================ */
 
-/* ── REPORT PAGE: Image picker ── */
+/* ── Report page: image picker ── */
 function showImageOptions() {
-    const choice = confirm("Open Camera?\n\nTap OK for Camera, Cancel to choose from Gallery.");
+    const choice  = confirm('Open Camera?\n\nTap OK for Camera, Cancel to choose from Gallery.');
     const inputId = choice ? 'cameraInput' : 'fileInput';
-    const el = document.getElementById(inputId);
+    const el      = document.getElementById(inputId);
     if (el) el.click();
 }
 
 function handleFileChange(e) {
-    const file = e.target.files[0];
+    const file    = e.target.files[0];
     const display = document.getElementById('fileNameDisplay');
     if (file && display) {
         display.style.display = 'block';
-        display.textContent = '✓ ' + file.name;
+        display.textContent   = '✓ ' + file.name;
     }
 }
 
-/* ── REPORT PAGE: Category badge ── */
+/* ── Report page: category badge ── */
 function updateCategoryBadge(select) {
-    const val = select.value;
+    const val    = select.value;
     const badges = ['infra', 'kalikasan', 'serbisyo', 'publiko', 'kapayapaan'];
-    badges.forEach(function(b) {
+    badges.forEach(b => {
         const el = document.getElementById('badge-' + b);
         if (el) el.classList.remove('show');
     });
     if (!val) return;
     const prefix = val.split('-')[0];
-    const el = document.getElementById('badge-' + prefix);
+    const el     = document.getElementById('badge-' + prefix);
     if (el) el.classList.add('show');
 }
 
-/* ── INIT: wire up events after DOM ready ── */
+/* ── Init: wire up file input events ── */
 document.addEventListener('DOMContentLoaded', function () {
-
-    /* File inputs on report page */
-    var fileInput   = document.getElementById('fileInput');
-    var cameraInput = document.getElementById('cameraInput');
+    const fileInput   = document.getElementById('fileInput');
+    const cameraInput = document.getElementById('cameraInput');
     if (fileInput)   fileInput.addEventListener('change', handleFileChange);
     if (cameraInput) cameraInput.addEventListener('change', handleFileChange);
-
 });

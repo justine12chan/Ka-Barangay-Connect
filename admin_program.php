@@ -1,64 +1,67 @@
 <?php
 require_once 'connection.php';
 
-// ── Handle status update
+// ─── Handle: update program status ───────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_program_status'])) {
-    $id     = (int)$_POST['program_id'];
-    $status = mysqli_real_escape_string($conn, $_POST['new_status']);
+    $id      = (int) $_POST['program_id'];
+    $status  = mysqli_real_escape_string($conn, $_POST['new_status']);
     $allowed = ['planned', 'ongoing', 'completed'];
     if (in_array($status, $allowed) && $id > 0) {
         executeQuery("UPDATE programs SET status='$status' WHERE id=$id");
     }
-    header("Location: admin_program.php");
+    header('Location: admin_program.php');
     exit;
 }
 
-// ── Handle edit program
+// ─── Handle: edit program ────────────────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_program'])) {
-    $id    = (int)$_POST['program_id'];
-    $title = mysqli_real_escape_string($conn, trim($_POST['title']       ?? ''));
-    $dept  = mysqli_real_escape_string($conn, trim($_POST['department']  ?? ''));
-    $desc  = mysqli_real_escape_string($conn, trim($_POST['description'] ?? ''));
-    $status = mysqli_real_escape_string($conn, trim($_POST['status']     ?? 'planned'));
-    $start_date = !empty($_POST['start_date']) ? "'" . mysqli_real_escape_string($conn, $_POST['start_date']) . "'" : 'NULL';
+    $id         = (int) $_POST['program_id'];
+    $title      = mysqli_real_escape_string($conn, trim($_POST['title']       ?? ''));
+    $dept       = mysqli_real_escape_string($conn, trim($_POST['department']  ?? ''));
+    $desc       = mysqli_real_escape_string($conn, trim($_POST['description'] ?? ''));
+    $status     = mysqli_real_escape_string($conn, trim($_POST['status']      ?? 'planned'));
+    $start_date = !empty($_POST['start_date'])
+        ? "'" . mysqli_real_escape_string($conn, $_POST['start_date']) . "'"
+        : 'NULL';
 
     $img_update = '';
     if (!empty($_FILES['edit_image']['name'])) {
         $upload_dir = 'assets/img/uploads/';
         if (!is_dir($upload_dir)) mkdir($upload_dir, 0755, true);
         $ext      = strtolower(pathinfo($_FILES['edit_image']['name'], PATHINFO_EXTENSION));
-        $filename = 'prog_' . time() . '_' . rand(100,999) . '.' . $ext;
+        $filename = 'prog_' . time() . '_' . rand(100, 999) . '.' . $ext;
         $target   = $upload_dir . $filename;
         if (move_uploaded_file($_FILES['edit_image']['tmp_name'], $target)) {
-            $img_esc = mysqli_real_escape_string($conn, $target);
+            $img_esc    = mysqli_real_escape_string($conn, $target);
             $img_update = ", image_path='$img_esc'";
         }
     }
 
     if ($title && $id > 0) {
-        executeQuery("UPDATE programs SET
-            title='$title', department='$dept',
-            description='$desc', status='$status', start_date=$start_date
-            $img_update
-            WHERE id=$id");
+        executeQuery("UPDATE programs
+                      SET title='$title', department='$dept', description='$desc',
+                          status='$status', start_date=$start_date $img_update
+                      WHERE id=$id");
     }
-    header("Location: admin_program.php");
+    header('Location: admin_program.php');
     exit;
 }
 
-// ── Handle add new program (with image upload)
+// ─── Handle: add new program ─────────────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_program'])) {
     $title      = mysqli_real_escape_string($conn, trim($_POST['title']       ?? ''));
     $dept       = mysqli_real_escape_string($conn, trim($_POST['department']  ?? ''));
     $desc       = mysqli_real_escape_string($conn, trim($_POST['description'] ?? ''));
-    $start_date = !empty($_POST['start_date']) ? "'" . mysqli_real_escape_string($conn, $_POST['start_date']) . "'" : 'NULL';
+    $start_date = !empty($_POST['start_date'])
+        ? "'" . mysqli_real_escape_string($conn, $_POST['start_date']) . "'"
+        : 'NULL';
     $image_path = null;
 
     if (!empty($_FILES['prog_image']['name'])) {
         $upload_dir = 'assets/img/uploads/';
         if (!is_dir($upload_dir)) mkdir($upload_dir, 0755, true);
         $ext      = strtolower(pathinfo($_FILES['prog_image']['name'], PATHINFO_EXTENSION));
-        $filename = 'prog_' . time() . '_' . rand(100,999) . '.' . $ext;
+        $filename = 'prog_' . time() . '_' . rand(100, 999) . '.' . $ext;
         $target   = $upload_dir . $filename;
         if (move_uploaded_file($_FILES['prog_image']['tmp_name'], $target)) {
             $image_path = $target;
@@ -70,18 +73,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_program'])) {
         executeQuery("INSERT INTO programs (title, department, description, status, start_date, image_path)
                       VALUES ('$title','$dept','$desc','planned',$start_date,$img_esc)");
     }
-    header("Location: admin_program.php");
+    header('Location: admin_program.php');
     exit;
 }
 
-// ── Stats
+// ─── Stats ───────────────────────────────────────────────────────────────────
 $p_planned   = mysqli_fetch_row(executeQuery("SELECT COUNT(*) FROM programs WHERE status='planned'"))[0]    ?? 0;
 $p_ongoing   = mysqli_fetch_row(executeQuery("SELECT COUNT(*) FROM programs WHERE status='ongoing'"))[0]    ?? 0;
 $p_completed = mysqli_fetch_row(executeQuery("SELECT COUNT(*) FROM programs WHERE status='completed'"))[0]  ?? 0;
 
-// ── Fetch all programs (tagged as 'project')
-$result   = executeQuery("SELECT * FROM programs ORDER BY created_at DESC");
+// ─── Fetch programs ──────────────────────────────────────────────────────────
 $programs = [];
+$result   = executeQuery("SELECT * FROM programs ORDER BY created_at DESC");
 if ($result) {
     while ($row = mysqli_fetch_assoc($result)) {
         $row['post_type'] = 'project';
@@ -89,12 +92,12 @@ if ($result) {
     }
 }
 
-// ── Fetch all announcements (tagged as 'announcement')
+// ─── Fetch announcements ─────────────────────────────────────────────────────
+$announcements_list = [];
 $ann_result = executeQuery("SELECT id, title, body AS description, posted_by AS department,
                                    image_path, is_urgent, created_at,
                                    NULL AS start_date, NULL AS status
                             FROM announcements ORDER BY created_at DESC");
-$announcements_list = [];
 if ($ann_result) {
     while ($row = mysqli_fetch_assoc($ann_result)) {
         $row['post_type'] = 'announcement';
@@ -103,7 +106,7 @@ if ($ann_result) {
     }
 }
 
-// ── Merge both into one $posts array
+// ─── Merge + sort by date ────────────────────────────────────────────────────
 $posts = array_merge($programs, $announcements_list);
 usort($posts, fn($a, $b) => strtotime($b['created_at']) - strtotime($a['created_at']));
 ?>
@@ -118,7 +121,7 @@ usort($posts, fn($a, $b) => strtotime($b['created_at']) - strtotime($a['created_
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="assets/css/admin.css">
     <style>
-        /* ── SOCIAL CARD (mirrors community-issues.php) ── */
+        /* Social feed card */
         .prog-social-card {
             background: white;
             border: 1px solid var(--border);
@@ -129,431 +132,140 @@ usort($posts, fn($a, $b) => strtotime($b['created_at']) - strtotime($a['created_
             margin-bottom: 14px;
             position: relative;
         }
-        .prog-social-card:hover {
-            box-shadow: 0 4px 14px rgba(0,0,0,0.1);
-        }
-        /* Header row */
+        .prog-social-card:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.1); }
+
         .prog-social-header {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 14px 16px 10px;
+            display: flex; align-items: center; gap: 10px; padding: 14px 16px 10px;
         }
-        /* Category avatar circle */
         .prog-reporter-avatar {
-            width: 42px;
-            height: 42px;
-            border-radius: 50%;
-            background: var(--blue-light, #ededff);
-            color: var(--blue-main, #0800a0);
-            font-family: 'Sora', sans-serif;
-            font-size: 11px;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-            border: 2px solid var(--border, #e2e3f0);
-            text-align: center;
-            line-height: 1.2;
+            width: 42px; height: 42px; border-radius: 50%;
+            background: var(--blue-light); color: var(--blue-main);
+            font-family: 'Sora', sans-serif; font-size: 11px; font-weight: 700;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0; border: 2px solid var(--border); text-align: center; line-height: 1.2;
         }
         .prog-reporter-meta { flex: 1; min-width: 0; }
         .prog-reporter-name {
-            font-family: 'Sora', sans-serif;
-            font-size: 14px;
-            font-weight: 700;
-            color: var(--text-main, #0d0e2e);
-            margin: 0 0 2px 0;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            font-family: 'Sora', sans-serif; font-size: 14px; font-weight: 700;
+            color: var(--text-main); margin: 0 0 2px 0;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
-        .prog-reporter-time {
-            font-size: 12px;
-            color: var(--muted, #8890b8);
-            margin: 0;
-        }
-        /* Status pill */
+        .prog-reporter-time { font-size: 12px; color: var(--muted); margin: 0; }
+
         .prog-status-pill {
-            font-size: 11px;
-            font-weight: 700;
-            padding: 4px 12px;
-            border-radius: 20px;
-            flex-shrink: 0;
-            letter-spacing: 0.03em;
-            text-transform: uppercase;
-            border: 1px solid transparent;
+            font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 20px;
+            flex-shrink: 0; letter-spacing: 0.03em; text-transform: uppercase; border: 1px solid transparent;
         }
         .pill-planned   { background:#f3e8ff; color:#7c3aed; border-color:#c4b5fd; }
         .pill-ongoing   { background:#e8f0fe; color:#1a56db; border-color:#93b4f7; }
         .pill-completed { background:#e6faed; color:#128548; border-color:#6dd98d; }
 
-        /* Body */
         .prog-social-body { padding: 0 16px 14px; }
         .prog-social-title {
-            font-family: 'Sora', sans-serif;
-            font-size: 14px;
-            font-weight: 700;
-            color: var(--text-main, #0d0e2e);
-            margin: 0 0 6px 0;
-            line-height: 1.4;
+            font-family: 'Sora', sans-serif; font-size: 14px; font-weight: 700;
+            color: var(--text-main); margin: 0 0 6px 0; line-height: 1.4;
         }
-        .prog-social-desc {
-            font-size: 13.5px;
-            color: var(--gray-600, #5c5e80);
-            margin: 0 0 10px 0;
-            line-height: 1.65;
-        }
-        .prog-social-meta {
-            font-size: 12px;
-            color: var(--muted, #8890b8);
-            display: flex;
-            gap: 14px;
-            flex-wrap: wrap;
-            margin-top: 6px;
-        }
-        /* ── Facebook-style stacked image grid ── */
-        .prog-social-images {
-            border-radius: 10px;
-            overflow: hidden;
-            margin-bottom: 8px;
-            display: grid;
-            gap: 3px;
-        }
-        /* 1 image — full width, taller */
-        .prog-social-images.img-count-1 {
-            grid-template-columns: 1fr;
-        }
+        .prog-social-desc { font-size: 13.5px; color: var(--gray-600); margin: 0 0 10px 0; line-height: 1.65; }
+        .prog-social-meta { font-size: 12px; color: var(--muted); display: flex; gap: 14px; flex-wrap: wrap; margin-top: 6px; }
+
+        /* Image grid */
+        .prog-social-images { border-radius: 10px; overflow: hidden; margin-bottom: 8px; display: grid; gap: 3px; }
+        .prog-social-images.img-count-1  { grid-template-columns: 1fr; }
         .prog-social-images.img-count-1 .prog-img-cell { height: 260px; }
-
-        /* 2 images — side by side */
-        .prog-social-images.img-count-2 {
-            grid-template-columns: 1fr 1fr;
-        }
+        .prog-social-images.img-count-2  { grid-template-columns: 1fr 1fr; }
         .prog-social-images.img-count-2 .prog-img-cell { height: 200px; }
-
-        /* 3 images — first takes left half, two stack on right */
-        .prog-social-images.img-count-3 {
-            grid-template-columns: 1fr 1fr;
-            grid-template-rows: 120px 120px;
-        }
-        .prog-social-images.img-count-3 .prog-img-cell:first-child {
-            grid-row: span 2;
-        }
-
-        /* 4+ images — 2x2, last cell gets overlay */
-        .prog-social-images.img-count-many {
-            grid-template-columns: 1fr 1fr;
-            grid-template-rows: 130px 130px;
-        }
-
-        /* Each image cell */
-        .prog-img-cell {
-            position: relative;
-            overflow: hidden;
-            background: var(--gray-100, #f0f1f8);
-            cursor: pointer;
-        }
-        .prog-img-cell img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: block;
-            transition: transform 0.22s ease, opacity 0.18s;
-        }
+        .prog-social-images.img-count-3  { grid-template-columns: 1fr 1fr; grid-template-rows: 120px 120px; }
+        .prog-social-images.img-count-3 .prog-img-cell:first-child { grid-row: span 2; }
+        .prog-social-images.img-count-many { grid-template-columns: 1fr 1fr; grid-template-rows: 130px 130px; }
+        .prog-img-cell { position: relative; overflow: hidden; background: var(--gray-100); cursor: pointer; }
+        .prog-img-cell img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.22s ease, opacity 0.18s; }
         .prog-img-cell:hover img { transform: scale(1.04); opacity: 0.9; }
-
-        /* "+N more" overlay on last visible cell */
         .prog-img-overlay {
-            position: absolute;
-            inset: 0;
-            background: rgba(0,0,0,0.52);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: 'Sora', sans-serif;
-            font-size: 22px;
-            font-weight: 800;
-            color: white;
-            letter-spacing: 0.01em;
-            pointer-events: none;
+            position: absolute; inset: 0; background: rgba(0,0,0,0.52);
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Sora', sans-serif; font-size: 22px; font-weight: 800;
+            color: white; pointer-events: none;
         }
 
         /* Three-dot menu */
         .prog-dots-btn {
-            background: none;
-            border: none;
-            padding: 6px 8px;
-            cursor: pointer;
-            color: var(--muted, #8890b8);
-            border-radius: 8px;
-            font-size: 16px;
-            line-height: 1;
-            flex-shrink: 0;
-            transition: background 0.15s, color 0.15s;
+            background: none; border: none; padding: 6px 8px; cursor: pointer;
+            color: var(--muted); border-radius: 8px; font-size: 16px; line-height: 1;
+            flex-shrink: 0; transition: background 0.15s, color 0.15s;
         }
-        .prog-dots-btn:hover { background: var(--faint, #f4f4ff); color: var(--blue-main, #0800a0); }
-
+        .prog-dots-btn:hover { background: var(--faint); color: var(--blue-main); }
         .prog-dropdown {
-            position: absolute;
-            top: 48px;
-            right: 12px;
-            background: white;
-            border: 1px solid var(--border, #e2e3f0);
-            border-radius: 10px;
-            box-shadow: 0 8px 28px rgba(0,0,0,0.13);
-            z-index: 200;
-            min-width: 130px;
-            display: none;
-            overflow: hidden;
+            position: absolute; top: 48px; right: 12px;
+            background: white; border: 1px solid var(--border); border-radius: 10px;
+            box-shadow: 0 8px 28px rgba(0,0,0,0.13); z-index: 200; min-width: 130px; display: none; overflow: hidden;
         }
         .prog-dropdown.open { display: block; }
         .prog-dropdown-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 16px;
-            font-size: 13.5px;
-            font-weight: 600;
-            color: var(--text-main, #0d0e2e);
-            cursor: pointer;
-            transition: background 0.13s;
-            border: none;
-            background: none;
-            width: 100%;
-            text-align: left;
+            display: flex; align-items: center; gap: 8px; padding: 10px 16px;
+            font-size: 13.5px; font-weight: 600; color: var(--text-main);
+            cursor: pointer; transition: background 0.13s; border: none; background: none; width: 100%; text-align: left;
         }
-        .prog-dropdown-item:hover { background: var(--faint, #f4f4ff); }
-        .prog-dropdown-item i { font-size: 13px; color: var(--blue-main, #0800a0); }
+        .prog-dropdown-item:hover { background: var(--faint); }
+        .prog-dropdown-item i { font-size: 13px; color: var(--blue-main); }
 
-        /* Category filter tabs */
-        .prog-filter-row {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            padding: 12px 14px 8px;
-            border-bottom: 1px solid var(--border, #e2e3f0);
-        }
+        /* Filter tabs */
+        .prog-filter-row { display: flex; gap: 8px; flex-wrap: wrap; padding: 12px 14px 8px; border-bottom: 1px solid var(--border); }
         .prog-filter-tab {
-            font-size: 12px;
-            font-weight: 700;
-            padding: 5px 14px;
-            border-radius: 20px;
-            border: 1.5px solid var(--border, #e2e3f0);
-            background: white;
-            color: var(--muted, #8890b8);
-            cursor: pointer;
-            letter-spacing: 0.02em;
-            transition: all 0.15s;
+            font-size: 12px; font-weight: 700; padding: 5px 14px; border-radius: 20px;
+            border: 1.5px solid var(--border); background: white; color: var(--muted);
+            cursor: pointer; letter-spacing: 0.02em; transition: all 0.15s;
         }
-        .prog-filter-tab:hover { border-color: var(--blue-main, #0800a0); color: var(--blue-main, #0800a0); }
-        .prog-filter-tab.active {
-            background: var(--blue-main, #0800a0);
-            border-color: var(--blue-main, #0800a0);
-            color: white;
-        }
+        .prog-filter-tab:hover { border-color: var(--blue-main); color: var(--blue-main); }
+        .prog-filter-tab.active { background: var(--blue-main); border-color: var(--blue-main); color: white; }
 
-        /* Lightbox / Gallery */
-        #imgLightbox {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.94);
-            z-index: 9999;
-            align-items: center;
-            justify-content: center;
-        }
+        /* Lightbox */
+        #imgLightbox { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.94); z-index: 9999; align-items: center; justify-content: center; }
         #imgLightbox.open { display: flex; }
-        #imgLightboxWrap {
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            max-width: 90vw;
-            max-height: 90vh;
+        #imgLightboxWrap { position: relative; display: flex; align-items: center; justify-content: center; max-width: 90vw; max-height: 90vh; }
+        #imgLightboxImg { max-width: 88vw; max-height: 86vh; border-radius: 10px; box-shadow: 0 10px 60px rgba(0,0,0,0.6); object-fit: contain; display: block; transition: opacity 0.18s; }
+        #imgLightboxClose, #imgLightboxPrev, #imgLightboxNext {
+            position: absolute; color: white; cursor: pointer;
+            background: rgba(255,255,255,0.12); border: 1.5px solid rgba(255,255,255,0.22); border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; z-index: 10001; transition: background 0.15s;
         }
-        #imgLightboxImg {
-            max-width: 88vw;
-            max-height: 86vh;
-            border-radius: 10px;
-            box-shadow: 0 10px 60px rgba(0,0,0,0.6);
-            object-fit: contain;
-            display: block;
-            transition: opacity 0.18s;
-        }
-        #imgLightboxClose {
-            position: absolute;
-            top: 16px; right: 18px;
-            color: white;
-            font-size: 20px;
-            cursor: pointer;
-            background: rgba(255,255,255,0.12);
-            border: 1.5px solid rgba(255,255,255,0.22);
-            border-radius: 50%;
-            width: 40px; height: 40px;
-            display: flex; align-items: center; justify-content: center;
-            z-index: 10001;
-            transition: background 0.15s;
-        }
-        #imgLightboxClose:hover { background: rgba(255,255,255,0.25); }
-        #imgLightboxPrev, #imgLightboxNext {
-            position: absolute;
-            top: 50%; transform: translateY(-50%);
-            color: white;
-            font-size: 18px;
-            cursor: pointer;
-            background: rgba(255,255,255,0.12);
-            border: 1.5px solid rgba(255,255,255,0.22);
-            border-radius: 50%;
-            width: 44px; height: 44px;
-            display: flex; align-items: center; justify-content: center;
-            z-index: 10001;
-            transition: background 0.15s;
-        }
-        #imgLightboxPrev:hover, #imgLightboxNext:hover { background: rgba(255,255,255,0.28); }
-        #imgLightboxPrev { left: 18px; }
-        #imgLightboxNext { right: 18px; }
+        #imgLightboxClose { top: 16px; right: 18px; width: 40px; height: 40px; font-size: 20px; }
+        #imgLightboxPrev  { top: 50%; transform: translateY(-50%); left:  18px; width: 44px; height: 44px; font-size: 18px; }
+        #imgLightboxNext  { top: 50%; transform: translateY(-50%); right: 18px; width: 44px; height: 44px; font-size: 18px; }
+        #imgLightboxPrev:hover, #imgLightboxNext:hover, #imgLightboxClose:hover { background: rgba(255,255,255,0.28); }
         #imgLightboxPrev.hidden, #imgLightboxNext.hidden { display: none; }
-        #imgLightboxCounter {
-            position: absolute;
-            bottom: -30px;
-            left: 50%;
-            transform: translateX(-50%);
-            color: rgba(255,255,255,0.7);
-            font-size: 13px;
-            font-weight: 600;
-            white-space: nowrap;
-        }
+        #imgLightboxCounter { position: absolute; bottom: -30px; left: 50%; transform: translateX(-50%); color: rgba(255,255,255,0.7); font-size: 13px; font-weight: 600; white-space: nowrap; }
 
-        /* Edit Confirmation Modal */
-        #editConfirmModal {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.45);
-            z-index: 9998;
-            align-items: center;
-            justify-content: center;
-        }
+        /* Edit modal */
+        #editConfirmModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 9998; align-items: center; justify-content: center; }
         #editConfirmModal.open { display: flex; }
-        .edit-confirm-box {
-            background: white;
-            border-radius: 18px;
-            padding: 26px 24px 20px;
-            max-width: 420px;
-            width: 92%;
-            box-shadow: 0 8px 40px rgba(0,0,0,0.18);
-        }
-        .edit-confirm-title {
-            font-family: 'Sora', sans-serif;
-            font-size: 16px;
-            font-weight: 800;
-            color: #1a2340;
-            margin-bottom: 14px;
-        }
+        .edit-confirm-box { background: white; border-radius: 18px; padding: 26px 24px 20px; max-width: 420px; width: 92%; box-shadow: 0 8px 40px rgba(0,0,0,0.18); }
+        .edit-confirm-title { font-family: 'Sora', sans-serif; font-size: 16px; font-weight: 800; color: #1a2340; margin-bottom: 14px; }
         .edit-field-group { margin-bottom: 12px; }
-        .edit-field-label {
-            font-size: 11.5px;
-            font-weight: 700;
-            color: var(--muted, #8890b8);
-            text-transform: uppercase;
-            letter-spacing: 0.07em;
-            margin-bottom: 4px;
-            display: block;
-        }
+        .edit-field-label { font-size: 11.5px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 4px; display: block; }
         .edit-field-input, .edit-field-textarea, .edit-field-select {
-            width: 100%;
-            border: 1.5px solid var(--border, #e2e3f0);
-            border-radius: 9px;
-            padding: 9px 12px;
-            font-size: 13.5px;
-            color: var(--text-main, #0d0e2e);
-            background: var(--faint, #f4f4ff);
-            outline: none;
-            transition: border-color 0.15s;
-            font-family: inherit;
+            width: 100%; border: 1.5px solid var(--border); border-radius: 9px; padding: 9px 12px;
+            font-size: 13.5px; color: var(--text-main); background: var(--faint); outline: none;
+            transition: border-color 0.15s; font-family: inherit;
         }
-        .edit-field-input:focus, .edit-field-textarea:focus, .edit-field-select:focus {
-            border-color: var(--blue-main, #0800a0);
-            background: white;
-        }
+        .edit-field-input:focus, .edit-field-textarea:focus, .edit-field-select:focus { border-color: var(--blue-main); background: white; }
         .edit-field-textarea { resize: vertical; min-height: 80px; }
-        .edit-confirm-actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 18px;
-            justify-content: flex-end;
-        }
-        .edit-cancel-btn {
-            padding: 9px 20px;
-            border-radius: 10px;
-            border: 1.5px solid var(--border, #e2e3f0);
-            background: var(--faint, #f4f4ff);
-            color: #4a5280;
-            font-weight: 700;
-            cursor: pointer;
-            font-size: 13px;
-        }
-        .edit-save-btn {
-            padding: 9px 22px;
-            border-radius: 10px;
-            background: var(--blue-main, #0800a0);
-            color: white;
-            font-weight: 700;
-            cursor: pointer;
-            font-size: 13px;
-            border: none;
-        }
+        .edit-confirm-actions { display: flex; gap: 10px; margin-top: 18px; justify-content: flex-end; }
+        .edit-cancel-btn { padding: 9px 20px; border-radius: 10px; border: 1.5px solid var(--border); background: var(--faint); color: #4a5280; font-weight: 700; cursor: pointer; font-size: 13px; }
+        .edit-save-btn  { padding: 9px 22px; border-radius: 10px; background: var(--blue-main); color: white; font-weight: 700; cursor: pointer; font-size: 13px; border: none; }
         .edit-save-btn:hover { opacity: 0.88; }
 
-        /* Save confirmation overlay */
-        #editSaveConfirm {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.45);
-            z-index: 9999;
-            align-items: center;
-            justify-content: center;
-        }
+        /* Save confirmation */
+        #editSaveConfirm { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 9999; align-items: center; justify-content: center; }
         #editSaveConfirm.open { display: flex; }
-        .save-confirm-box {
-            background: white;
-            border-radius: 18px;
-            padding: 28px 28px 22px;
-            max-width: 340px;
-            width: 90%;
-            box-shadow: 0 8px 40px rgba(0,0,0,0.18);
-            text-align: center;
-        }
-        .save-confirm-icon {
-            width: 52px; height: 52px;
-            border-radius: 50%;
-            background: #e8f0fe;
-            display: flex; align-items: center; justify-content: center;
-            margin: 0 auto 14px;
-        }
-        .save-confirm-icon i { font-size: 22px; color: var(--blue-main, #0800a0); }
+        .save-confirm-box { background: white; border-radius: 18px; padding: 28px 28px 22px; max-width: 340px; width: 90%; box-shadow: 0 8px 40px rgba(0,0,0,0.18); text-align: center; }
+        .save-confirm-icon { width: 52px; height: 52px; border-radius: 50%; background: #e8f0fe; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; }
+        .save-confirm-icon i { font-size: 22px; color: var(--blue-main); }
         .save-confirm-title { font-size: 16px; font-weight: 800; color: #1a2340; margin-bottom: 6px; }
-        .save-confirm-sub { font-size: 13px; color: #8890b8; margin-bottom: 20px; }
+        .save-confirm-sub   { font-size: 13px; color: #8890b8; margin-bottom: 20px; }
         .save-confirm-actions { display: flex; gap: 10px; justify-content: center; }
-        .save-go-btn {
-            flex: 1; padding: 10px;
-            border-radius: 10px;
-            background: var(--blue-main, #0800a0);
-            color: white; font-weight: 700;
-            cursor: pointer; font-size: 13px; border: none;
-        }
-        .save-cancel-btn {
-            flex: 1; padding: 10px;
-            border-radius: 10px;
-            border: 1.5px solid #e0e4f0;
-            background: #f7f8fc;
-            color: #4a5280; font-weight: 700;
-            cursor: pointer; font-size: 13px;
-        }
+        .save-go-btn     { flex: 1; padding: 10px; border-radius: 10px; background: var(--blue-main); color: white; font-weight: 700; cursor: pointer; font-size: 13px; border: none; }
+        .save-cancel-btn { flex: 1; padding: 10px; border-radius: 10px; border: 1.5px solid #e0e4f0; background: #f7f8fc; color: #4a5280; font-weight: 700; cursor: pointer; font-size: 13px; }
 
-        /* List feed wrapper */
         #programsList { padding: 14px; }
     </style>
 </head>
@@ -567,7 +279,8 @@ usort($posts, fn($a, $b) => strtotime($b['created_at']) - strtotime($a['created_
                 <div class="sidebar">
                     <div class="sidebar-top">
                         <div class="sidebar-logo-wrap">
-                            <img src="assets/img/logo.png" alt="Logo" onerror="this.style.display='none';this.parentElement.textContent='SB'">
+                            <img src="assets/img/logo.png" alt="Logo"
+                                 onerror="this.style.display='none';this.parentElement.textContent='SB'">
                         </div>
                         <div>
                             <div class="sidebar-admin">Admin Panel</div>
@@ -576,7 +289,8 @@ usort($posts, fn($a, $b) => strtotime($b['created_at']) - strtotime($a['created_
                     </div>
                     <div class="sidebar-footer">
                         <a href="#" class="sidebar-btn profile"><i class="fa fa-user"></i> Profile</a>
-                        <a href="index.html" class="sidebar-btn logout" onclick="return confirmLogout()"><i class="fa fa-sign-out"></i> Logout</a>
+                        <a href="index.html" class="sidebar-btn logout"
+                           onclick="return confirmLogout()"><i class="fa fa-sign-out"></i> Logout</a>
                     </div>
                 </div>
             </div>
@@ -618,23 +332,21 @@ usort($posts, fn($a, $b) => strtotime($b['created_at']) - strtotime($a['created_
                     <div class="content-area" style="padding:0;">
 
                         <!-- Filter bar -->
-                        <div style="padding:12px 14px 10px; display:flex; gap:8px; align-items:center; flex-wrap:wrap; border-bottom:1px solid var(--border);">
-                            <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:120px;">
+                        <div style="padding:12px 14px 10px; display:flex; gap:8px; align-items:center;
+                                    flex-wrap:wrap; border-bottom:1px solid var(--border);">
+                            <div style="display:flex; align-items:center; gap:6px; flex:1; min-width:120px;">
                                 <span class="content-eyebrow" style="white-space:nowrap;">Programs</span>
                                 <div class="content-line"></div>
                             </div>
-                            <!-- Sort -->
                             <select class="rpt-filter-select" id="sortFilter" onchange="renderPrograms()">
                                 <option value="newest">Newest First</option>
                                 <option value="oldest">Oldest First</option>
                             </select>
-                            <!-- Post type filter -->
                             <select class="rpt-filter-select" id="typeFilter" onchange="renderPrograms()">
                                 <option value="all">All Posts</option>
                                 <option value="announcement">Announcement</option>
                                 <option value="project">Project</option>
                             </select>
-                            <!-- Status filter -->
                             <select class="rpt-filter-select" id="statusFilter" onchange="renderPrograms()">
                                 <option value="all">All Status</option>
                                 <option value="planned">Planned</option>
@@ -643,30 +355,31 @@ usort($posts, fn($a, $b) => strtotime($b['created_at']) - strtotime($a['created_
                             </select>
                         </div>
 
-                        <!-- Social card feed -->
                         <div id="programsList"></div>
-                        <div class="content-empty" id="emptyState" style="display:none;padding:40px 16px;">
+                        <div class="content-empty" id="emptyState" style="display:none; padding:40px 16px;">
                             <div class="content-empty-icon"><i class="fa fa-briefcase"></i></div>
                             <p>No programs match the selected filter.</p>
                         </div>
 
-                    </div><!-- /content-area -->
+                    </div>
+
                 </div>
             </div>
 
         </div>
     </div>
 
-    <!-- Unified FAB -->
+    <!-- FAB -->
     <button class="rpt-fab" title="Create New" onclick="openUnifiedModal()">
         <i class="fa fa-plus"></i>
     </button>
 
     <!-- ══ UNIFIED CREATE MODAL ══ -->
-    <div class="rpt-modal-overlay" id="unifiedModal" onclick="if(event.target===this)closeUnifiedModal()">
+    <div class="rpt-modal-overlay" id="unifiedModal"
+         onclick="if(event.target===this) closeUnifiedModal()">
         <div class="rpt-modal">
 
-            <!-- ── STEP 1: Type picker ── -->
+            <!-- Step 1 -->
             <div id="uStep1">
                 <div class="rpt-modal-header">
                     <div>
@@ -678,18 +391,14 @@ usort($posts, fn($a, $b) => strtotime($b['created_at']) - strtotime($a['created_
                     </button>
                 </div>
                 <div class="rpt-modal-body" style="padding-bottom:24px;">
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px;">
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:4px;">
                         <button type="button" class="u-type-tile" onclick="chooseType('announcement')">
-                            <div class="u-type-icon" style="background:#fff3cd;color:#856404;">
-                                <i class="fa fa-bullhorn"></i>
-                            </div>
+                            <div class="u-type-icon" style="background:#fff3cd; color:#856404;"><i class="fa fa-bullhorn"></i></div>
                             <div class="u-type-label">Announcement</div>
                             <div class="u-type-sub">Post an official notice to residents</div>
                         </button>
                         <button type="button" class="u-type-tile" onclick="chooseType('program')">
-                            <div class="u-type-icon" style="background:#e8f0fe;color:#1a56db;">
-                                <i class="fa fa-briefcase"></i>
-                            </div>
+                            <div class="u-type-icon" style="background:#e8f0fe; color:#1a56db;"><i class="fa fa-briefcase"></i></div>
                             <div class="u-type-label">Project</div>
                             <div class="u-type-sub">Add a new barangay project</div>
                         </button>
@@ -697,21 +406,17 @@ usort($posts, fn($a, $b) => strtotime($b['created_at']) - strtotime($a['created_
                 </div>
             </div>
 
-            <!-- ── STEP 2a: Announcement form ── -->
+            <!-- Step 2a: Announcement -->
             <div id="uStep2Ann" style="display:none;">
                 <div class="rpt-modal-header">
-                    <div style="display:flex;align-items:center;gap:10px;">
-                        <button type="button" class="u-back-btn" onclick="backToTypePicker()">
-                            <i class="fa fa-arrow-left"></i>
-                        </button>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <button type="button" class="u-back-btn" onclick="backToTypePicker()"><i class="fa fa-arrow-left"></i></button>
                         <div>
                             <div class="rpt-modal-eyebrow">Admin Action</div>
                             <div class="rpt-modal-title">Post Announcement</div>
                         </div>
                     </div>
-                    <button type="button" class="rpt-modal-close" onclick="closeUnifiedModal()">
-                        <i class="fa fa-times"></i>
-                    </button>
+                    <button type="button" class="rpt-modal-close" onclick="closeUnifiedModal()"><i class="fa fa-times"></i></button>
                 </div>
                 <form method="POST" action="report_admin.php" enctype="multipart/form-data">
                     <input type="hidden" name="add_announcement" value="1">
@@ -726,25 +431,28 @@ usort($posts, fn($a, $b) => strtotime($b['created_at']) - strtotime($a['created_
                         </div>
                         <div class="field-group">
                             <label class="field-label">Posted By</label>
-                            <input type="text" class="field-input" name="posted_by" placeholder="e.g. Barangay Admin" value="Barangay Admin">
+                            <input type="text" class="field-input" name="posted_by" value="Barangay Admin">
                         </div>
                         <div class="field-group">
                             <label class="field-label">Image (optional)</label>
-                            <div class="image-picker-admin" onclick="document.getElementById('annFileInput').click()" style="display:flex;align-items:center;gap:12px;padding:12px 16px;border:1.5px dashed var(--border);border-radius:10px;cursor:pointer;background:var(--faint);">
-                                <i class="fa fa-image" style="font-size:18px;color:var(--muted);"></i>
-                                <span style="font-size:13px;color:var(--muted);" id="annFileLabel">Choose image...</span>
+                            <div onclick="document.getElementById('annFileInput').click()"
+                                 style="display:flex; align-items:center; gap:12px; padding:12px 16px;
+                                        border:1.5px dashed var(--border); border-radius:10px; cursor:pointer; background:var(--faint);">
+                                <i class="fa fa-image" style="font-size:18px; color:var(--muted);"></i>
+                                <span style="font-size:13px; color:var(--muted);" id="annFileLabel">Choose image...</span>
                             </div>
                             <input type="file" id="annFileInput" name="ann_image" accept="image/*" style="display:none;"
                                    onchange="document.getElementById('annFileLabel').textContent = this.files[0] ? '✓ ' + this.files[0].name : 'Choose image...'">
                         </div>
-                        <div style="display:flex;align-items:center;gap:10px;margin-top:6px;">
+                        <div style="display:flex; align-items:center; gap:10px; margin-top:6px;">
                             <input type="hidden" name="is_urgent" value="0" id="urgentHidden">
                             <button type="button" id="urgentBtn" onclick="toggleUrgent()"
-                                style="display:flex;align-items:center;gap:7px;padding:8px 14px;border-radius:8px;border:1.5px solid #ffd580;background:#fff3e0;color:#c47200;font-size:12px;font-weight:700;cursor:pointer;">
+                                style="display:flex; align-items:center; gap:7px; padding:8px 14px; border-radius:8px;
+                                       border:1.5px solid #ffd580; background:#fff3e0; color:#c47200; font-size:12px; font-weight:700; cursor:pointer;">
                                 <i class="fa fa-exclamation-triangle"></i>
                                 <span id="urgentBtnLabel">Mark as Urgent</span>
                             </button>
-                            <span style="font-size:11.5px;color:var(--muted);">Toggle to flag as urgent</span>
+                            <span style="font-size:11.5px; color:var(--muted);">Toggle to flag as urgent</span>
                         </div>
                     </div>
                     <div class="rpt-modal-footer">
@@ -754,21 +462,17 @@ usort($posts, fn($a, $b) => strtotime($b['created_at']) - strtotime($a['created_
                 </form>
             </div>
 
-            <!-- ── STEP 2b: Program form ── -->
+            <!-- Step 2b: Program -->
             <div id="uStep2Prog" style="display:none;">
                 <div class="rpt-modal-header">
-                    <div style="display:flex;align-items:center;gap:10px;">
-                        <button type="button" class="u-back-btn" onclick="backToTypePicker()">
-                            <i class="fa fa-arrow-left"></i>
-                        </button>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <button type="button" class="u-back-btn" onclick="backToTypePicker()"><i class="fa fa-arrow-left"></i></button>
                         <div>
                             <div class="rpt-modal-eyebrow">Admin Action</div>
                             <div class="rpt-modal-title">Add New Program</div>
                         </div>
                     </div>
-                    <button type="button" class="rpt-modal-close" onclick="closeUnifiedModal()">
-                        <i class="fa fa-times"></i>
-                    </button>
+                    <button type="button" class="rpt-modal-close" onclick="closeUnifiedModal()"><i class="fa fa-times"></i></button>
                 </div>
                 <form method="POST" action="admin_program.php" enctype="multipart/form-data">
                     <input type="hidden" name="add_program" value="1">
@@ -779,11 +483,11 @@ usort($posts, fn($a, $b) => strtotime($b['created_at']) - strtotime($a['created_
                         </div>
                         <div class="field-group">
                             <label class="field-label">Department</label>
-                            <input type="text" class="field-input" name="department" id="uProgDept" placeholder="e.g. Health Department" required>
+                            <input type="text" class="field-input" name="department" placeholder="e.g. Health Department" required>
                         </div>
                         <div class="field-group">
                             <label class="field-label">Description</label>
-                            <textarea class="field-input" name="description" placeholder="Describe the program and its goals..." required style="resize:vertical;"></textarea>
+                            <textarea class="field-input" name="description" placeholder="Describe the program..." required style="resize:vertical;"></textarea>
                         </div>
                         <div class="field-group">
                             <label class="field-label">Start Date</label>
@@ -791,9 +495,11 @@ usort($posts, fn($a, $b) => strtotime($b['created_at']) - strtotime($a['created_
                         </div>
                         <div class="field-group">
                             <label class="field-label">Image (optional)</label>
-                            <div class="image-picker-admin" onclick="document.getElementById('uProgFileInput').click()" style="display:flex;align-items:center;gap:12px;padding:12px 16px;border:1.5px dashed var(--border);border-radius:10px;cursor:pointer;background:var(--faint);">
-                                <i class="fa fa-image" style="font-size:18px;color:var(--muted);"></i>
-                                <span style="font-size:13px;color:var(--muted);" id="uProgFileLabel">Choose image...</span>
+                            <div onclick="document.getElementById('uProgFileInput').click()"
+                                 style="display:flex; align-items:center; gap:12px; padding:12px 16px;
+                                        border:1.5px dashed var(--border); border-radius:10px; cursor:pointer; background:var(--faint);">
+                                <i class="fa fa-image" style="font-size:18px; color:var(--muted);"></i>
+                                <span style="font-size:13px; color:var(--muted);" id="uProgFileLabel">Choose image...</span>
                             </div>
                             <input type="file" id="uProgFileInput" name="prog_image" accept="image/*" style="display:none;"
                                    onchange="document.getElementById('uProgFileLabel').textContent = this.files[0] ? '✓ ' + this.files[0].name : 'Choose image...'">
@@ -809,10 +515,12 @@ usort($posts, fn($a, $b) => strtotime($b['created_at']) - strtotime($a['created_
         </div>
     </div>
 
-    <!-- Edit Program Modal (form) -->
-    <div id="editConfirmModal" onclick="if(event.target===this)closeEditModal()">
+    <!-- Edit Program Modal -->
+    <div id="editConfirmModal" onclick="if(event.target===this) closeEditModal()">
         <div class="edit-confirm-box">
-            <div class="edit-confirm-title"><i class="fa fa-pencil" style="color:var(--blue-main);margin-right:8px;"></i>Edit Program</div>
+            <div class="edit-confirm-title">
+                <i class="fa fa-pencil" style="color:var(--blue-main); margin-right:8px;"></i>Edit Program
+            </div>
             <form method="POST" action="admin_program.php" enctype="multipart/form-data" id="editForm">
                 <input type="hidden" name="edit_program" value="1">
                 <input type="hidden" name="program_id"   id="editId">
@@ -842,17 +550,18 @@ usort($posts, fn($a, $b) => strtotime($b['created_at']) - strtotime($a['created_
                 </div>
                 <div class="edit-field-group">
                     <label class="edit-field-label">Replace Image (optional)</label>
-                    <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;border:1.5px dashed var(--border);border-radius:9px;cursor:pointer;background:var(--faint);"
-                         onclick="document.getElementById('editFileInput').click()">
+                    <div onclick="document.getElementById('editFileInput').click()"
+                         style="display:flex; align-items:center; gap:12px; padding:10px 14px;
+                                border:1.5px dashed var(--border); border-radius:9px; cursor:pointer; background:var(--faint);">
                         <i class="fa fa-image" style="color:var(--muted);"></i>
-                        <span style="font-size:12.5px;color:var(--muted);" id="editFileLabel">Keep current image...</span>
+                        <span style="font-size:12.5px; color:var(--muted);" id="editFileLabel">Keep current image...</span>
                     </div>
                     <input type="file" id="editFileInput" name="edit_image" accept="image/*" style="display:none;"
                            onchange="document.getElementById('editFileLabel').textContent = this.files[0] ? '✓ ' + this.files[0].name : 'Keep current image...'">
                 </div>
                 <div class="edit-confirm-actions">
                     <button type="button" class="edit-cancel-btn" onclick="closeEditModal()">Cancel</button>
-                    <button type="button" class="edit-save-btn" onclick="showSaveConfirm()">
+                    <button type="button" class="edit-save-btn"   onclick="showSaveConfirm()">
                         <i class="fa fa-check"></i> Save Changes
                     </button>
                 </div>
@@ -860,12 +569,12 @@ usort($posts, fn($a, $b) => strtotime($b['created_at']) - strtotime($a['created_
         </div>
     </div>
 
-    <!-- Save confirmation step -->
-    <div id="editSaveConfirm" onclick="if(event.target===this)closeSaveConfirm()">
+    <!-- Save confirmation -->
+    <div id="editSaveConfirm" onclick="if(event.target===this) closeSaveConfirm()">
         <div class="save-confirm-box">
             <div class="save-confirm-icon"><i class="fa fa-pencil-square-o"></i></div>
             <div class="save-confirm-title">Confirm Changes</div>
-            <div class="save-confirm-sub">Are you sure you want to save these changes? This will update the program in the database.</div>
+            <div class="save-confirm-sub">Are you sure you want to save these changes?</div>
             <div class="save-confirm-actions">
                 <button class="save-cancel-btn" onclick="closeSaveConfirm()">Cancel</button>
                 <button class="save-go-btn" onclick="document.getElementById('editForm').submit()">
@@ -875,10 +584,10 @@ usort($posts, fn($a, $b) => strtotime($b['created_at']) - strtotime($a['created_
         </div>
     </div>
 
-    <!-- Image Lightbox / Gallery -->
-    <div id="imgLightbox" onclick="if(event.target===this||event.target.id==='imgLightbox')closeLightbox()">
+    <!-- Image Lightbox -->
+    <div id="imgLightbox" onclick="if(event.target===this||event.target.id==='imgLightbox') closeLightbox()">
         <button id="imgLightboxClose" onclick="closeLightbox()"><i class="fa fa-times"></i></button>
-        <button id="imgLightboxPrev" onclick="lightboxNav(-1)"><i class="fa fa-chevron-left"></i></button>
+        <button id="imgLightboxPrev"  onclick="lightboxNav(-1)"><i class="fa fa-chevron-left"></i></button>
         <div id="imgLightboxWrap">
             <img id="imgLightboxImg" src="" alt="Full image">
             <div id="imgLightboxCounter"></div>
@@ -886,17 +595,32 @@ usort($posts, fn($a, $b) => strtotime($b['created_at']) - strtotime($a['created_
         <button id="imgLightboxNext" onclick="lightboxNav(1)"><i class="fa fa-chevron-right"></i></button>
     </div>
 
-    <!-- Logout Confirmation Modal -->
-    <div id="logoutModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:9999;align-items:center;justify-content:center;">
-        <div style="background:#fff;border-radius:18px;padding:28px 28px 22px;max-width:340px;width:90%;box-shadow:0 8px 40px rgba(0,0,0,0.18);text-align:center;">
-            <div style="width:52px;height:52px;border-radius:50%;background:#fff0f0;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;">
-                <i class="fa fa-sign-out" style="font-size:22px;color:#c0001a;"></i>
+    <!-- Logout Modal -->
+    <div id="logoutModal"
+         style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45);
+                z-index:9999; align-items:center; justify-content:center;">
+        <div style="background:#fff; border-radius:18px; padding:28px 28px 22px; max-width:340px;
+                    width:90%; box-shadow:0 8px 40px rgba(0,0,0,0.18); text-align:center;">
+            <div style="width:52px; height:52px; border-radius:50%; background:#fff0f0;
+                        display:flex; align-items:center; justify-content:center; margin:0 auto 14px;">
+                <i class="fa fa-sign-out" style="font-size:22px; color:#c0001a;"></i>
             </div>
-            <div style="font-size:16px;font-weight:800;color:#1a2340;margin-bottom:6px;">Log Out?</div>
-            <div style="font-size:13px;color:#8890b8;margin-bottom:20px;">Are you sure you want to log out of the admin panel?</div>
-            <div style="display:flex;gap:10px;justify-content:center;">
-                <button onclick="document.getElementById('logoutModal').style.display='none'" style="flex:1;padding:10px;border-radius:10px;border:1.5px solid #e0e4f0;background:#f7f8fc;color:#4a5280;font-weight:700;cursor:pointer;font-size:13px;">Cancel</button>
-                <a href="index.html" onclick="sessionStorage.clear()" style="flex:1;padding:10px;border-radius:10px;background:#c0001a;color:#fff;font-weight:700;cursor:pointer;font-size:13px;text-decoration:none;display:flex;align-items:center;justify-content:center;">Log Out</a>
+            <div style="font-size:16px; font-weight:800; color:#1a2340; margin-bottom:6px;">Log Out?</div>
+            <div style="font-size:13px; color:#8890b8; margin-bottom:20px;">
+                Are you sure you want to log out of the admin panel?
+            </div>
+            <div style="display:flex; gap:10px; justify-content:center;">
+                <button onclick="document.getElementById('logoutModal').style.display='none'"
+                        style="flex:1; padding:10px; border-radius:10px; border:1.5px solid #e0e4f0;
+                               background:#f7f8fc; color:#4a5280; font-weight:700; cursor:pointer; font-size:13px;">
+                    Cancel
+                </button>
+                <a href="index.html" onclick="sessionStorage.clear()"
+                   style="flex:1; padding:10px; border-radius:10px; background:#c0001a; color:#fff;
+                          font-weight:700; cursor:pointer; font-size:13px; text-decoration:none;
+                          display:flex; align-items:center; justify-content:center;">
+                    Log Out
+                </a>
             </div>
         </div>
     </div>
@@ -906,65 +630,45 @@ usort($posts, fn($a, $b) => strtotime($b['created_at']) - strtotime($a['created_
     const programs = <?= json_encode(array_values($posts)) ?>;
 
     const catColors = {
-        "Infrastructure":   { bg: "#fff3e0", color: "#c47200",  border: "#ffd580" },
-        "Kalikasan":        { bg: "#e6faed", color: "#128548",  border: "#7de0a4" },
-        "Serbisyo Publiko": { bg: "#e8f0fe", color: "#1a56db",  border: "#90aef8" },
-        "Kapayapaan":       { bg: "#fce8ff", color: "#8b00c7",  border: "#d48cf7" },
-        "Publiko":          { bg: "#fff0f0", color: "#c0001a",  border: "#f7a0aa" },
+        'Infrastructure':   { bg: '#fff3e0', color: '#c47200', border: '#ffd580' },
+        'Kalikasan':        { bg: '#e6faed', color: '#128548', border: '#7de0a4' },
+        'Serbisyo Publiko': { bg: '#e8f0fe', color: '#1a56db', border: '#90aef8' },
+        'Kapayapaan':       { bg: '#fce8ff', color: '#8b00c7', border: '#d48cf7' },
+        'Publiko':          { bg: '#fff0f0', color: '#c0001a', border: '#f7a0aa' },
     };
 
-    // Post-type visual identity — announcement vs project
     const typeConfig = {
-        "announcement": {
-            bg: "#fff8e1", color: "#b45309", border: "#fcd34d",
-            icon: "fa-bullhorn", label: "Announcement"
-        },
-        "project": {
-            bg: "#eff6ff", color: "#1d4ed8", border: "#93c5fd",
-            icon: "fa-briefcase", label: "Project"
-        },
+        'announcement': { bg: '#fff8e1', color: '#b45309', border: '#fcd34d', icon: 'fa-bullhorn',  label: 'Announcement' },
+        'project':      { bg: '#eff6ff', color: '#1d4ed8', border: '#93c5fd', icon: 'fa-briefcase', label: 'Project' },
     };
 
-    const statusPill = {
-        "planned":   "pill-planned",
-        "ongoing":   "pill-ongoing",
-        "completed": "pill-completed",
-    };
-    const statusLabel = {
-        "planned":   "Planned",
-        "ongoing":   "Ongoing",
-        "completed": "Completed",
-    };
+    const statusPill  = { planned: 'pill-planned', ongoing: 'pill-ongoing', completed: 'pill-completed' };
+    const statusLabel = { planned: 'Planned',       ongoing: 'Ongoing',      completed: 'Completed' };
 
     function fmtDate(str) {
         if (!str) return 'TBD';
-        const d = new Date(str + 'T00:00:00');
-        return d.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+        return new Date(str + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     }
-
     function fmtDateTime(str) {
         if (!str) return '';
-        return new Date(str).toLocaleString('en-US', { month:'short', day:'numeric', year:'numeric', hour:'numeric', minute:'2-digit' });
+        return new Date(str).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
     }
-
     function getCatInitials(cat) {
         if (!cat) return '??';
-        const words = cat.split(' ');
-        if (words.length === 1) return cat.substring(0, 2).toUpperCase();
-        return (words[0][0] + words[1][0]).toUpperCase();
+        const w = cat.split(' ');
+        return w.length === 1 ? cat.substring(0, 2).toUpperCase() : (w[0][0] + w[1][0]).toUpperCase();
     }
 
-    // ── Build stacked image grid ──
     function buildImageGrid(imagePath, progId) {
         if (!imagePath) return '';
         let images = [];
         try {
             const parsed = JSON.parse(imagePath);
             images = Array.isArray(parsed) ? parsed : [imagePath];
-        } catch(e) {
+        } catch (e) {
             images = imagePath.split(',').map(s => s.trim()).filter(Boolean);
         }
-        if (images.length === 0) return '';
+        if (!images.length) return '';
 
         const MAX_VISIBLE = 4;
         const visible    = images.slice(0, MAX_VISIBLE);
@@ -974,8 +678,6 @@ usort($posts, fn($a, $b) => strtotime($b['created_at']) - strtotime($a['created_
                          : images.length === 3 ? 'img-count-3'
                          : 'img-count-many';
 
-        window['_imgs_' + progId] = images;
-
         const cells = visible.map((src, idx) => {
             const isLast  = idx === visible.length - 1 && extra > 0;
             const overlay = isLast ? `<div class="prog-img-overlay">+${extra + 1}</div>` : '';
@@ -984,63 +686,51 @@ usort($posts, fn($a, $b) => strtotime($b['created_at']) - strtotime($a['created_
                         ${overlay}
                     </div>`;
         }).join('');
-
         return `<div class="prog-social-images ${countClass}">${cells}</div>`;
     }
 
-    // ── Build a single program card ──
     function buildCard(r, isLatest) {
-        const pill     = statusPill[r.status]  || 'pill-planned';
-        const label    = statusLabel[r.status] || 'Planned';
-        const initials = getCatInitials(r.department);
-        const dateStr  = fmtDateTime(r.created_at);
-        const imgHtml  = buildImageGrid(r.image_path, r.id);
+        const postType   = (r.post_type || 'project').toLowerCase();
+        const tc         = typeConfig[postType] || typeConfig['project'];
+        const cat        = r.department || '';
+        const catC       = catColors[cat] || { bg: '#ededff', color: '#0800a0', border: '#c7c8f0' };
+        const avatarStyle = `background:${catC.bg}; color:${catC.color}; border-color:${catC.border};`;
+        const initials   = getCatInitials(cat);
+        const dateStr    = fmtDateTime(r.created_at);
+        const imgHtml    = buildImageGrid(r.image_path, r.id);
 
-        // ── Avatar: colored by department/category ──
-        const cat     = r.department || '';
-        const catC    = catColors[cat] || { bg: '#ededff', color: '#0800a0', border: '#c7c8f0' };
-        const avatarStyle = `background:${catC.bg};color:${catC.color};border-color:${catC.border};`;
-
-        // ── Type badge — pill style matching the status pill in the image ──
-        const postType = (r.post_type || 'project').toLowerCase();
-        const tc       = typeConfig[postType] || typeConfig['project'];
-        const typeBadge = `<span class="prog-status-pill" style="
-                background:${tc.bg};
-                color:${tc.color};
-                border:1.5px solid ${tc.border};
-                display:inline-flex;align-items:center;gap:5px;">
+        const typeBadge = `<span class="prog-status-pill" style="background:${tc.bg}; color:${tc.color};
+                            border:1.5px solid ${tc.border}; display:inline-flex; align-items:center; gap:5px;">
             <i class="fa ${tc.icon}" style="font-size:9px;"></i>${tc.label}
         </span>`;
 
-        // ── Status pill (hidden for announcements since they have no status) ──
         const statusBadge = (postType === 'project' && r.status && statusPill[r.status])
-            ? `<span class="prog-status-pill ${pill}">${label}</span>`
+            ? `<span class="prog-status-pill ${statusPill[r.status]}">${statusLabel[r.status]}</span>`
             : '';
 
         const latestTag = isLatest
             ? `<div style="padding:2px 16px 8px;">
-                   <span style="display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:700;
-                                color:#1a56db;background:#e8f0fe;border:1px solid #93b4f7;
-                                border-radius:20px;padding:2px 10px;letter-spacing:0.03em;">
+                   <span style="display:inline-flex; align-items:center; gap:5px; font-size:10.5px; font-weight:700;
+                                color:#1a56db; background:#e8f0fe; border:1px solid #93b4f7; border-radius:20px;
+                                padding:2px 10px; letter-spacing:0.03em;">
                        <i class="fa fa-bolt" style="font-size:9px;"></i> Latest Update
                    </span>
-               </div>`
-            : '';
+               </div>` : '';
 
         return `
-        <div class="prog-social-card" data-status="${r.status || ''}" data-type="${postType}" data-cat="${r.department || ''}" data-id="${r.id}" data-date="${r.created_at || ''}">
+        <div class="prog-social-card" data-status="${r.status || ''}" data-type="${postType}"
+             data-id="${r.id}" data-date="${r.created_at || ''}">
             <div class="prog-social-header">
                 <div class="prog-reporter-avatar" style="${avatarStyle}">${initials}</div>
                 <div class="prog-reporter-meta">
                     <p class="prog-reporter-name">${r.title}</p>
-                    <p class="prog-reporter-time">${r.department || ''}${dateStr ? ' · ' + dateStr : ''}</p>
+                    <p class="prog-reporter-time">${cat}${dateStr ? ' · ' + dateStr : ''}</p>
                 </div>
-                ${typeBadge}
-                ${statusBadge}
+                ${typeBadge} ${statusBadge}
                 <button class="prog-dots-btn" title="More options"
-                        onclick="toggleDropdown(event, ${r.id})">&#8942;</button>
+                        onclick="toggleDropdown(event,${r.id})">&#8942;</button>
                 <div class="prog-dropdown" id="dropdown-${r.id}">
-                    <button class="prog-dropdown-item" onclick="openEditModal(event, ${r.id})">
+                    <button class="prog-dropdown-item" onclick="openEditModal(event,${r.id})">
                         <i class="fa fa-pencil"></i> Edit
                     </button>
                 </div>
@@ -1063,59 +753,47 @@ usort($posts, fn($a, $b) => strtotime($b['created_at']) - strtotime($a['created_
         const list      = document.getElementById('programsList');
         const empty     = document.getElementById('emptyState');
 
-        // Filter by type and status
-        let filtered = programs.filter(r => {
-            const matchType   = typeVal   === 'all' || r.post_type === typeVal;
-            const matchStatus = statusVal === 'all' || r.status    === statusVal;
-            return matchType && matchStatus;
-        });
+        let filtered = programs.filter(r =>
+            (typeVal   === 'all' || r.post_type === typeVal) &&
+            (statusVal === 'all' || r.status    === statusVal)
+        );
 
-        // Sort
         filtered.sort((a, b) => {
             const da = new Date(a.created_at || 0), db = new Date(b.created_at || 0);
             return sortVal === 'oldest' ? da - db : db - da;
         });
 
-        if (filtered.length === 0) { list.innerHTML = ''; empty.style.display = ''; return; }
+        if (!filtered.length) { list.innerHTML = ''; empty.style.display = ''; return; }
         empty.style.display = 'none';
 
-        // When a specific status is selected, show section header + "Latest Update" tag on first card
         if (statusVal !== 'all') {
-            const sectionIcon = { planned:'fa-clock-o', ongoing:'fa-spinner', completed:'fa-check-circle' };
-            const icon = sectionIcon[statusVal] || 'fa-list';
-            const lbl  = statusLabel[statusVal] || statusVal;
-
+            const iconMap = { planned: 'fa-clock-o', ongoing: 'fa-spinner', completed: 'fa-check-circle' };
             const divider = `
-            <div style="display:flex;align-items:center;gap:10px;padding:14px 14px 6px;">
-                <span class="content-eyebrow" style="display:inline-flex;align-items:center;gap:6px;white-space:nowrap;">
-                    <i class="fa ${icon}"></i> ${lbl}
+            <div style="display:flex; align-items:center; gap:10px; padding:14px 14px 6px;">
+                <span class="content-eyebrow" style="display:inline-flex; align-items:center; gap:6px; white-space:nowrap;">
+                    <i class="fa ${iconMap[statusVal] || 'fa-list'}"></i> ${statusLabel[statusVal] || statusVal}
                 </span>
                 <div class="content-line"></div>
             </div>`;
-
-            list.innerHTML = divider + filtered.map((r, idx) => buildCard(r, idx === 0)).join('');
+            list.innerHTML = divider + filtered.map((r, i) => buildCard(r, i === 0)).join('');
         } else {
             list.innerHTML = filtered.map(r => buildCard(r, false)).join('');
         }
     }
 
-    // ── Three-dot dropdown ──
-    let openDropdownId = null;
+    // Three-dot dropdown
     function toggleDropdown(e, id) {
         e.stopPropagation();
-        const dd = document.getElementById('dropdown-' + id);
+        const dd     = document.getElementById('dropdown-' + id);
         const isOpen = dd.classList.contains('open');
-        // close all
         document.querySelectorAll('.prog-dropdown.open').forEach(d => d.classList.remove('open'));
-        openDropdownId = null;
-        if (!isOpen) { dd.classList.add('open'); openDropdownId = id; }
+        if (!isOpen) dd.classList.add('open');
     }
     document.addEventListener('click', () => {
         document.querySelectorAll('.prog-dropdown.open').forEach(d => d.classList.remove('open'));
-        openDropdownId = null;
     });
 
-    // ── Edit modal ──
+    // Edit modal
     function openEditModal(e, id) {
         e.stopPropagation();
         document.querySelectorAll('.prog-dropdown.open').forEach(d => d.classList.remove('open'));
@@ -1126,31 +804,20 @@ usort($posts, fn($a, $b) => strtotime($b['created_at']) - strtotime($a['created_
         document.getElementById('editDept').value      = r.department;
         document.getElementById('editDesc').value      = r.description;
         document.getElementById('editStatus').value    = r.status;
-        document.getElementById('editStartDate').value = r.start_date ? r.start_date.substring(0,10) : '';
+        document.getElementById('editStartDate').value = r.start_date ? r.start_date.substring(0, 10) : '';
         document.getElementById('editFileLabel').textContent = 'Keep current image...';
         document.getElementById('editFileInput').value = '';
         document.getElementById('editConfirmModal').classList.add('open');
     }
-    function closeEditModal() {
-        document.getElementById('editConfirmModal').classList.remove('open');
-    }
-
-    // ── Save confirmation step ──
+    function closeEditModal()  { document.getElementById('editConfirmModal').classList.remove('open'); }
     function showSaveConfirm() {
-        // basic validation
-        if (!document.getElementById('editTitle').value.trim()) {
-            alert('Title cannot be empty.'); return;
-        }
+        if (!document.getElementById('editTitle').value.trim()) { alert('Title cannot be empty.'); return; }
         document.getElementById('editSaveConfirm').classList.add('open');
     }
-    function closeSaveConfirm() {
-        document.getElementById('editSaveConfirm').classList.remove('open');
-    }
+    function closeSaveConfirm() { document.getElementById('editSaveConfirm').classList.remove('open'); }
 
-    // ── Lightbox / Gallery ──
-    let lbImages = [];
-    let lbIndex  = 0;
-
+    // Lightbox
+    let lbImages = [], lbIndex = 0;
     function openLightbox(e, images, startIndex) {
         e.stopPropagation();
         lbImages = Array.isArray(images) ? images : [images];
@@ -1159,93 +826,72 @@ usort($posts, fn($a, $b) => strtotime($b['created_at']) - strtotime($a['created_
         document.getElementById('imgLightbox').classList.add('open');
         document.addEventListener('keydown', lightboxKeyHandler);
     }
-
     function showLightboxImage() {
         const img     = document.getElementById('imgLightboxImg');
         const counter = document.getElementById('imgLightboxCounter');
-        const prev    = document.getElementById('imgLightboxPrev');
-        const next    = document.getElementById('imgLightboxNext');
         img.style.opacity = '0';
         img.onload = () => { img.style.opacity = '1'; };
         img.src = lbImages[lbIndex];
         counter.textContent = lbImages.length > 1 ? `${lbIndex + 1} / ${lbImages.length}` : '';
-        prev.classList.toggle('hidden', lbIndex === 0);
-        next.classList.toggle('hidden', lbIndex === lbImages.length - 1);
+        document.getElementById('imgLightboxPrev').classList.toggle('hidden', lbIndex === 0);
+        document.getElementById('imgLightboxNext').classList.toggle('hidden', lbIndex === lbImages.length - 1);
     }
-
     function lightboxNav(dir) {
         lbIndex = Math.max(0, Math.min(lbImages.length - 1, lbIndex + dir));
         showLightboxImage();
     }
-
     function lightboxKeyHandler(e) {
         if (e.key === 'ArrowLeft')  lightboxNav(-1);
         if (e.key === 'ArrowRight') lightboxNav(1);
         if (e.key === 'Escape')     closeLightbox();
     }
-
     function closeLightbox() {
         document.getElementById('imgLightbox').classList.remove('open');
         document.removeEventListener('keydown', lightboxKeyHandler);
         lbImages = []; lbIndex = 0;
     }
 
-    // ── Status update (detail panel kept for compatibility — now inline) ──
-    function submitStatus(newStatus) {
-        document.getElementById('formNewStatus').value = newStatus;
-        document.getElementById('statusForm').submit();
-    }
+    function confirmLogout() { document.getElementById('logoutModal').style.display = 'flex'; return false; }
 
-    function confirmLogout() {
-        document.getElementById('logoutModal').style.display = 'flex';
-        return false;
-    }
-
+    // Show username
     const adminUser = sessionStorage.getItem('adminUser');
     if (adminUser) {
         const el = document.getElementById('sidebarUsername');
         if (el) el.textContent = adminUser.charAt(0).toUpperCase() + adminUser.slice(1);
     }
 
-    renderPrograms();
-
-    // ── Unified modal logic ──
+    // Unified modal
     function openUnifiedModal() {
         document.getElementById('uStep1').style.display     = '';
         document.getElementById('uStep2Ann').style.display  = 'none';
         document.getElementById('uStep2Prog').style.display = 'none';
         document.getElementById('unifiedModal').classList.add('open');
     }
-    function closeUnifiedModal() {
-        document.getElementById('unifiedModal').classList.remove('open');
-    }
+    function closeUnifiedModal() { document.getElementById('unifiedModal').classList.remove('open'); }
     function chooseType(type) {
         document.getElementById('uStep1').style.display = 'none';
-        if (type === 'announcement') {
-            document.getElementById('uStep2Ann').style.display  = '';
-            document.getElementById('uStep2Prog').style.display = 'none';
-        } else {
-            document.getElementById('uStep2Prog').style.display = '';
-            document.getElementById('uStep2Ann').style.display  = 'none';
-        }
+        document.getElementById('uStep2Ann').style.display  = (type === 'announcement') ? '' : 'none';
+        document.getElementById('uStep2Prog').style.display = (type === 'program')       ? '' : 'none';
     }
     function backToTypePicker() {
         document.getElementById('uStep1').style.display     = '';
         document.getElementById('uStep2Ann').style.display  = 'none';
         document.getElementById('uStep2Prog').style.display = 'none';
     }
-    // Urgent toggle (for announcement form inside unified modal)
+
     let urgentOn = false;
     function toggleUrgent() {
         urgentOn = !urgentOn;
-        document.getElementById('urgentHidden').value = urgentOn ? '1' : '0';
         const btn   = document.getElementById('urgentBtn');
         const label = document.getElementById('urgentBtnLabel');
+        document.getElementById('urgentHidden').value = urgentOn ? '1' : '0';
         btn.style.background  = urgentOn ? '#c0001a' : '#fff3e0';
         btn.style.color       = urgentOn ? '#fff'    : '#c47200';
         btn.style.borderColor = urgentOn ? '#c0001a' : '#ffd580';
         label.textContent     = urgentOn ? '⚠ Urgent ON' : 'Mark as Urgent';
     }
+
+    renderPrograms();
     </script>
 </body>
 </html>

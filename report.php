@@ -17,13 +17,13 @@ $success_msg = '';
 $error_msg   = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $is_anon    = (!empty($_POST['is_anonymous']) && $_POST['is_anonymous'] === '1') ? 1 : 0;
-    $reporter   = $is_anon ? 'Anonymous' : trim($_POST['reporter'] ?? '');
-    $purok      = trim($_POST['purok']       ?? '');
-    $category   = trim($_POST['category']    ?? '');
-    $title      = trim($_POST['title']       ?? '');
-    $description= trim($_POST['description'] ?? '');
-    $image_path = null;
+    $is_anon     = (!empty($_POST['is_anonymous']) && $_POST['is_anonymous'] === '1') ? 1 : 0;
+    $reporter    = $is_anon ? 'Anonymous' : trim($_POST['reporter']    ?? '');
+    $purok       = trim($_POST['purok']       ?? '');
+    $category    = trim($_POST['category']    ?? '');
+    $title       = trim($_POST['title']       ?? '');
+    $description = trim($_POST['description'] ?? '');
+    $image_path  = null;
 
     if (empty($title) || empty($category) || empty($description)) {
         $error_msg = 'Please fill in all required fields.';
@@ -32,23 +32,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!empty($_FILES['report_image']['name'])) {
             $upload_dir = 'assets/img/uploads/';
             if (!is_dir($upload_dir)) mkdir($upload_dir, 0755, true);
-            $ext       = pathinfo($_FILES['report_image']['name'], PATHINFO_EXTENSION);
-            $filename  = 'report_' . time() . '_' . rand(100,999) . '.' . $ext;
-            $target    = $upload_dir . $filename;
+            $ext      = pathinfo($_FILES['report_image']['name'], PATHINFO_EXTENSION);
+            $filename = 'report_' . time() . '_' . rand(100, 999) . '.' . $ext;
+            $target   = $upload_dir . $filename;
             if (move_uploaded_file($_FILES['report_image']['tmp_name'], $target)) {
                 $image_path = $target;
             }
         }
 
-        $reporter_esc   = mysqli_real_escape_string($conn, $reporter);
-        $purok_esc      = mysqli_real_escape_string($conn, $purok);
-        $category_esc   = mysqli_real_escape_string($conn, $category);
-        $title_esc      = mysqli_real_escape_string($conn, $title);
-        $desc_esc       = mysqli_real_escape_string($conn, $description);
-        $img_esc        = $image_path ? "'" . mysqli_real_escape_string($conn, $image_path) . "'" : 'NULL';
+        $r_esc    = mysqli_real_escape_string($conn, $reporter);
+        $p_esc    = mysqli_real_escape_string($conn, $purok);
+        $cat_esc  = mysqli_real_escape_string($conn, $category);
+        $t_esc    = mysqli_real_escape_string($conn, $title);
+        $d_esc    = mysqli_real_escape_string($conn, $description);
+        $img_esc  = $image_path ? "'" . mysqli_real_escape_string($conn, $image_path) . "'" : 'NULL';
 
         $query = "INSERT INTO reports (reporter, purok, is_anonymous, category, title, description, image_path, status)
-                  VALUES ('$reporter_esc', '$purok_esc', $is_anon, '$category_esc', '$title_esc', '$desc_esc', $img_esc, 'pending')";
+                  VALUES ('$r_esc', '$p_esc', $is_anon, '$cat_esc', '$t_esc', '$d_esc', $img_esc, 'pending')";
 
         if (executeQuery($query)) {
             $success_msg = 'Your report has been submitted successfully!';
@@ -62,13 +62,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <!-- HEADER -->
     <nav class="header">
         <div class="logo">
-            <img src="assets/img/logo.png" alt="Logo" onerror="this.style.display='none';this.parentElement.textContent='SB'">
+            <img src="assets/img/logo.png" alt="Logo"
+                 onerror="this.style.display='none';this.parentElement.textContent='SB'">
         </div>
         <div>
             <div class="header-name">Ka-Barangay Connect</div>
             <div class="header-loc">San Bartolome</div>
         </div>
-        <a href="resident.php" class="back-btn" style="margin-left:auto; margin-bottom:0;">&#8592; Back</a>
+        <a href="resident.php" class="back-btn" style="margin-left:auto;">&#8592; Back</a>
     </nav>
 
     <div class="page-body">
@@ -82,13 +83,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
 
             <?php if ($success_msg): ?>
-            <div style="margin:0 24px; padding:14px 18px; background:#e6faed; border:1.5px solid #7de0a4; border-radius:12px; color:#128548; font-size:13.5px; font-weight:600;">
+            <div style="margin:0 24px; padding:14px 18px; background:#e6faed; border:1.5px solid #7de0a4;
+                        border-radius:12px; color:#128548; font-size:13.5px; font-weight:600;">
                 ✓ <?= htmlspecialchars($success_msg) ?>
             </div>
             <?php endif; ?>
 
             <?php if ($error_msg): ?>
-            <div style="margin:0 24px; padding:14px 18px; background:#fff0f0; border:1.5px solid #f7a0aa; border-radius:12px; color:#c0001a; font-size:13.5px; font-weight:600;">
+            <div style="margin:0 24px; padding:14px 18px; background:#fff0f0; border:1.5px solid #f7a0aa;
+                        border-radius:12px; color:#c0001a; font-size:13.5px; font-weight:600;">
                 ✗ <?= htmlspecialchars($error_msg) ?>
             </div>
             <?php endif; ?>
@@ -102,13 +105,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
 
                 <div class="row g-3 mb-2">
-                    <!-- Name field -->
+                    <!-- Name -->
                     <div class="col-12 col-sm-6">
                         <div class="field-group">
                             <div class="name-label-row">
                                 <label class="field-label" id="nameLabel">Full Name</label>
                                 <button type="button" class="anon-toggle" id="anonToggle" onclick="toggleAnonymous()">
-                                    <svg id="anonIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <svg id="anonIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
                                         <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
                                         <line x1="1" y1="1" x2="23" y2="23"/>
@@ -117,11 +121,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 </button>
                             </div>
                             <div id="nameInputWrap">
-                                <input type="text" class="field-input" id="nameInput" name="reporter" placeholder="Enter your name">
+                                <input type="text" class="field-input" id="nameInput"
+                                       name="reporter" placeholder="Enter your name">
                             </div>
                             <div id="anonBadge" class="anon-badge" style="display:none;">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <circle cx="12" cy="8" r="4"/><path d="M6 20v-2a6 6 0 0 1 12 0v2"/>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="8" r="4"/>
+                                    <path d="M6 20v-2a6 6 0 0 1 12 0v2"/>
                                     <line x1="1" y1="1" x2="23" y2="23"/>
                                 </svg>
                                 Your identity will be kept private
@@ -130,11 +137,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
                     </div>
 
-                    <!-- Purok field -->
+                    <!-- Purok -->
                     <div class="col-12 col-sm-6">
                         <div class="field-group">
                             <label class="field-label">Purok / Area</label>
-                            <select class="field-input" name="purok" required style="cursor:pointer;">
+                            <select class="field-input" name="purok" required>
                                 <option value="" disabled selected>Select your purok...</option>
                                 <option value="Purok 1">Purok 1</option>
                                 <option value="Purok 2">Purok 2</option>
@@ -155,51 +162,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="form-line"></div>
                 </div>
 
-                <div class="row g-3 mb-2">
-                    <div class="col-12">
-                        <div class="field-group">
-                            <label class="field-label">Category</label>
-                            <select class="field-input" name="category" onchange="updateCategoryBadge(this)" required style="cursor:pointer;">
-                                <option value="" disabled selected>Select a category...</option>
-                                <optgroup label="Isyu sa Imprastraktura">
-                                    <option value="Infrastructure">Sirang kalsada</option>
-                                    <option value="Infrastructure">Lubak sa daan</option>
-                                    <option value="Infrastructure">Sirang tulay</option>
-                                    <option value="Infrastructure">Wasak na sidewalk</option>
-                                </optgroup>
-                                <optgroup label="Isyu sa Kapaligiran">
-                                    <option value="Kalikasan">Baradong kanal</option>
-                                    <option value="Kalikasan">Tambak na basura</option>
-                                    <option value="Kalikasan">Maruming paligid</option>
-                                    <option value="Kalikasan">Mabahong tubig</option>
-                                </optgroup>
-                                <optgroup label="Serbisyong Pangunahing Pangangailangan">
-                                    <option value="Serbisyo Publiko">Sirang streetlight</option>
-                                    <option value="Serbisyo Publiko">Walang ilaw sa daan</option>
-                                    <option value="Serbisyo Publiko">Problema sa tubig</option>
-                                    <option value="Serbisyo Publiko">Nawawalang poste ng ilaw</option>
-                                </optgroup>
-                                <optgroup label="Serbisyong Pampubliko">
-                                    <option value="Publiko">Mabagal na aksyon ng barangay</option>
-                                    <option value="Publiko">Hindi naasikaso ang reklamo</option>
-                                    <option value="Publiko">Kulang ang serbisyo</option>
-                                    <option value="Publiko">Walang follow-up</option>
-                                </optgroup>
-                                <optgroup label="Kapayapaan at Kaayusan">
-                                    <option value="Kapayapaan">Madilim na lugar sa gabi</option>
-                                    <option value="Kapayapaan">Maingay na kapitbahay</option>
-                                    <option value="Kapayapaan">Gulo o away</option>
-                                    <option value="Kapayapaan">Kahina-hinalang tambay</option>
-                                </optgroup>
-                            </select>
-                            <div class="category-badge-row">
-                                <span class="cat-badge infra"      id="badge-infra">🔧 Imprastraktura</span>
-                                <span class="cat-badge kalikasan"  id="badge-kalikasan">🌿 Kapaligiran</span>
-                                <span class="cat-badge serbisyo"   id="badge-serbisyo">💡 Pangunahing Serbisyo</span>
-                                <span class="cat-badge publiko"    id="badge-publiko">🏛️ Serbisyong Pampubliko</span>
-                                <span class="cat-badge kapayapaan" id="badge-kapayapaan">🕊️ Kapayapaan at Kaayusan</span>
-                            </div>
-                        </div>
+                <div class="field-group">
+                    <label class="field-label">Category</label>
+                    <select class="field-input" name="category" onchange="updateCategoryBadge(this)" required>
+                        <option value="" disabled selected>Select a category...</option>
+                        <optgroup label="Isyu sa Imprastraktura">
+                            <option value="Infrastructure">Sirang kalsada</option>
+                            <option value="Infrastructure">Lubak sa daan</option>
+                            <option value="Infrastructure">Sirang tulay</option>
+                            <option value="Infrastructure">Wasak na sidewalk</option>
+                        </optgroup>
+                        <optgroup label="Isyu sa Kapaligiran">
+                            <option value="Kalikasan">Baradong kanal</option>
+                            <option value="Kalikasan">Tambak na basura</option>
+                            <option value="Kalikasan">Maruming paligid</option>
+                            <option value="Kalikasan">Mabahong tubig</option>
+                        </optgroup>
+                        <optgroup label="Serbisyong Pangunahing Pangangailangan">
+                            <option value="Serbisyo Publiko">Sirang streetlight</option>
+                            <option value="Serbisyo Publiko">Walang ilaw sa daan</option>
+                            <option value="Serbisyo Publiko">Problema sa tubig</option>
+                            <option value="Serbisyo Publiko">Nawawalang poste ng ilaw</option>
+                        </optgroup>
+                        <optgroup label="Serbisyong Pampubliko">
+                            <option value="Publiko">Mabagal na aksyon ng barangay</option>
+                            <option value="Publiko">Hindi naasikaso ang reklamo</option>
+                            <option value="Publiko">Kulang ang serbisyo</option>
+                            <option value="Publiko">Walang follow-up</option>
+                        </optgroup>
+                        <optgroup label="Kapayapaan at Kaayusan">
+                            <option value="Kapayapaan">Madilim na lugar sa gabi</option>
+                            <option value="Kapayapaan">Maingay na kapitbahay</option>
+                            <option value="Kapayapaan">Gulo o away</option>
+                            <option value="Kapayapaan">Kahina-hinalang tambay</option>
+                        </optgroup>
+                    </select>
+                    <div class="category-badge-row">
+                        <span class="cat-badge infra"      id="badge-infra">🔧 Imprastraktura</span>
+                        <span class="cat-badge kalikasan"  id="badge-kalikasan">🌿 Kapaligiran</span>
+                        <span class="cat-badge serbisyo"   id="badge-serbisyo">💡 Pangunahing Serbisyo</span>
+                        <span class="cat-badge publiko"    id="badge-publiko">🏛️ Serbisyong Pampubliko</span>
+                        <span class="cat-badge kapayapaan" id="badge-kapayapaan">🕊️ Kapayapaan at Kaayusan</span>
                     </div>
                 </div>
 
@@ -210,12 +213,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 <div class="field-group">
                     <label class="field-label">Report Title</label>
-                    <input type="text" class="field-input" name="title" placeholder="Brief title of your report" required>
+                    <input type="text" class="field-input" name="title"
+                           placeholder="Brief title of your report" required>
                 </div>
 
                 <div class="field-group">
                     <label class="field-label">Description</label>
-                    <textarea class="field-input" name="description" placeholder="Provide full details of the issue or concern..." required></textarea>
+                    <textarea class="field-input" name="description"
+                              placeholder="Provide full details of the issue or concern..." required></textarea>
                 </div>
 
                 <div class="form-section-label mt-2">
@@ -225,8 +230,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 <div class="image-picker mb-2" onclick="document.getElementById('fileInput').click()">
                     <div class="picker-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="#f5cc00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#f5cc00" stroke-width="2"
+                             stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="18" height="18" rx="2"/>
+                            <circle cx="8.5" cy="8.5" r="1.5"/>
                             <polyline points="21 15 16 10 5 21"/>
                         </svg>
                     </div>
@@ -236,15 +243,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
                 </div>
 
-                <div id="fileNameDisplay" style="display:none; font-size:12.5px; color:#128548; margin-bottom:8px;">&#10003; File selected</div>
+                <div id="fileNameDisplay" style="display:none; font-size:12.5px; color:#128548; margin-bottom:8px;">
+                    &#10003; File selected
+                </div>
                 <input type="file" id="fileInput" name="report_image" accept="image/*" style="display:none;"
-                       onchange="document.getElementById('fileNameDisplay').style.display='block'; document.getElementById('fileNameDisplay').textContent='✓ ' + this.files[0].name;">
+                       onchange="document.getElementById('fileNameDisplay').style.display='block';
+                                 document.getElementById('fileNameDisplay').textContent='✓ ' + this.files[0].name;">
 
-                <!-- Submit -->
                 <div class="form-footer">
                     <button type="submit" class="btn-submit">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                            <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                             stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="22" y1="2" x2="11" y2="13"/>
+                            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
                         </svg>
                         Submit Report
                     </button>
@@ -258,49 +269,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="assets/js/main.js"></script>
     <script>
-        let isAnonymous = false;
+    let isAnonymous = false;
 
-        function toggleAnonymous() {
-            isAnonymous = !isAnonymous;
-            const toggle    = document.getElementById('anonToggle');
-            const label     = document.getElementById('anonLabel');
-            const icon      = document.getElementById('anonIcon');
-            const nameWrap  = document.getElementById('nameInputWrap');
-            const badge     = document.getElementById('anonBadge');
-            const nameInput = document.getElementById('nameInput');
-            const anonInput = document.getElementById('anonInput');
+    function toggleAnonymous() {
+        isAnonymous = !isAnonymous;
+        const toggle    = document.getElementById('anonToggle');
+        const label     = document.getElementById('anonLabel');
+        const icon      = document.getElementById('anonIcon');
+        const nameWrap  = document.getElementById('nameInputWrap');
+        const badge     = document.getElementById('anonBadge');
+        const nameInput = document.getElementById('nameInput');
+        const anonInput = document.getElementById('anonInput');
 
-            if (isAnonymous) {
-                toggle.classList.add('active');
-                label.textContent = 'Submitting Anonymously';
-                icon.innerHTML = `<circle cx="12" cy="8" r="4"/>
-                    <path d="M6 20v-2a6 6 0 0 1 12 0v2"/>
-                    <line x1="1" y1="1" x2="23" y2="23"/>`;
-                nameWrap.classList.add('hidden');
-                badge.style.display = 'flex';
-                nameInput.value = '';
-                anonInput.value = '1';
-            } else {
-                toggle.classList.remove('active');
-                label.textContent = 'Submit Anonymously';
-                icon.innerHTML = `<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
-                    <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
-                    <line x1="1" y1="1" x2="23" y2="23"/>`;
-                nameWrap.classList.remove('hidden');
-                badge.style.display = 'none';
-                anonInput.value = '0';
-            }
+        if (isAnonymous) {
+            toggle.classList.add('active');
+            label.textContent = 'Submitting Anonymously';
+            icon.innerHTML = `<circle cx="12" cy="8" r="4"/>
+                <path d="M6 20v-2a6 6 0 0 1 12 0v2"/>
+                <line x1="1" y1="1" x2="23" y2="23"/>`;
+            nameWrap.classList.add('hidden');
+            badge.style.display = 'flex';
+            nameInput.value     = '';
+            anonInput.value     = '1';
+        } else {
+            toggle.classList.remove('active');
+            label.textContent = 'Submit Anonymously';
+            icon.innerHTML = `<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                <line x1="1" y1="1" x2="23" y2="23"/>`;
+            nameWrap.classList.remove('hidden');
+            badge.style.display = 'none';
+            anonInput.value     = '0';
         }
+    }
 
-        function updateCategoryBadge(sel) {
-            const val = sel.value;
-            document.querySelectorAll('.cat-badge').forEach(b => b.style.display = 'none');
-            if (val === 'Infrastructure')   document.getElementById('badge-infra').style.display = '';
-            if (val === 'Kalikasan')        document.getElementById('badge-kalikasan').style.display = '';
-            if (val === 'Serbisyo Publiko') document.getElementById('badge-serbisyo').style.display = '';
-            if (val === 'Publiko')          document.getElementById('badge-publiko').style.display = '';
-            if (val === 'Kapayapaan')       document.getElementById('badge-kapayapaan').style.display = '';
-        }
+    function updateCategoryBadge(sel) {
+        const val = sel.value;
+        document.querySelectorAll('.cat-badge').forEach(b => b.style.display = 'none');
+        const map = {
+            'Infrastructure':   'badge-infra',
+            'Kalikasan':        'badge-kalikasan',
+            'Serbisyo Publiko': 'badge-serbisyo',
+            'Publiko':          'badge-publiko',
+            'Kapayapaan':       'badge-kapayapaan',
+        };
+        if (map[val]) document.getElementById(map[val]).style.display = '';
+    }
     </script>
 </body>
 </html>
