@@ -4,14 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Submit Report — Ka-Barangay Connect</title>
-    <link rel="icon" href="assets/img/logo.png" type="image/x-icon">
+    <link rel="icon" href="../assets/img/logo.png" type="image/x-icon">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="assets/css/resident.css">
+    <link rel="stylesheet" href="../assets/css/resident.css">
 </head>
 <body class="page-report">
 
 <?php
-require_once 'connection.php';
+require_once __DIR__ . '/../connection.php';
 
 $success_msg = '';
 $error_msg   = '';
@@ -30,13 +30,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         // Handle image upload
         if (!empty($_FILES['report_image']['name'])) {
-            $upload_dir = 'assets/img/uploads/';
+            $upload_dir     = __DIR__ . '/../assets/img/uploads/';
+            $upload_dir_web = 'assets/img/uploads/';
             if (!is_dir($upload_dir)) mkdir($upload_dir, 0755, true);
             $ext      = pathinfo($_FILES['report_image']['name'], PATHINFO_EXTENSION);
             $filename = 'report_' . time() . '_' . rand(100, 999) . '.' . $ext;
             $target   = $upload_dir . $filename;
             if (move_uploaded_file($_FILES['report_image']['tmp_name'], $target)) {
-                $image_path = $target;
+                $image_path = $upload_dir_web . $filename;
             }
         }
 
@@ -62,7 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <!-- HEADER -->
     <nav class="header">
         <div class="logo">
-            <img src="assets/img/logo.png" alt="Logo"
+            <img src="../assets/img/logo.png" alt="Logo"
                  onerror="this.style.display='none';this.parentElement.textContent='SB'">
         </div>
         <div>
@@ -267,7 +268,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="assets/js/main.js"></script>
+    <script src="../assets/js/main.js"></script>
     <script>
     let isAnonymous = false;
 

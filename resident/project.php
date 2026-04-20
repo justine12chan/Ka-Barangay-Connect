@@ -4,17 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Projects - Ka-Barangay Connect</title>
-    <link rel="icon" href="assets/img/logo.png" type="image/x-icon">
+    <link rel="icon" href="../assets/img/logo.png" type="image/x-icon">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="assets/css/resident.css">
+    <link rel="stylesheet" href="../assets/css/resident.css">
 </head>
 <body class="page-projects">
 
-<?php require_once 'connection.php'; ?>
+<?php require_once __DIR__ . '/../connection.php'; ?>
 
     <nav class="header" style="height:64px; padding:0 28px;">
         <div class="header-logo lg">
-            <img src="assets/img/logo.png" alt="Logo" onerror="this.style.display='none';this.parentElement.textContent='SB'">
+            <img src="../assets/img/logo.png" alt="Logo" onerror="this.style.display='none';this.parentElement.textContent='SB'">
         </div>
         <div>
             <div class="header-title">Ka-Barangay Connect</div>
@@ -27,7 +27,7 @@
 
     <!-- BANNER -->
     <div class="page-banner-wrapper">
-        <img src="assets/img/Project.png" alt="Projects" class="page-banner-img">
+        <img src="../assets/img/Project.png" alt="Projects" class="page-banner-img">
     </div>
 
     <!-- MAIN CONTENT -->
@@ -76,7 +76,7 @@ if ($result && mysqli_num_rows($result) > 0):
                     <div class="proj-card-header">
                         <div class="proj-author-info">
                             <div class="proj-avatar">
-                                <img src="assets/img/logo.png" alt="<?= $dept ?>">
+                                <img src="../assets/img/logo.png" alt="<?= $dept ?>">
                             </div>
                             <div class="proj-author-meta">
                                 <p class="proj-author-name"><?= $dept ?></p>

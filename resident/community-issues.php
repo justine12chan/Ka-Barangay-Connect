@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Community Issues - Ka-Barangay Connect</title>
-    <link rel="icon" href="assets/img/logo.png" type="image/x-icon">
+    <link rel="icon" href="../assets/img/logo.png" type="image/x-icon">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="assets/css/resident.css">
+    <link rel="stylesheet" href="../assets/css/resident.css">
 
     <style>
         body { background: var(--gray-50); min-height: 100vh; }
@@ -246,7 +246,7 @@
 <body>
 
 <?php
-require_once 'connection.php';
+require_once __DIR__ . '/../connection.php';
 
 $pill_map = [
     'pending'     => ['label' => 'Open',        'class' => 'pill-open'],
@@ -286,7 +286,7 @@ if ($result && mysqli_num_rows($result) > 0) {
 <!-- Mobile top bar -->
 <div class="mobile-topbar d-xl-none">
     <div class="brand-logo">
-        <img src="assets/img/logo.png" alt="Logo" onerror="this.style.display='none'">
+        <img src="../assets/img/logo.png" alt="Logo" onerror="this.style.display='none'">
     </div>
     <div class="brand-text">
         <div class="brand-name">Ka-Barangay Connect</div>
@@ -312,7 +312,7 @@ if ($result && mysqli_num_rows($result) > 0) {
                 <div class="position-sticky" style="top:24px;">
                     <div class="sidebar-card">
                         <div class="sidebar-logo-wrap">
-                            <img src="assets/img/logo.png" alt="Logo" onerror="this.style.display='none';this.parentElement.textContent='SB'">
+                            <img src="../assets/img/logo.png" alt="Logo" onerror="this.style.display='none';this.parentElement.textContent='SB'">
                         </div>
                         <div class="sidebar-org-name">Ka-Barangay Connect</div>
                         <div class="sidebar-org-loc">San Bartolome</div>

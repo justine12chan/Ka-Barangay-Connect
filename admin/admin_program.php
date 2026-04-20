@@ -1,5 +1,20 @@
 <?php
-require_once 'connection.php';
+session_start();
+if (!isset($_SESSION['userID'])) {
+    header("Location: admin_login.php");
+    exit();
+}
+include __DIR__ . '/../connection.php';
+
+// ─── Handle: delete program ───────────────────────────────────────────────────
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_program'])) {
+    $id = (int) $_POST['program_id'];
+    if ($id > 0) {
+        executeQuery("DELETE FROM programs WHERE id=$id");
+    }
+    header('Location: admin_program.php');
+    exit;
+}
 
 // ─── Handle: update program status ───────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_program_status'])) {
@@ -26,13 +41,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_program'])) {
 
     $img_update = '';
     if (!empty($_FILES['edit_image']['name'])) {
-        $upload_dir = 'assets/img/uploads/';
+        $upload_dir = __DIR__ . '/../assets/img/uploads/';
+        $upload_dir_web = 'assets/img/uploads/';
         if (!is_dir($upload_dir)) mkdir($upload_dir, 0755, true);
         $ext      = strtolower(pathinfo($_FILES['edit_image']['name'], PATHINFO_EXTENSION));
         $filename = 'prog_' . time() . '_' . rand(100, 999) . '.' . $ext;
         $target   = $upload_dir . $filename;
         if (move_uploaded_file($_FILES['edit_image']['tmp_name'], $target)) {
-            $img_esc    = mysqli_real_escape_string($conn, $target);
+            $img_esc    = mysqli_real_escape_string($conn, $upload_dir_web . $filename);
             $img_update = ", image_path='$img_esc'";
         }
     }
@@ -58,13 +74,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_program'])) {
     $image_path = null;
 
     if (!empty($_FILES['prog_image']['name'])) {
-        $upload_dir = 'assets/img/uploads/';
+        $upload_dir = __DIR__ . '/../assets/img/uploads/';
+        $upload_dir_web = 'assets/img/uploads/';
         if (!is_dir($upload_dir)) mkdir($upload_dir, 0755, true);
         $ext      = strtolower(pathinfo($_FILES['prog_image']['name'], PATHINFO_EXTENSION));
         $filename = 'prog_' . time() . '_' . rand(100, 999) . '.' . $ext;
         $target   = $upload_dir . $filename;
         if (move_uploaded_file($_FILES['prog_image']['tmp_name'], $target)) {
-            $image_path = $target;
+            $image_path = $upload_dir_web . $filename;
         }
     }
 
@@ -116,10 +133,10 @@ usort($posts, fn($a, $b) => strtotime($b['created_at']) - strtotime($a['created_
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ka-Barangay Connect — Programs</title>
-    <link rel="icon" href="assets/img/logo.png" type="image/x-icon">
+    <link rel="icon" href="../assets/img/logo.png" type="image/x-icon">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-    <link rel="stylesheet" href="assets/css/admin.css">
+    <link rel="stylesheet" href="../assets/css/admin.css">
     <style>
         /* Social feed card */
         .prog-social-card {
@@ -207,6 +224,9 @@ usort($posts, fn($a, $b) => strtotime($b['created_at']) - strtotime($a['created_
         }
         .prog-dropdown-item:hover { background: var(--faint); }
         .prog-dropdown-item i { font-size: 13px; color: var(--blue-main); }
+        .prog-dropdown-item.delete-item { color: #c0001a; }
+        .prog-dropdown-item.delete-item i { color: #c0001a; }
+        .prog-dropdown-item.delete-item:hover { background: #fff0f0; }
 
         /* Filter tabs */
         .prog-filter-row { display: flex; gap: 8px; flex-wrap: wrap; padding: 12px 14px 8px; border-bottom: 1px solid var(--border); }
@@ -279,17 +299,17 @@ usort($posts, fn($a, $b) => strtotime($b['created_at']) - strtotime($a['created_
                 <div class="sidebar">
                     <div class="sidebar-top">
                         <div class="sidebar-logo-wrap">
-                            <img src="assets/img/logo.png" alt="Logo"
+                            <img src="../assets/img/logo.png" alt="Logo"
                                  onerror="this.style.display='none';this.parentElement.textContent='SB'">
                         </div>
                         <div>
                             <div class="sidebar-admin">Admin Panel</div>
-                            <div class="sidebar-name" id="sidebarUsername">San Bartolome</div>
+                            <div class="sidebar-name"><?= htmlspecialchars($_SESSION['admin_full_name'] ?? $_SESSION['admin_user'] ?? 'Admin') ?></div>
                         </div>
                     </div>
                     <div class="sidebar-footer">
                         <a href="#" class="sidebar-btn profile"><i class="fa fa-user"></i> Profile</a>
-                        <a href="index.html" class="sidebar-btn logout"
+                        <a href="#" class="sidebar-btn logout"
                            onclick="return confirmLogout()"><i class="fa fa-sign-out"></i> Logout</a>
                     </div>
                 </div>
@@ -302,13 +322,13 @@ usort($posts, fn($a, $b) => strtotime($b['created_at']) - strtotime($a['created_
                     <!-- Top Nav -->
                     <div class="top-nav">
                         <div class="top-nav-left">
-                            <a href="official.php" class="back-btn light">&#8592; Back</a>
+                            <a href="admin_dashboard.php" class="back-btn light">&#8592; Back</a>
                             <span class="top-nav-title">Programs Overview</span>
                         </div>
                         <div class="top-nav-pills">
-                            <a href="official.php"      class="nav-pill">Dashboard</a>
-                            <a href="report_admin.php"  class="nav-pill">Report</a>
-                            <a href="admin_program.php" class="nav-pill active">Programs</a>
+                            <a href="admin_dashboard.php" class="nav-pill">Dashboard</a>
+                            <a href="admin_report.php"    class="nav-pill">Report</a>
+                            <a href="admin_program.php"   class="nav-pill active">Programs</a>
                         </div>
                     </div>
 
@@ -418,7 +438,7 @@ usort($posts, fn($a, $b) => strtotime($b['created_at']) - strtotime($a['created_
                     </div>
                     <button type="button" class="rpt-modal-close" onclick="closeUnifiedModal()"><i class="fa fa-times"></i></button>
                 </div>
-                <form method="POST" action="report_admin.php" enctype="multipart/form-data">
+                <form method="POST" action="admin_report.php" enctype="multipart/form-data">
                     <input type="hidden" name="add_announcement" value="1">
                     <div class="rpt-modal-body">
                         <div class="field-group">
@@ -584,6 +604,44 @@ usort($posts, fn($a, $b) => strtotime($b['created_at']) - strtotime($a['created_
         </div>
     </div>
 
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteConfirmModal"
+         style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45);
+                z-index:9999; align-items:center; justify-content:center;">
+        <div style="background:#fff; border-radius:18px; padding:28px 28px 22px; max-width:340px;
+                    width:90%; box-shadow:0 8px 40px rgba(0,0,0,0.18); text-align:center;">
+            <div style="width:52px; height:52px; border-radius:50%; background:#fff0f0;
+                        display:flex; align-items:center; justify-content:center; margin:0 auto 14px;">
+                <i class="fa fa-trash" style="font-size:22px; color:#c0001a;"></i>
+            </div>
+            <div style="font-size:16px; font-weight:800; color:#1a2340; margin-bottom:6px;">Delete Program?</div>
+            <div style="font-size:13px; color:#8890b8; margin-bottom:4px;">
+                This will permanently delete
+            </div>
+            <div style="font-size:13px; color:#4a5280; font-weight:600; margin-bottom:18px;"
+                 id="deleteProgramTitle"></div>
+            <div style="font-size:12px; color:#c0001a; margin-bottom:18px;">This action cannot be undone.</div>
+            <div style="display:flex; gap:10px; justify-content:center;">
+                <button onclick="document.getElementById('deleteConfirmModal').style.display='none'"
+                        style="flex:1; padding:10px; border-radius:10px; border:1.5px solid #e0e4f0;
+                               background:#f7f8fc; color:#4a5280; font-weight:700; cursor:pointer; font-size:13px;">
+                    Cancel
+                </button>
+                <button onclick="confirmDelete()"
+                        style="flex:1; padding:10px; border-radius:10px; background:#c0001a; color:#fff;
+                               font-weight:700; cursor:pointer; font-size:13px; border:none;">
+                    <i class="fa fa-trash"></i> Delete
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden delete form -->
+    <form method="POST" action="admin_program.php" id="deleteFormHidden" style="display:none;">
+        <input type="hidden" name="delete_program" value="1">
+        <input type="hidden" name="program_id" id="deleteProgramId" value="">
+    </form>
+
     <!-- Image Lightbox -->
     <div id="imgLightbox" onclick="if(event.target===this||event.target.id==='imgLightbox') closeLightbox()">
         <button id="imgLightboxClose" onclick="closeLightbox()"><i class="fa fa-times"></i></button>
@@ -615,7 +673,7 @@ usort($posts, fn($a, $b) => strtotime($b['created_at']) - strtotime($a['created_
                                background:#f7f8fc; color:#4a5280; font-weight:700; cursor:pointer; font-size:13px;">
                     Cancel
                 </button>
-                <a href="index.html" onclick="sessionStorage.clear()"
+                <a href="admin_logout.php"
                    style="flex:1; padding:10px; border-radius:10px; background:#c0001a; color:#fff;
                           font-weight:700; cursor:pointer; font-size:13px; text-decoration:none;
                           display:flex; align-items:center; justify-content:center;">
@@ -717,6 +775,18 @@ usort($posts, fn($a, $b) => strtotime($b['created_at']) - strtotime($a['created_
                    </span>
                </div>` : '';
 
+        // Only show Edit & Delete for projects (not announcements)
+        const dropdownItems = postType === 'project'
+            ? `<button class="prog-dropdown-item" onclick="openEditModal(event,${r.id})">
+                   <i class="fa fa-pencil"></i> Edit
+               </button>
+               <button class="prog-dropdown-item delete-item" onclick="openDeleteModal(event,${r.id},${JSON.stringify(r.title)})">
+                   <i class="fa fa-trash"></i> Delete
+               </button>`
+            : `<button class="prog-dropdown-item" onclick="openEditModal(event,${r.id})">
+                   <i class="fa fa-pencil"></i> Edit
+               </button>`;
+
         return `
         <div class="prog-social-card" data-status="${r.status || ''}" data-type="${postType}"
              data-id="${r.id}" data-date="${r.created_at || ''}">
@@ -730,9 +800,7 @@ usort($posts, fn($a, $b) => strtotime($b['created_at']) - strtotime($a['created_
                 <button class="prog-dots-btn" title="More options"
                         onclick="toggleDropdown(event,${r.id})">&#8942;</button>
                 <div class="prog-dropdown" id="dropdown-${r.id}">
-                    <button class="prog-dropdown-item" onclick="openEditModal(event,${r.id})">
-                        <i class="fa fa-pencil"></i> Edit
-                    </button>
+                    ${dropdownItems}
                 </div>
             </div>
             ${latestTag}
@@ -781,7 +849,7 @@ usort($posts, fn($a, $b) => strtotime($b['created_at']) - strtotime($a['created_
         }
     }
 
-    // Three-dot dropdown
+    // ── Three-dot dropdown ──
     function toggleDropdown(e, id) {
         e.stopPropagation();
         const dd     = document.getElementById('dropdown-' + id);
@@ -793,7 +861,7 @@ usort($posts, fn($a, $b) => strtotime($b['created_at']) - strtotime($a['created_
         document.querySelectorAll('.prog-dropdown.open').forEach(d => d.classList.remove('open'));
     });
 
-    // Edit modal
+    // ── Edit modal ──
     function openEditModal(e, id) {
         e.stopPropagation();
         document.querySelectorAll('.prog-dropdown.open').forEach(d => d.classList.remove('open'));
@@ -816,7 +884,21 @@ usort($posts, fn($a, $b) => strtotime($b['created_at']) - strtotime($a['created_
     }
     function closeSaveConfirm() { document.getElementById('editSaveConfirm').classList.remove('open'); }
 
-    // Lightbox
+    // ── Delete modal ──
+    let pendingDeleteId = null;
+    function openDeleteModal(e, id, title) {
+        e.stopPropagation();
+        document.querySelectorAll('.prog-dropdown.open').forEach(d => d.classList.remove('open'));
+        pendingDeleteId = id;
+        document.getElementById('deleteProgramTitle').textContent = '"' + title + '"';
+        document.getElementById('deleteConfirmModal').style.display = 'flex';
+    }
+    function confirmDelete() {
+        document.getElementById('deleteProgramId').value = pendingDeleteId;
+        document.getElementById('deleteFormHidden').submit();
+    }
+
+    // ── Lightbox ──
     let lbImages = [], lbIndex = 0;
     function openLightbox(e, images, startIndex) {
         e.stopPropagation();
@@ -853,14 +935,7 @@ usort($posts, fn($a, $b) => strtotime($b['created_at']) - strtotime($a['created_
 
     function confirmLogout() { document.getElementById('logoutModal').style.display = 'flex'; return false; }
 
-    // Show username
-    const adminUser = sessionStorage.getItem('adminUser');
-    if (adminUser) {
-        const el = document.getElementById('sidebarUsername');
-        if (el) el.textContent = adminUser.charAt(0).toUpperCase() + adminUser.slice(1);
-    }
-
-    // Unified modal
+    // ── Unified modal ──
     function openUnifiedModal() {
         document.getElementById('uStep1').style.display     = '';
         document.getElementById('uStep2Ann').style.display  = 'none';

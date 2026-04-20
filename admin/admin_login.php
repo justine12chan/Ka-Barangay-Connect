@@ -1,6 +1,12 @@
 <?php
 session_start();
-require_once 'connection.php';
+require_once __DIR__ . '/../connection.php';
+
+// Already logged in → go straight to dashboard
+if (isset($_SESSION['userID'])) {
+    header('Location: admin_dashboard.php');
+    exit;
+}
 
 $php_error = '';
 
@@ -11,17 +17,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($username === '' || $password === '') {
         $php_error = 'Please fill in all fields.';
     } else {
-        $u      = mysqli_real_escape_string($conn, $username);
-        $res    = executeQuery("SELECT * FROM officials WHERE username='$u' LIMIT 1");
+        $u       = mysqli_real_escape_string($conn, $username);
+        $res     = executeQuery("SELECT * FROM officials WHERE username='$u' LIMIT 1");
         $official = $res ? mysqli_fetch_assoc($res) : null;
 
         if ($official && $password === $official['password']) {
             session_regenerate_id(true);
+            $_SESSION['userID']          = $official['id'];
             $_SESSION['admin_user']      = $official['username'];
             $_SESSION['admin_full_name'] = $official['full_name'];
             $_SESSION['admin_position']  = $official['position'];
             $_SESSION['logged_in']       = true;
-            header('Location: official.php');
+            header('Location: admin_dashboard.php');
             exit;
         } else {
             $php_error = 'Invalid username or password.';
@@ -35,9 +42,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Official Login — Ka-Barangay Connect</title>
-    <link rel="icon" href="assets/img/logo.png" type="image/x-icon">
+    <link rel="icon" href="../assets/img/logo.png" type="image/x-icon">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="assets/css/admin.css">
+    <link rel="stylesheet" href="../assets/css/admin.css">
 </head>
 <body class="page-login">
 
@@ -46,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <div class="login-card">
 
-        <a href="index.html" class="back-btn" style="margin-left:0; display:inline-flex; width:fit-content;">
+        <a href="../index.html" class="back-btn" style="margin-left:0; display:inline-flex; width:fit-content;">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                  stroke-linecap="round" stroke-linejoin="round" width="13" height="13">
                 <polyline points="15 18 9 12 15 6"/>
@@ -56,7 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <div class="login-header">
             <div class="login-logo">
-                <img src="assets/img/logo.png" alt="Barangay Logo">
+                <img src="../assets/img/logo.png" alt="Barangay Logo">
             </div>
             <div>
                 <div class="login-title">Official Portal</div>
@@ -76,7 +83,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <span id="errorText"><?= htmlspecialchars($php_error) ?></span>
         </div>
 
-        <form id="loginForm" method="POST" action="login.php" novalidate>
+        <form id="loginForm" method="POST" action="admin_login.php" novalidate>
 
             <div class="form-group-login">
                 <label class="form-label-custom" for="username">Username</label>
@@ -138,7 +145,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     </div>
 
-    <script src="assets/js/main.js"></script>
+    <script src="../assets/js/main.js"></script>
     <script>
     const togglePw = document.getElementById('togglePw');
     const pwInput  = document.getElementById('password');
@@ -152,15 +159,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     togglePw.addEventListener('click', () => {
         const isHidden = pwInput.type === 'password';
-        pwInput.type       = isHidden ? 'text' : 'password';
-        eyeIcon.innerHTML  = isHidden ? eyeClosed : eyeOpen;
+        pwInput.type      = isHidden ? 'text' : 'password';
+        eyeIcon.innerHTML = isHidden ? eyeClosed : eyeOpen;
     });
-
-    <?php if (isset($_SESSION['admin_user'])): ?>
-    sessionStorage.setItem('adminUser',     '<?= addslashes($_SESSION['admin_user']) ?>');
-    sessionStorage.setItem('adminName',     '<?= addslashes($_SESSION['admin_full_name'] ?? '') ?>');
-    sessionStorage.setItem('adminPosition', '<?= addslashes($_SESSION['admin_position'] ?? '') ?>');
-    <?php endif; ?>
 
     ['username', 'password'].forEach(id => {
         document.getElementById(id).addEventListener('input', () => {

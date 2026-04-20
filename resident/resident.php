@@ -4,14 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ka-Barangay Connect</title>
-    <link rel="icon" href="assets/img/logo.png" type="image/x-icon">
+    <link rel="icon" href="../assets/img/logo.png" type="image/x-icon">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="assets/css/resident.css">
+    <link rel="stylesheet" href="../assets/css/resident.css">
 </head>
 <body class="page-resident">
 
 <?php
-require_once 'connection.php';
+require_once __DIR__ . '/../connection.php';
 
 // --- Live stats ---
 $r_open      = mysqli_fetch_row(executeQuery("SELECT COUNT(*) FROM reports WHERE status='pending'"))[0]      ?? 0;
@@ -50,7 +50,7 @@ $dot_map = ['pending' => 'open', 'in-progress' => 'progress', 'resolved' => 'don
     <!-- HEADER -->
     <nav class="header" style="height:64px; padding:0 28px;">
         <div class="header-logo lg">
-            <img src="assets/img/logo.png" alt="Logo"
+            <img src="../assets/img/logo.png" alt="Logo"
                  onerror="this.style.display='none';this.parentElement.textContent='SB'">
         </div>
         <div>
@@ -58,7 +58,7 @@ $dot_map = ['pending' => 'open', 'in-progress' => 'progress', 'resolved' => 'don
             <div class="header-sub">San Bartolome</div>
         </div>
         <div class="header-right">
-            <a href="index.html" class="back-btn" style="margin-left:0;">&#8592; Back</a>
+            <a href="../index.html" class="back-btn" style="margin-left:0;">&#8592; Back</a>
         </div>
     </nav>
 
@@ -70,13 +70,9 @@ $dot_map = ['pending' => 'open', 'in-progress' => 'progress', 'resolved' => 'don
 
                 <div class="info-box-wrapper">
                     <div class="info-box">
-                        <img src="assets/img/barangay_header.jpg" alt="Barangay San Bartolome">
+                        <img src="../assets/img/barangay_header.jpg" alt="Barangay San Bartolome">
                         <div class="info-box-overlay"></div>
                         <div class="info-box-content">
-                            <div class="info-box-label">
-                                <div class="label-dot"></div>
-                                Official Barangay Portal
-                            </div>
                             <h2 class="info-box-heading">Barangay San Bartolome</h2>
                         </div>
                     </div>
@@ -302,6 +298,6 @@ $dot_map = ['pending' => 'open', 'in-progress' => 'progress', 'resolved' => 'don
     <a href="report.php" class="floating-btn" title="Submit a report">+</a>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="assets/js/main.js"></script>
+    <script src="../assets/js/main.js"></script>
 </body>
 </html>

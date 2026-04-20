@@ -1,19 +1,10 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ka-Barangay Connect — Dashboard</title>
-    <link rel="icon" href="assets/img/logo.png" type="image/x-icon">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-    <link rel="stylesheet" href="assets/css/admin.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-</head>
-<body class="page-official">
-
 <?php
-require_once 'connection.php';
+session_start();
+if (!isset($_SESSION['userID'])) {
+    header("Location: admin_login.php");
+    exit();
+}
+include __DIR__ . '/../connection.php';
 
 // --- Stats ---
 $r_pending   = mysqli_fetch_row(executeQuery("SELECT COUNT(*) FROM reports WHERE status='pending'"))[0]     ?? 0;
@@ -55,6 +46,19 @@ if ($cat_res) {
     while ($row = mysqli_fetch_assoc($cat_res)) $category_data[$row['category']] = (int) $row['cnt'];
 }
 ?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ka-Barangay Connect — Dashboard</title>
+    <link rel="icon" href="../assets/img/logo.png" type="image/x-icon">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="../assets/css/admin.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body class="page-official">
 
     <div class="container-fluid p-3 p-md-4">
         <div class="row g-3">
@@ -64,17 +68,17 @@ if ($cat_res) {
                 <div class="sidebar">
                     <div class="sidebar-top">
                         <div class="sidebar-logo-wrap">
-                            <img src="assets/img/logo.png" alt="Logo"
+                            <img src="../assets/img/logo.png" alt="Logo"
                                  onerror="this.style.display='none';this.parentElement.textContent='SB'">
                         </div>
                         <div>
                             <div class="sidebar-admin">Admin Panel</div>
-                            <div class="sidebar-name" id="sidebarUsername">San Bartolome</div>
+                            <div class="sidebar-name"><?= htmlspecialchars($_SESSION['admin_full_name'] ?? $_SESSION['admin_user'] ?? 'Admin') ?></div>
                         </div>
                     </div>
                     <div class="sidebar-footer">
                         <a href="#" class="sidebar-btn profile"><i class="fa fa-user"></i> Profile</a>
-                        <a href="index.html" class="sidebar-btn logout"
+                        <a href="#" class="sidebar-btn logout"
                            onclick="return confirmLogout()"><i class="fa fa-sign-out"></i> Logout</a>
                     </div>
                 </div>
@@ -87,13 +91,13 @@ if ($cat_res) {
                     <!-- Top Nav -->
                     <div class="top-nav">
                         <div class="top-nav-left">
-                            <a href="index.html" class="back-btn light">&#8592; Back</a>
+                            <a href="../index.html" class="back-btn light">&#8592; Back</a>
                             <span class="top-nav-title">Dashboard Overview</span>
                         </div>
                         <div class="top-nav-pills">
-                            <a href="official.php"      class="nav-pill active">Dashboard</a>
-                            <a href="report_admin.php"  class="nav-pill">Report</a>
-                            <a href="admin_program.php" class="nav-pill">Programs</a>
+                            <a href="admin_dashboard.php" class="nav-pill active">Dashboard</a>
+                            <a href="admin_report.php"    class="nav-pill">Report</a>
+                            <a href="admin_program.php"   class="nav-pill">Programs</a>
                         </div>
                     </div>
 
@@ -172,7 +176,6 @@ if ($cat_res) {
 
                         </div>
 
-                           
                         <!-- Chart: Reports Over Time -->
                         <div style="margin-top:20px;">
                             <div style="font-size:11px; font-weight:700; color:var(--muted);
@@ -268,7 +271,7 @@ if ($cat_res) {
                         <i class="fa fa-times"></i>
                     </button>
                 </div>
-                <form method="POST" action="report_admin.php" enctype="multipart/form-data">
+                <form method="POST" action="admin_report.php" enctype="multipart/form-data">
                     <input type="hidden" name="add_announcement" value="1">
                     <div class="rpt-modal-body">
                         <div class="field-group">
@@ -408,7 +411,7 @@ if ($cat_res) {
                                background:#f7f8fc; color:#4a5280; font-weight:700; cursor:pointer; font-size:13px;">
                     Cancel
                 </button>
-                <a href="index.html" onclick="sessionStorage.clear()"
+                <a href="admin_logout.php"
                    style="flex:1; padding:10px; border-radius:10px; background:#c0001a; color:#fff;
                           font-weight:700; cursor:pointer; font-size:13px; text-decoration:none;
                           display:flex; align-items:center; justify-content:center;">
@@ -419,15 +422,8 @@ if ($cat_res) {
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="assets/js/main.js"></script>
+    <script src="../assets/js/main.js"></script>
     <script>
-    // Show username from sessionStorage
-    const adminUser = sessionStorage.getItem('adminUser');
-    if (adminUser) {
-        const el = document.getElementById('sidebarUsername');
-        if (el) el.textContent = adminUser.charAt(0).toUpperCase() + adminUser.slice(1);
-    }
-
     function confirmLogout() {
         document.getElementById('logoutModal').style.display = 'flex';
         return false;
@@ -547,7 +543,7 @@ if ($cat_res) {
         btn.style.color      = '#fff';
         if (chartInstance) chartInstance.destroy();
         const ctx = document.getElementById('reportsChart').getContext('2d');
-        const cfg = view === 'month' ? buildMonthChart()
+        const cfg = view === 'month'    ? buildMonthChart()
                   : view === 'category' ? buildCategoryChart()
                   : buildStatusChart();
         chartInstance = new Chart(ctx, cfg);
