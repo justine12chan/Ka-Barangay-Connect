@@ -56,7 +56,13 @@ $r_resolved = mysqli_fetch_row(executeQuery("SELECT COUNT(*) FROM reports WHERE 
 $result  = executeQuery("SELECT * FROM reports ORDER BY created_at DESC");
 $reports = [];
 if ($result) {
-    while ($row = mysqli_fetch_assoc($result)) $reports[] = $row;
+    while ($row = mysqli_fetch_assoc($result)) {
+        // image_path is stored as assets/img/uploads/... but admin/ folder needs ../
+        if (!empty($row['image_path'])) {
+            $row['image_path'] = '../' . $row['image_path'];
+        }
+        $reports[] = $row;
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -69,6 +75,29 @@ if ($result) {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="../assets/css/admin.css">
+    <style>
+        /* ── Lightbox ── */
+        #imgLightbox { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.94); z-index:9999; align-items:center; justify-content:center; }
+        #imgLightbox.open { display:flex; }
+        #imgLightboxWrap { position:relative; display:flex; align-items:center; justify-content:center; max-width:90vw; max-height:90vh; }
+        #imgLightboxImg { max-width:88vw; max-height:86vh; border-radius:10px; box-shadow:0 10px 60px rgba(0,0,0,0.6); object-fit:contain; display:block; transition:opacity 0.18s; }
+        #imgLightboxClose, #imgLightboxPrev, #imgLightboxNext {
+            position:absolute; color:white; cursor:pointer;
+            background:rgba(255,255,255,0.12); border:1.5px solid rgba(255,255,255,0.22); border-radius:50%;
+            display:flex; align-items:center; justify-content:center; z-index:10001; transition:background 0.15s;
+        }
+        #imgLightboxClose { top:16px; right:18px; width:40px; height:40px; font-size:20px; }
+        #imgLightboxPrev  { top:50%; transform:translateY(-50%); left:18px;  width:44px; height:44px; font-size:18px; }
+        #imgLightboxNext  { top:50%; transform:translateY(-50%); right:18px; width:44px; height:44px; font-size:18px; }
+        #imgLightboxPrev:hover, #imgLightboxNext:hover, #imgLightboxClose:hover { background:rgba(255,255,255,0.28); }
+        #imgLightboxPrev.hidden, #imgLightboxNext.hidden { display:none; }
+        #imgLightboxCounter { position:absolute; bottom:-30px; left:50%; transform:translateX(-50%); color:rgba(255,255,255,0.7); font-size:13px; font-weight:600; white-space:nowrap; }
+        /* ── Clickable report image ── */
+        .rpt-img-wrap { margin-bottom:14px; border-radius:10px; overflow:hidden; cursor:zoom-in; position:relative; }
+        .rpt-img-wrap img { width:100%; max-height:240px; object-fit:cover; border:1.5px solid var(--border); display:block; transition:transform 0.22s, opacity 0.18s; }
+        .rpt-img-wrap:hover img { transform:scale(1.02); opacity:0.9; }
+        .rpt-img-zoom-hint { position:absolute; bottom:8px; right:8px; background:rgba(0,0,0,0.45); color:#fff; font-size:11px; font-weight:600; padding:3px 9px; border-radius:20px; pointer-events:none; display:flex; align-items:center; gap:4px; }
+    </style>
 </head>
 <body class="page-official">
 
@@ -416,6 +445,17 @@ if ($result) {
         </div>
     </div>
 
+    <!-- ══ IMAGE LIGHTBOX ══ -->
+    <div id="imgLightbox" onclick="if(event.target===this)closeLightbox()">
+        <div id="imgLightboxWrap">
+            <button id="imgLightboxClose" onclick="closeLightbox()" aria-label="Close">&#215;</button>
+            <button id="imgLightboxPrev"  onclick="lightboxNav(-1)" aria-label="Previous">&#8249;</button>
+            <img id="imgLightboxImg" src="" alt="Full image">
+            <button id="imgLightboxNext"  onclick="lightboxNav(1)"  aria-label="Next">&#8250;</button>
+            <div id="imgLightboxCounter"></div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
     const reports = <?= json_encode(array_values($reports)) ?>;
@@ -451,10 +491,10 @@ if ($result) {
         const st            = statusConfig[r.status] || statusConfig['pending'];
         const reporter_disp = parseInt(r.is_anonymous) ? 'Anonymous' : (r.reporter || '');
         const imgHtml       = r.image_path
-            ? `<div style="margin-bottom:14px;">
-                   <img src="${r.image_path}" alt="Report photo"
-                        style="width:100%; border-radius:10px; max-height:240px;
-                               object-fit:cover; border:1.5px solid var(--border);">
+            ? `<div class="rpt-img-wrap" onclick="openLightbox(event,['${r.image_path.replace(/'/g,"\\'")}'],0)" title="Click to enlarge">
+                   <img src="${r.image_path}" alt="Report photo" loading="lazy"
+                        onerror="this.closest('.rpt-img-wrap').style.display='none'">
+                   <div class="rpt-img-zoom-hint"><i class="fa fa-search-plus"></i> View full</div>
                </div>` : '';
         const purokHtml = r.purok
             ? `<div style="font-size:11px; color:var(--muted); margin-top:2px;">📍 ${r.purok}</div>` : '';
@@ -639,6 +679,43 @@ if ($result) {
         document.getElementById('uStep1').style.display     = '';
         document.getElementById('uStep2Ann').style.display  = 'none';
         document.getElementById('uStep2Prog').style.display = 'none';
+    }
+
+    // ── Lightbox ──
+    let lbImages = [], lbIndex = 0;
+    function openLightbox(e, images, startIndex) {
+        e.stopPropagation();
+        lbImages = Array.isArray(images) ? images : [images];
+        lbIndex  = startIndex || 0;
+        showLightboxImage();
+        document.getElementById('imgLightbox').classList.add('open');
+        document.body.style.overflow = 'hidden';
+        document.addEventListener('keydown', lightboxKeyHandler);
+    }
+    function showLightboxImage() {
+        const img     = document.getElementById('imgLightboxImg');
+        const counter = document.getElementById('imgLightboxCounter');
+        img.style.opacity = '0';
+        img.onload = () => { img.style.opacity = '1'; };
+        img.src = lbImages[lbIndex];
+        counter.textContent = lbImages.length > 1 ? `${lbIndex + 1} / ${lbImages.length}` : '';
+        document.getElementById('imgLightboxPrev').classList.toggle('hidden', lbIndex === 0);
+        document.getElementById('imgLightboxNext').classList.toggle('hidden', lbIndex === lbImages.length - 1);
+    }
+    function lightboxNav(dir) {
+        lbIndex = Math.max(0, Math.min(lbImages.length - 1, lbIndex + dir));
+        showLightboxImage();
+    }
+    function lightboxKeyHandler(e) {
+        if (e.key === 'ArrowLeft')  lightboxNav(-1);
+        if (e.key === 'ArrowRight') lightboxNav(1);
+        if (e.key === 'Escape')     closeLightbox();
+    }
+    function closeLightbox() {
+        document.getElementById('imgLightbox').classList.remove('open');
+        document.body.style.overflow = '';
+        document.removeEventListener('keydown', lightboxKeyHandler);
+        lbImages = []; lbIndex = 0;
     }
 
     renderReports();

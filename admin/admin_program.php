@@ -16,6 +16,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_program'])) {
     exit;
 }
 
+// ─── Handle: edit announcement ───────────────────────────────────────────────
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_announcement'])) {
+    $id   = (int) $_POST['announcement_id'];
+    $title = mysqli_real_escape_string($conn, trim($_POST['title']       ?? ''));
+    $body  = mysqli_real_escape_string($conn, trim($_POST['description'] ?? ''));
+    $dept  = mysqli_real_escape_string($conn, trim($_POST['department']  ?? ''));
+
+    $img_update = '';
+    if (!empty($_FILES['edit_image']['name'])) {
+        $upload_dir     = __DIR__ . '/../assets/img/uploads/';
+        $upload_dir_web = 'assets/img/uploads/';
+        if (!is_dir($upload_dir)) mkdir($upload_dir, 0755, true);
+        $ext      = strtolower(pathinfo($_FILES['edit_image']['name'], PATHINFO_EXTENSION));
+        $filename = 'ann_' . time() . '_' . rand(100,999) . '.' . $ext;
+        if (move_uploaded_file($_FILES['edit_image']['tmp_name'], $upload_dir . $filename)) {
+            $img_esc    = mysqli_real_escape_string($conn, $upload_dir_web . $filename);
+            $img_update = ", image_path='$img_esc'";
+        }
+    }
+
+    if ($title && $id > 0) {
+        executeQuery("UPDATE announcements SET title='$title', body='$body', posted_by='$dept' $img_update WHERE id=$id");
+    }
+    header('Location: admin_program.php');
+    exit;
+}
+
+// ─── Handle: delete announcement ─────────────────────────────────────────────
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_announcement'])) {
+    $id = (int) $_POST['announcement_id'];
+    if ($id > 0) {
+        executeQuery("DELETE FROM announcements WHERE id=$id");
+    }
+    header('Location: admin_program.php');
+    exit;
+}
+
 // ─── Handle: update program status ───────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_program_status'])) {
     $id      = (int) $_POST['program_id'];
@@ -105,6 +142,10 @@ $result   = executeQuery("SELECT * FROM programs ORDER BY created_at DESC");
 if ($result) {
     while ($row = mysqli_fetch_assoc($result)) {
         $row['post_type'] = 'project';
+        // Fix image path: stored as assets/img/uploads/... but admin/ needs ../
+        if (!empty($row['image_path'])) {
+            $row['image_path'] = '../' . $row['image_path'];
+        }
         $programs[] = $row;
     }
 }
@@ -119,6 +160,10 @@ if ($ann_result) {
     while ($row = mysqli_fetch_assoc($ann_result)) {
         $row['post_type'] = 'announcement';
         $row['status']    = $row['is_urgent'] ? 'urgent' : 'general';
+        // Fix image path: stored as assets/img/uploads/... but admin/ needs ../
+        if (!empty($row['image_path'])) {
+            $row['image_path'] = '../' . $row['image_path'];
+        }
         $announcements_list[] = $row;
     }
 }
@@ -254,6 +299,8 @@ usort($posts, fn($a, $b) => strtotime($b['created_at']) - strtotime($a['created_
         #imgLightboxPrev:hover, #imgLightboxNext:hover, #imgLightboxClose:hover { background: rgba(255,255,255,0.28); }
         #imgLightboxPrev.hidden, #imgLightboxNext.hidden { display: none; }
         #imgLightboxCounter { position: absolute; bottom: -30px; left: 50%; transform: translateX(-50%); color: rgba(255,255,255,0.7); font-size: 13px; font-weight: 600; white-space: nowrap; }
+        #deleteConfirmModal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.52); z-index:9999; align-items:center; justify-content:center; }
+        #deleteConfirmModal.open { display:flex; }
 
         /* Edit modal */
         #editConfirmModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 9998; align-items: center; justify-content: center; }
@@ -535,38 +582,45 @@ usort($posts, fn($a, $b) => strtotime($b['created_at']) - strtotime($a['created_
         </div>
     </div>
 
-    <!-- Edit Program Modal -->
+    <!-- Edit Modal (Program + Announcement) -->
     <div id="editConfirmModal" onclick="if(event.target===this) closeEditModal()">
         <div class="edit-confirm-box">
-            <div class="edit-confirm-title">
-                <i class="fa fa-pencil" style="color:var(--blue-main); margin-right:8px;"></i>Edit Program
+            <div class="edit-confirm-title" id="editModalTitle">
+                <i class="fa fa-pencil" style="color:var(--blue-main); margin-right:8px;"></i>Edit
             </div>
             <form method="POST" action="admin_program.php" enctype="multipart/form-data" id="editForm">
-                <input type="hidden" name="edit_program" value="1">
-                <input type="hidden" name="program_id"   id="editId">
+                <!-- hidden fields — toggled by JS -->
+                <input type="hidden" name="edit_program"      id="editFlagProgram"  value="1">
+                <input type="hidden" name="edit_announcement" id="editFlagAnn"      value="" disabled>
+                <input type="hidden" name="program_id"        id="editId"           value="">
+                <input type="hidden" name="announcement_id"   id="editAnnId"        value="" disabled>
+
                 <div class="edit-field-group">
                     <label class="edit-field-label">Title</label>
                     <input type="text" class="edit-field-input" name="title" id="editTitle" required>
                 </div>
                 <div class="edit-field-group">
-                    <label class="edit-field-label">Department</label>
+                    <label class="edit-field-label" id="editDeptLabel">Department</label>
                     <input type="text" class="edit-field-input" name="department" id="editDept">
                 </div>
                 <div class="edit-field-group">
-                    <label class="edit-field-label">Description</label>
+                    <label class="edit-field-label" id="editDescLabel">Description</label>
                     <textarea class="edit-field-textarea" name="description" id="editDesc"></textarea>
                 </div>
-                <div class="edit-field-group">
-                    <label class="edit-field-label">Status</label>
-                    <select class="edit-field-select" name="status" id="editStatus">
-                        <option value="planned">Planned</option>
-                        <option value="ongoing">Ongoing</option>
-                        <option value="completed">Completed</option>
-                    </select>
-                </div>
-                <div class="edit-field-group">
-                    <label class="edit-field-label">Start Date</label>
-                    <input type="date" class="edit-field-input" name="start_date" id="editStartDate">
+                <!-- Program-only fields -->
+                <div id="editProgFields">
+                    <div class="edit-field-group">
+                        <label class="edit-field-label">Status</label>
+                        <select class="edit-field-select" name="status" id="editStatus">
+                            <option value="planned">Planned</option>
+                            <option value="ongoing">Ongoing</option>
+                            <option value="completed">Completed</option>
+                        </select>
+                    </div>
+                    <div class="edit-field-group">
+                        <label class="edit-field-label">Start Date</label>
+                        <input type="date" class="edit-field-input" name="start_date" id="editStartDate">
+                    </div>
                 </div>
                 <div class="edit-field-group">
                     <label class="edit-field-label">Replace Image (optional)</label>
@@ -606,8 +660,7 @@ usort($posts, fn($a, $b) => strtotime($b['created_at']) - strtotime($a['created_
 
     <!-- Delete Confirmation Modal -->
     <div id="deleteConfirmModal"
-         style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45);
-                z-index:9999; align-items:center; justify-content:center;">
+         onclick="if(event.target===this) closeDeleteModal()">
         <div style="background:#fff; border-radius:18px; padding:28px 28px 22px; max-width:340px;
                     width:90%; box-shadow:0 8px 40px rgba(0,0,0,0.18); text-align:center;">
             <div style="width:52px; height:52px; border-radius:50%; background:#fff0f0;
@@ -622,7 +675,7 @@ usort($posts, fn($a, $b) => strtotime($b['created_at']) - strtotime($a['created_
                  id="deleteProgramTitle"></div>
             <div style="font-size:12px; color:#c0001a; margin-bottom:18px;">This action cannot be undone.</div>
             <div style="display:flex; gap:10px; justify-content:center;">
-                <button onclick="document.getElementById('deleteConfirmModal').style.display='none'"
+                <button onclick="closeDeleteModal()"
                         style="flex:1; padding:10px; border-radius:10px; border:1.5px solid #e0e4f0;
                                background:#f7f8fc; color:#4a5280; font-weight:700; cursor:pointer; font-size:13px;">
                     Cancel
@@ -640,6 +693,12 @@ usort($posts, fn($a, $b) => strtotime($b['created_at']) - strtotime($a['created_
     <form method="POST" action="admin_program.php" id="deleteFormHidden" style="display:none;">
         <input type="hidden" name="delete_program" value="1">
         <input type="hidden" name="program_id" id="deleteProgramId" value="">
+    </form>
+
+    <!-- Hidden announcement delete form -->
+    <form method="POST" action="admin_program.php" id="deleteAnnFormHidden" style="display:none;">
+        <input type="hidden" name="delete_announcement" value="1">
+        <input type="hidden" name="announcement_id" id="deleteAnnId" value="">
     </form>
 
     <!-- Image Lightbox -->
@@ -736,11 +795,15 @@ usort($posts, fn($a, $b) => strtotime($b['created_at']) - strtotime($a['created_
                          : images.length === 3 ? 'img-count-3'
                          : 'img-count-many';
 
+        // Store images safely on a data attribute to avoid quote-escaping issues in onclick
+        const imagesAttr = JSON.stringify(images).replace(/'/g, '&#39;');
         const cells = visible.map((src, idx) => {
             const isLast  = idx === visible.length - 1 && extra > 0;
             const overlay = isLast ? `<div class="prog-img-overlay">+${extra + 1}</div>` : '';
-            return `<div class="prog-img-cell" onclick="openLightbox(event,${JSON.stringify(images)},${idx})">
-                        <img src="${src.replace(/"/g,'&quot;')}" alt="Program image" loading="lazy">
+            const safeSrc = src.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+            return `<div class="prog-img-cell" data-images='${imagesAttr}' data-index="${idx}" onclick="handleImgClick(event,this)">
+                        <img src="${safeSrc}" alt="Program image" loading="lazy"
+                             onerror="this.closest('.prog-img-cell').style.display='none'">
                         ${overlay}
                     </div>`;
         }).join('');
@@ -775,16 +838,15 @@ usort($posts, fn($a, $b) => strtotime($b['created_at']) - strtotime($a['created_
                    </span>
                </div>` : '';
 
-        // Only show Edit & Delete for projects (not announcements)
-        const dropdownItems = postType === 'project'
-            ? `<button class="prog-dropdown-item" onclick="openEditModal(event,${r.id})">
+        // Show Edit & Delete for both projects and announcements
+        const safeTitle = (r.title || '').replace(/'/g, "\\'");
+        const dropdownItems = `<button class="prog-dropdown-item" onclick="openEditModal(event,${r.id})">
                    <i class="fa fa-pencil"></i> Edit
                </button>
-               <button class="prog-dropdown-item delete-item" onclick="openDeleteModal(event,${r.id},${JSON.stringify(r.title)})">
+               <button class="prog-dropdown-item delete-item"
+                       data-id="${r.id}" data-type="${postType}" data-title="${(r.title||'').replace(/"/g,'&quot;')}"
+                       onclick="openDeleteModal(event,this)">
                    <i class="fa fa-trash"></i> Delete
-               </button>`
-            : `<button class="prog-dropdown-item" onclick="openEditModal(event,${r.id})">
-                   <i class="fa fa-pencil"></i> Edit
                </button>`;
 
         return `
@@ -867,14 +929,36 @@ usort($posts, fn($a, $b) => strtotime($b['created_at']) - strtotime($a['created_
         document.querySelectorAll('.prog-dropdown.open').forEach(d => d.classList.remove('open'));
         const r = programs.find(x => parseInt(x.id) === id);
         if (!r) return;
-        document.getElementById('editId').value        = r.id;
-        document.getElementById('editTitle').value     = r.title;
-        document.getElementById('editDept').value      = r.department;
-        document.getElementById('editDesc').value      = r.description;
-        document.getElementById('editStatus').value    = r.status;
-        document.getElementById('editStartDate').value = r.start_date ? r.start_date.substring(0, 10) : '';
+        const isAnn = (r.post_type || 'project') === 'announcement';
+
+        // Toggle hidden fields
+        document.getElementById('editFlagProgram').disabled = isAnn;
+        document.getElementById('editFlagAnn').disabled     = !isAnn;
+        document.getElementById('editId').disabled          = isAnn;
+        document.getElementById('editAnnId').disabled       = !isAnn;
+        document.getElementById('editId').value             = isAnn ? '' : r.id;
+        document.getElementById('editAnnId').value          = isAnn ? r.id : '';
+
+        // Shared fields
+        document.getElementById('editTitle').value = r.title || '';
+        document.getElementById('editDept').value  = r.department || '';
+        document.getElementById('editDesc').value  = r.description || '';
         document.getElementById('editFileLabel').textContent = 'Keep current image...';
         document.getElementById('editFileInput').value = '';
+
+        // Program-only fields
+        document.getElementById('editProgFields').style.display = isAnn ? 'none' : '';
+        if (!isAnn) {
+            document.getElementById('editStatus').value    = r.status || 'planned';
+            document.getElementById('editStartDate').value = r.start_date ? r.start_date.substring(0, 10) : '';
+        }
+
+        // Update modal title & dept label
+        document.getElementById('editModalTitle').innerHTML =
+            `<i class="fa fa-pencil" style="color:var(--blue-main); margin-right:8px;"></i>Edit ${isAnn ? 'Announcement' : 'Program'}`;
+        document.getElementById('editDeptLabel').textContent = isAnn ? 'Posted By' : 'Department';
+        document.getElementById('editDescLabel').textContent = isAnn ? 'Message' : 'Description';
+
         document.getElementById('editConfirmModal').classList.add('open');
     }
     function closeEditModal()  { document.getElementById('editConfirmModal').classList.remove('open'); }
@@ -885,20 +969,41 @@ usort($posts, fn($a, $b) => strtotime($b['created_at']) - strtotime($a['created_
     function closeSaveConfirm() { document.getElementById('editSaveConfirm').classList.remove('open'); }
 
     // ── Delete modal ──
-    let pendingDeleteId = null;
-    function openDeleteModal(e, id, title) {
+    let pendingDeleteId   = null;
+    let pendingDeleteType = 'project';
+    function openDeleteModal(e, btn) {
         e.stopPropagation();
         document.querySelectorAll('.prog-dropdown.open').forEach(d => d.classList.remove('open'));
-        pendingDeleteId = id;
+        pendingDeleteId   = btn.getAttribute('data-id');
+        pendingDeleteType = btn.getAttribute('data-type') || 'project';
+        const title       = btn.getAttribute('data-title') || 'this item';
         document.getElementById('deleteProgramTitle').textContent = '"' + title + '"';
-        document.getElementById('deleteConfirmModal').style.display = 'flex';
+        document.getElementById('deleteConfirmModal').classList.add('open');
+    }
+    function closeDeleteModal() {
+        document.getElementById('deleteConfirmModal').classList.remove('open');
     }
     function confirmDelete() {
-        document.getElementById('deleteProgramId').value = pendingDeleteId;
-        document.getElementById('deleteFormHidden').submit();
+        if (pendingDeleteType === 'announcement') {
+            document.getElementById('deleteAnnId').value = pendingDeleteId;
+            document.getElementById('deleteAnnFormHidden').submit();
+        } else {
+            document.getElementById('deleteProgramId').value = pendingDeleteId;
+            document.getElementById('deleteFormHidden').submit();
+        }
     }
 
     // ── Lightbox ──
+    // Safe click handler — reads images from data attribute to avoid inline-JS escaping issues
+    function handleImgClick(e, el) {
+        e.stopPropagation();
+        try {
+            const images = JSON.parse(el.getAttribute('data-images'));
+            const index  = parseInt(el.getAttribute('data-index')) || 0;
+            openLightbox(e, images, index);
+        } catch(err) { console.error('Lightbox error:', err); }
+    }
+
     let lbImages = [], lbIndex = 0;
     function openLightbox(e, images, startIndex) {
         e.stopPropagation();
