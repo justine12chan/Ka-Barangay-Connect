@@ -271,7 +271,6 @@ usort($posts, fn($a, $b) => strtotime($b['created_at']) - strtotime($a['created_
         .prog-dropdown-item.delete-item i { color: #c0001a; }
         .prog-dropdown-item.delete-item:hover { background: #fff0f0; }
 
-        /* Lightbox */
         #imgLightbox { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.94); z-index: 9999; align-items: center; justify-content: center; }
         #imgLightbox.open { display: flex; }
         #imgLightboxWrap { position: relative; display: flex; align-items: center; justify-content: center; max-width: 90vw; max-height: 90vh; }
@@ -323,6 +322,10 @@ usort($posts, fn($a, $b) => strtotime($b['created_at']) - strtotime($a['created_
         .save-cancel-btn { flex: 1; padding: 10px; border-radius: 10px; border: 1.5px solid #e0e4f0; background: #f7f8fc; color: #4a5280; font-weight: 700; cursor: pointer; font-size: 13px; }
 
         #programsList { padding: 14px; }
+
+        /* ── Refresh button spin ── */
+        @keyframes fa-spin { 0%{transform:rotate(0deg)} 100%{transform:rotate(360deg)} }
+        #refreshBtn.spinning .fa { animation: fa-spin 0.7s linear infinite; }
     </style>
 </head>
 <body class="page-official">
@@ -330,7 +333,7 @@ usort($posts, fn($a, $b) => strtotime($b['created_at']) - strtotime($a['created_
     <div class="container-fluid p-3 p-md-4">
         <div class="row g-3">
 
-            <!-- SIDEBAR -->
+
             <div class="col-12 col-xl-3">
                 <div class="sidebar">
                     <div class="sidebar-top">
@@ -344,21 +347,27 @@ usort($posts, fn($a, $b) => strtotime($b['created_at']) - strtotime($a['created_
                         </div>
                     </div>
                     <div class="sidebar-footer">
-                        <a href="#" class="sidebar-btn profile"><i class="fa fa-user"></i> Profile</a>
                         <a href="#" class="sidebar-btn logout"
                            onclick="return confirmLogout()"><i class="fa fa-sign-out"></i> Logout</a>
                     </div>
                 </div>
             </div>
 
-            <!-- MAIN CONTENT -->
             <div class="col-12 col-xl-9">
                 <div class="main-card">
-
-                    <!-- Top Nav -->
                     <div class="top-nav">
                         <div class="top-nav-left">
                             <span class="top-nav-title">Programs Overview</span>
+                            <button id="refreshBtn" onclick="refreshPage()" title="Refresh"
+                                style="display:flex; align-items:center; gap:5px; padding:6px 12px;
+                                       border-radius:8px; border:1.5px solid var(--border);
+                                       background:#fff; color:var(--muted); font-size:12px;
+                                       font-weight:700; cursor:pointer; transition:all 0.2s;
+                                       margin-left:8px;"
+                                onmouseover="this.style.borderColor='var(--blue-main)';this.style.color='var(--blue-main)'"
+                                onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">
+                                <i class="fa fa-refresh"></i> Refresh
+                            </button>
                         </div>
                         <div class="top-nav-pills">
                             <a href="admin_dashboard.php" class="nav-pill">Dashboard</a>
@@ -367,7 +376,7 @@ usort($posts, fn($a, $b) => strtotime($b['created_at']) - strtotime($a['created_
                         </div>
                     </div>
 
-                    <!-- Stats -->
+
                     <div class="stats-row">
                         <div class="stat-box" style="border-left-color:#7c3aed;">
                             <div class="stat-label">Planned</div>
@@ -383,10 +392,9 @@ usort($posts, fn($a, $b) => strtotime($b['created_at']) - strtotime($a['created_
                         </div>
                     </div>
 
-                    <!-- Content -->
+    
                     <div class="content-area" style="padding:0;">
 
-                        <!-- Filter bar -->
                         <div style="padding:12px 14px 10px; display:flex; gap:8px; align-items:center;
                                     flex-wrap:wrap; border-bottom:1px solid var(--border);">
                             <div style="display:flex; align-items:center; gap:6px; flex:1; min-width:120px;">
@@ -424,17 +432,14 @@ usort($posts, fn($a, $b) => strtotime($b['created_at']) - strtotime($a['created_
         </div>
     </div>
 
-    <!-- FAB -->
     <button class="rpt-fab" title="Create New" onclick="openUnifiedModal()">
         <i class="fa fa-plus"></i>
     </button>
 
-    <!-- ══ UNIFIED CREATE MODAL ══ -->
     <div class="rpt-modal-overlay" id="unifiedModal"
          onclick="if(event.target===this) closeUnifiedModal()">
         <div class="rpt-modal">
 
-            <!-- Step 1 -->
             <div id="uStep1">
                 <div class="rpt-modal-header">
                     <div>
@@ -461,7 +466,7 @@ usort($posts, fn($a, $b) => strtotime($b['created_at']) - strtotime($a['created_
                 </div>
             </div>
 
-            <!-- Step 2a: Announcement -->
+            <!--Announcement -->
             <div id="uStep2Ann" style="display:none;">
                 <div class="rpt-modal-header">
                     <div style="display:flex; align-items:center; gap:10px;">
@@ -517,7 +522,7 @@ usort($posts, fn($a, $b) => strtotime($b['created_at']) - strtotime($a['created_
                 </form>
             </div>
 
-            <!-- Step 2b: Program -->
+            <!--Program -->
             <div id="uStep2Prog" style="display:none;">
                 <div class="rpt-modal-header">
                     <div style="display:flex; align-items:center; gap:10px;">
@@ -570,7 +575,7 @@ usort($posts, fn($a, $b) => strtotime($b['created_at']) - strtotime($a['created_
         </div>
     </div>
 
-    <!-- Edit Modal (Program + Announcement) -->
+    <!-- Edit Modal -->
     <div id="editConfirmModal" onclick="if(event.target===this) closeEditModal()">
         <div class="edit-confirm-box">
             <div class="edit-confirm-title" id="editModalTitle">
@@ -644,7 +649,7 @@ usort($posts, fn($a, $b) => strtotime($b['created_at']) - strtotime($a['created_
         </div>
     </div>
 
-    <!-- Delete Confirmation Modal -->
+    <!-- Delete Confirmation  -->
     <div id="deleteConfirmModal" onclick="if(event.target===this) closeDeleteModal()">
         <div style="background:#fff; border-radius:18px; padding:28px 28px 22px; max-width:340px;
                     width:90%; box-shadow:0 8px 40px rgba(0,0,0,0.18); text-align:center;">
@@ -672,19 +677,18 @@ usort($posts, fn($a, $b) => strtotime($b['created_at']) - strtotime($a['created_
         </div>
     </div>
 
-    <!-- Hidden delete form -->
+
     <form method="POST" action="admin_program.php" id="deleteFormHidden" style="display:none;">
         <input type="hidden" name="delete_program" value="1">
         <input type="hidden" name="program_id" id="deleteProgramId" value="">
     </form>
 
-    <!-- Hidden announcement delete form -->
     <form method="POST" action="admin_program.php" id="deleteAnnFormHidden" style="display:none;">
         <input type="hidden" name="delete_announcement" value="1">
         <input type="hidden" name="announcement_id" id="deleteAnnId" value="">
     </form>
 
-    <!-- Image Lightbox -->
+ 
     <div id="imgLightbox" onclick="if(event.target===this||event.target.id==='imgLightbox') closeLightbox()">
         <button id="imgLightboxClose" onclick="closeLightbox()"><i class="fa fa-times"></i></button>
         <button id="imgLightboxPrev"  onclick="lightboxNav(-1)"><i class="fa fa-chevron-left"></i></button>
@@ -695,7 +699,7 @@ usort($posts, fn($a, $b) => strtotime($b['created_at']) - strtotime($a['created_
         <button id="imgLightboxNext" onclick="lightboxNav(1)"><i class="fa fa-chevron-right"></i></button>
     </div>
 
-    <!-- Logout Modal -->
+    <!-- Logout -->
     <div id="logoutModal"
          style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45);
                 z-index:9999; align-items:center; justify-content:center;">

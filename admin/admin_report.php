@@ -75,6 +75,9 @@ if ($result) {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="../assets/css/admin.css">
     <style>
+        /* ── Refresh button spin ── */
+        @keyframes fa-spin { 0%{transform:rotate(0deg)} 100%{transform:rotate(360deg)} }
+        #refreshBtn.spinning .fa { animation: fa-spin 0.7s linear infinite; }
         /* ── Lightbox ── */
         #imgLightbox { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.94); z-index:9999; align-items:center; justify-content:center; }
         #imgLightbox.open { display:flex; }
@@ -117,7 +120,6 @@ if ($result) {
                         </div>
                     </div>
                     <div class="sidebar-footer">
-                        <a href="#" class="sidebar-btn profile"><i class="fa fa-user"></i> Profile</a>
                         <a href="#" class="sidebar-btn logout"
                            onclick="return confirmLogout()"><i class="fa fa-sign-out"></i> Logout</a>
                     </div>
@@ -132,6 +134,16 @@ if ($result) {
                     <div class="top-nav">
                         <div class="top-nav-left">
                             <span class="top-nav-title">Reports Overview</span>
+                            <button id="refreshBtn" onclick="refreshPage()" title="Refresh"
+                                style="display:flex; align-items:center; gap:5px; padding:6px 12px;
+                                       border-radius:8px; border:1.5px solid var(--border);
+                                       background:#fff; color:var(--muted); font-size:12px;
+                                       font-weight:700; cursor:pointer; transition:all 0.2s;
+                                       margin-left:8px;"
+                                onmouseover="this.style.borderColor='var(--blue-main)';this.style.color='var(--blue-main)'"
+                                onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">
+                                <i class="fa fa-refresh"></i> Refresh
+                            </button>
                         </div>
                         <div class="top-nav-pills">
                             <a href="admin_dashboard.php" class="nav-pill">Dashboard</a>

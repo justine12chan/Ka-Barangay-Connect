@@ -6,24 +6,19 @@ if (!isset($_SESSION['userID'])) {
 }
 include __DIR__ . '/../connection.php';
 
-// --- Stats ---
 $r_pending   = mysqli_fetch_row(executeQuery("SELECT COUNT(*) FROM reports WHERE status='pending'"))[0]     ?? 0;
 $r_progress  = mysqli_fetch_row(executeQuery("SELECT COUNT(*) FROM reports WHERE status='in-progress'"))[0] ?? 0;
 $r_resolved  = mysqli_fetch_row(executeQuery("SELECT COUNT(*) FROM reports WHERE status='resolved'"))[0]    ?? 0;
 $r_total     = $r_pending + $r_progress + $r_resolved;
-
 $p_planned   = mysqli_fetch_row(executeQuery("SELECT COUNT(*) FROM programs WHERE status='planned'"))[0]    ?? 0;
 $p_ongoing   = mysqli_fetch_row(executeQuery("SELECT COUNT(*) FROM programs WHERE status='ongoing'"))[0]    ?? 0;
 $p_completed = mysqli_fetch_row(executeQuery("SELECT COUNT(*) FROM programs WHERE status='completed'"))[0]  ?? 0;
-
 $ann_total   = mysqli_fetch_row(executeQuery("SELECT COUNT(*) FROM announcements"))[0]                  ?? 0;
 $ann_urgent  = mysqli_fetch_row(executeQuery("SELECT COUNT(*) FROM announcements WHERE is_urgent=1"))[0] ?? 0;
-
-// --- Recent records ---
 $recent_reports = executeQuery("SELECT * FROM reports ORDER BY created_at DESC LIMIT 5");
 $recent_ann     = executeQuery("SELECT * FROM announcements ORDER BY created_at DESC LIMIT 3");
 
-// --- Monthly chart data (last 12 months) ---
+
 $monthly_data = [];
 $monthly_res  = executeQuery("
     SELECT DATE_FORMAT(created_at,'%Y-%m') AS ym,
@@ -39,7 +34,7 @@ if ($monthly_res) {
     while ($row = mysqli_fetch_assoc($monthly_res)) $monthly_data[] = $row;
 }
 
-// --- Category breakdown (group by broad category, stripping "Group|Specific Issue" to just "Group") ---
+
 $category_data = [];
 $cat_res = executeQuery("
     SELECT SUBSTRING_INDEX(category, '|', 1) AS cat_group, COUNT(*) AS cnt
@@ -67,8 +62,6 @@ if ($cat_res) {
 
     <div class="container-fluid p-3 p-md-4">
         <div class="row g-3">
-
-            <!-- SIDEBAR -->
             <div class="col-12 col-lg-3">
                 <div class="sidebar">
                     <div class="sidebar-top">
@@ -82,18 +75,14 @@ if ($cat_res) {
                         </div>
                     </div>
                     <div class="sidebar-footer">
-                        <a href="#" class="sidebar-btn profile"><i class="fa fa-user"></i> Profile</a>
                         <a href="#" class="sidebar-btn logout"
                            onclick="return confirmLogout()"><i class="fa fa-sign-out"></i> Logout</a>
                     </div>
                 </div>
             </div>
 
-            <!-- MAIN CONTENT -->
             <div class="col-12 col-lg-9">
                 <div class="main-card">
-
-                    <!-- Top Nav -->
                     <div class="top-nav">
                         <div class="top-nav-left">
                             <span class="top-nav-title">Dashboard Overview</span>
@@ -120,17 +109,13 @@ if ($cat_res) {
                             <div class="stat-num" style="color:#22cc77;"><?= $r_resolved ?></div>
                         </div>
                     </div>
-
-                    <!-- Content Area -->
                     <div class="content-area">
-
-                        <!-- Overview header -->
                         <div class="content-header">
                             <span class="content-eyebrow">Overview</span>
                             <div class="content-line"></div>
                         </div>
 
-                        <!-- Summary mini-cards -->
+                      
                         <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:20px;">
 
                             <div style="flex:1; min-width:140px; background:var(--faint);
@@ -217,18 +202,14 @@ if ($cat_res) {
 
         </div>
     </div>
-
-    <!-- FAB -->
     <button class="rpt-fab" title="Create New" onclick="openUnifiedModal()">
         <i class="fa fa-plus"></i>
     </button>
 
-    <!-- ══ UNIFIED CREATE MODAL ══ -->
     <div class="rpt-modal-overlay" id="unifiedModal"
          onclick="if(event.target===this) closeUnifiedModal()">
         <div class="rpt-modal">
-
-            <!-- Step 1: Type picker -->
+            <!--Type picker -->
             <div id="uStep1">
                 <div class="rpt-modal-header">
                     <div>
@@ -259,7 +240,7 @@ if ($cat_res) {
                 </div>
             </div>
 
-            <!-- Step 2a: Announcement form -->
+            <!-- Announcement form -->
             <div id="uStep2Ann" style="display:none;">
                 <div class="rpt-modal-header">
                     <div style="display:flex; align-items:center; gap:10px;">
@@ -329,7 +310,7 @@ if ($cat_res) {
                 </form>
             </div>
 
-            <!-- Step 2b: Program form -->
+            <!-- Program form -->
             <div id="uStep2Prog" style="display:none;">
                 <div class="rpt-modal-header">
                     <div style="display:flex; align-items:center; gap:10px;">
@@ -395,7 +376,7 @@ if ($cat_res) {
         </div>
     </div>
 
-    <!-- Logout Confirmation Modal -->
+    <!-- Logout -->
     <div id="logoutModal"
          style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45);
                 z-index:9999; align-items:center; justify-content:center;">
@@ -427,7 +408,6 @@ if ($cat_res) {
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="../assets/js/main.js"></script>
-    <!-- PHP data injected as window globals so admin_dashboard.js stays pure JS -->
     <script>
         window.MONTHLY_DATA  = <?= json_encode($monthly_data) ?>;
         window.CATEGORY_DATA = <?= json_encode($category_data) ?>;

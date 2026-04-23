@@ -2,7 +2,6 @@
 session_start();
 require_once __DIR__ . '/../connection.php';
 
-// Already logged in → go straight to dashboard
 if (isset($_SESSION['userID'])) {
     header('Location: admin_dashboard.php');
     exit;
@@ -47,10 +46,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="stylesheet" href="../assets/css/admin.css">
 </head>
 <body class="page-login">
-
     <div class="blob blob-1"></div>
     <div class="blob blob-2"></div>
-
     <div class="login-card">
 
         <a href="../index.html" class="back-btn" style="margin-left:0; display:inline-flex; width:fit-content;">
