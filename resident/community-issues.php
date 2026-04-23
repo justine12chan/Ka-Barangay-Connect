@@ -88,9 +88,12 @@ if ($result && mysqli_num_rows($result) > 0) {
         $title     = htmlspecialchars($row['title']);
         $desc      = htmlspecialchars($row['description']);
         $img_path  = $row['image_path'] ? htmlspecialchars('../' . $row['image_path']) : '';
-        $category  = isset($row['category']) ? trim($row['category']) : 'Publiko';
-        $cat_label = $category ?: 'Publiko';
-        $cat_icon  = $category_icons[$category] ?? '📋';
+        $raw_cat   = isset($row['category']) ? trim($row['category']) : 'Publiko';
+        // Category stored as "Group|Specific Issue" or just "Group" for old records
+        $cat_parts    = explode('|', $raw_cat, 2);
+        $category     = $cat_parts[0];                                                        // broad group for icon/color lookup
+        $cat_label    = isset($cat_parts[1]) ? $category . ' · ' . $cat_parts[1] : $category; // "Kalikasan · Baradong kanal"
+        $cat_icon     = $category_icons[$category] ?? '📋';
         $report_id = (int) $row['id'];
         $purok     = isset($row['purok']) && $row['purok'] !== '' ? htmlspecialchars($row['purok']) : 'N/A';
         $words     = explode(' ', $reporter);
@@ -112,14 +115,16 @@ if ($result && mysqli_num_rows($result) > 0) {
                             </div>
                             <div class="proj-author-meta">
                                 <p class="proj-author-name"><?= $reporter ?></p>
-                                <p class="proj-date-time">📍 Purok <?= $purok ?> · <?= $date_fmt ?></p>
+                                <p class="proj-date-time">📍<?= $purok ?> · <?= $date_fmt ?></p>
                             </div>
                         </div>
                         <span class="proj-status-badge <?= $pill['class'] ?>"><?= $pill['label'] ?></span>
                     </div>
 
                     <div class="proj-social-body">
-                        <span class="issue-category-pill" data-category="<?= htmlspecialchars($cat_label) ?>"><?= $cat_icon ?> <?= $cat_label ?></span>
+                        <span class="issue-category-pill"
+                              data-category="<?= htmlspecialchars($cat_label) ?>"
+                              data-group="<?= htmlspecialchars($category) ?>"><?= $cat_icon ?> <?= $cat_label ?></span>
                         <p class="proj-social-title"><?= $title ?></p>
                         <p class="proj-social-desc"><?= $desc ?></p>
                     </div>
@@ -145,7 +150,7 @@ if ($result && mysqli_num_rows($result) > 0) {
                         </div>
                         <div class="proj-detail-item">
                             <span class="detail-label">Purok</span>
-                            <span class="detail-value">📍 <?= $purok ?></span>
+                            <span class="detail-value">📍<?= $purok ?></span>
                         </div>
                     </div>
                 </div>
@@ -168,7 +173,9 @@ if ($result && mysqli_num_rows($result) > 0) {
                             <p class="modal-title"><?= $title ?></p>
                             <div class="modal-meta-row">
                                 <span class="proj-status-badge <?= $pill['class'] ?>"><?= $pill['label'] ?></span>
-                                <span class="issue-category-pill" data-category="<?= htmlspecialchars($cat_label) ?>"><?= $cat_icon ?> <?= $cat_label ?></span>
+                                <span class="issue-category-pill"
+                                      data-category="<?= htmlspecialchars($cat_label) ?>"
+                                      data-group="<?= htmlspecialchars($category) ?>"><?= $cat_icon ?> <?= $cat_label ?></span>
                             </div>
                             <div class="modal-detail-grid">
                                 <div><div class="modal-detail-label">Reported by</div><div class="modal-detail-value"><?= $reporter ?></div></div>
@@ -213,7 +220,9 @@ if ($result && mysqli_num_rows($result) > 0) {
 
         function applyCatColors() {
             document.querySelectorAll('.issue-category-pill[data-category]').forEach(pill => {
-                const c = catColors[pill.dataset.category];
+                // data-group = broad category for colors; data-category = specific issue label
+                const group = pill.dataset.group || pill.dataset.category;
+                const c = catColors[group];
                 if (c) {
                     pill.style.background    = c.bg;
                     pill.style.color         = c.color;

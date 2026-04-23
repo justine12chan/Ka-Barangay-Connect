@@ -20,10 +20,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $is_anon     = (!empty($_POST['is_anonymous']) && $_POST['is_anonymous'] === '1') ? 1 : 0;
     $reporter    = $is_anon ? 'Anonymous' : trim($_POST['reporter']    ?? '');
     $purok       = trim($_POST['purok']       ?? '');
-    $category    = trim($_POST['category']    ?? '');
+    $raw_cat     = trim($_POST['category']    ?? '');
     $title       = trim($_POST['title']       ?? '');
     $description = trim($_POST['description'] ?? '');
     $image_path  = null;
+
+    // Split "CategoryGroup|Specific Issue" — value="Kalikasan|Baradong kanal"
+    $cat_parts      = explode('|', $raw_cat, 2);
+    $category       = $cat_parts[0];                                 // e.g. "Kalikasan"
+    $specific_issue = isset($cat_parts[1]) ? $cat_parts[1] : '';    // e.g. "Baradong kanal"
 
     if (empty($title) || empty($category) || empty($description)) {
         $error_msg = 'Please fill in all required fields.';
@@ -44,12 +49,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $r_esc    = mysqli_real_escape_string($conn, $reporter);
         $p_esc    = mysqli_real_escape_string($conn, $purok);
         $cat_esc  = mysqli_real_escape_string($conn, $category);
+        $spec_esc = mysqli_real_escape_string($conn, $specific_issue);
         $t_esc    = mysqli_real_escape_string($conn, $title);
         $d_esc    = mysqli_real_escape_string($conn, $description);
         $img_esc  = $image_path ? "'" . mysqli_real_escape_string($conn, $image_path) . "'" : 'NULL';
 
+        // Save "CategoryGroup|Specific Issue" so community-issues.php can show the specific issue
+        $full_cat_esc = $spec_esc ? "$cat_esc|$spec_esc" : $cat_esc;
+
         $query = "INSERT INTO reports (reporter, purok, is_anonymous, category, title, description, image_path, status)
-                  VALUES ('$r_esc', '$p_esc', $is_anon, '$cat_esc', '$t_esc', '$d_esc', $img_esc, 'pending')";
+                  VALUES ('$r_esc', '$p_esc', $is_anon, '$full_cat_esc', '$t_esc', '$d_esc', $img_esc, 'pending')";
 
         if (executeQuery($query)) {
             $success_msg = 'Your report has been submitted successfully!';
@@ -165,37 +174,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 <div class="field-group">
                     <label class="field-label">Category</label>
+                    <!-- value = "CategoryGroup|Specific Issue" so both are saved -->
+                    <input type="hidden" name="category_group" id="categoryGroup" value="">
                     <select class="field-input" name="category" onchange="updateCategoryBadge(this)" required>
                         <option value="" disabled selected>Select a category...</option>
                         <optgroup label="Isyu sa Imprastraktura">
-                            <option value="Infrastructure">Sirang kalsada</option>
-                            <option value="Infrastructure">Lubak sa daan</option>
-                            <option value="Infrastructure">Sirang tulay</option>
-                            <option value="Infrastructure">Wasak na sidewalk</option>
+                            <option value="Infrastructure|Sirang kalsada">Sirang kalsada</option>
+                            <option value="Infrastructure|Lubak sa daan">Lubak sa daan</option>
+                            <option value="Infrastructure|Sirang tulay">Sirang tulay</option>
+                            <option value="Infrastructure|Wasak na sidewalk">Wasak na sidewalk</option>
                         </optgroup>
                         <optgroup label="Isyu sa Kapaligiran">
-                            <option value="Kalikasan">Baradong kanal</option>
-                            <option value="Kalikasan">Tambak na basura</option>
-                            <option value="Kalikasan">Maruming paligid</option>
-                            <option value="Kalikasan">Mabahong tubig</option>
+                            <option value="Kalikasan|Baradong kanal">Baradong kanal</option>
+                            <option value="Kalikasan|Tambak na basura">Tambak na basura</option>
+                            <option value="Kalikasan|Maruming paligid">Maruming paligid</option>
+                            <option value="Kalikasan|Mabahong tubig">Mabahong tubig</option>
                         </optgroup>
                         <optgroup label="Serbisyong Pangunahing Pangangailangan">
-                            <option value="Serbisyo Publiko">Sirang streetlight</option>
-                            <option value="Serbisyo Publiko">Walang ilaw sa daan</option>
-                            <option value="Serbisyo Publiko">Problema sa tubig</option>
-                            <option value="Serbisyo Publiko">Nawawalang poste ng ilaw</option>
+                            <option value="Serbisyo Publiko|Sirang streetlight">Sirang streetlight</option>
+                            <option value="Serbisyo Publiko|Walang ilaw sa daan">Walang ilaw sa daan</option>
+                            <option value="Serbisyo Publiko|Problema sa tubig">Problema sa tubig</option>
+                            <option value="Serbisyo Publiko|Nawawalang poste ng ilaw">Nawawalang poste ng ilaw</option>
                         </optgroup>
                         <optgroup label="Serbisyong Pampubliko">
-                            <option value="Publiko">Mabagal na aksyon ng barangay</option>
-                            <option value="Publiko">Hindi naasikaso ang reklamo</option>
-                            <option value="Publiko">Kulang ang serbisyo</option>
-                            <option value="Publiko">Walang follow-up</option>
+                            <option value="Publiko|Mabagal na aksyon ng barangay">Mabagal na aksyon ng barangay</option>
+                            <option value="Publiko|Hindi naasikaso ang reklamo">Hindi naasikaso ang reklamo</option>
+                            <option value="Publiko|Kulang ang serbisyo">Kulang ang serbisyo</option>
+                            <option value="Publiko|Walang follow-up">Walang follow-up</option>
                         </optgroup>
                         <optgroup label="Kapayapaan at Kaayusan">
-                            <option value="Kapayapaan">Madilim na lugar sa gabi</option>
-                            <option value="Kapayapaan">Maingay na kapitbahay</option>
-                            <option value="Kapayapaan">Gulo o away</option>
-                            <option value="Kapayapaan">Kahina-hinalang tambay</option>
+                            <option value="Kapayapaan|Madilim na lugar sa gabi">Madilim na lugar sa gabi</option>
+                            <option value="Kapayapaan|Maingay na kapitbahay">Maingay na kapitbahay</option>
+                            <option value="Kapayapaan|Gulo o away">Gulo o away</option>
+                            <option value="Kapayapaan|Kahina-hinalang tambay">Kahina-hinalang tambay</option>
                         </optgroup>
                     </select>
                     <div class="category-badge-row">
@@ -305,7 +316,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     function updateCategoryBadge(sel) {
-        const val = sel.value;
+        const group = sel.value.split('|')[0]; // "Kalikasan|Baradong kanal" → "Kalikasan"
         document.querySelectorAll('.cat-badge').forEach(b => b.style.display = 'none');
         const map = {
             'Infrastructure':   'badge-infra',
@@ -314,7 +325,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'Publiko':          'badge-publiko',
             'Kapayapaan':       'badge-kapayapaan',
         };
-        if (map[val]) document.getElementById(map[val]).style.display = '';
+        if (map[group]) document.getElementById(map[group]).style.display = '';
     }
     </script>
 </body>

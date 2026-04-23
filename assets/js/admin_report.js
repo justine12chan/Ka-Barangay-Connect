@@ -28,6 +28,16 @@ const statusConfig = {
     'resolved':    { label: 'Resolved',    bg: '#e6faed', color: '#128548' },
 };
 
+/* ── Category helpers ── */
+// Stored as "Group|Specific Issue" (new) or just "Group" (old records)
+function catGroup(raw)   { return (raw || '').split('|')[0].trim(); }
+function catSpecific(raw){ const p=(raw||'').split('|'); return p.length>1?p[1].trim():null; }
+function catDisplayLabel(raw) {
+    const g=catGroup(raw), s=catSpecific(raw);
+    return s ? g + ' · ' + s : g;  // "Kalikasan · Baradong kanal"
+}
+function catStyle(raw)   { return catColors[catGroup(raw)] || {bg:'#f1f5f9',color:'#475569',border:'#e2e8f0'}; }
+
 /* ── Helpers ── */
 function fmtDate(str) {
     if (!str) return '—';
@@ -46,6 +56,9 @@ let openDetailId = null;
 
 function buildDetailHtml(r) {
     const st            = statusConfig[r.status] || statusConfig['pending'];
+    const cat           = catStyle(r.category);
+    const grp           = catGroup(r.category);
+    const specific      = catSpecific(r.category);
     const reporter_disp = parseInt(r.is_anonymous) ? 'Anonymous' : (r.reporter || '');
     const imgHtml       = r.image_path
         ? `<div class="rpt-img-wrap" onclick="openLightbox(event,['${r.image_path.replace(/'/g,"\\'")}'],0)" title="Click to enlarge">
@@ -54,30 +67,32 @@ function buildDetailHtml(r) {
                <div class="rpt-img-zoom-hint"><i class="fa fa-search-plus"></i> View full</div>
            </div>` : '';
     const purokHtml = r.purok
-        ? `<div style="font-size:11px; color:var(--muted); margin-top:2px;">📍 ${r.purok}</div>` : '';
+        ? `<div style="font-size:11px; color:rgba(255,255,255,0.7); margin-top:2px;">📍 ${r.purok}</div>` : '';
 
     return `
-    <div style="border-top:1.5px solid var(--border); background:var(--faint);">
-        <div style="background:linear-gradient(135deg,var(--blue-deep) 60%,var(--blue-main));
+    <div style="border-top:2px solid ${cat.border}; background:#fff;">
+        <div style="background:linear-gradient(135deg,${cat.color}dd 0%,${cat.color} 100%);
                     padding:16px 18px;">
             <div style="font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
-                         color:rgba(255,255,255,0.6); margin-bottom:4px;">${r.category}</div>
+                         color:rgba(255,255,255,0.75); margin-bottom:${specific ? '1px' : '4px'};">${grp}</div>
+            ${specific ? `<div style="font-size:12px; font-weight:600; color:rgba(255,255,255,0.95);
+                         margin-bottom:6px; letter-spacing:.01em;">${specific}</div>` : ''}
             <div style="font-family:'Sora',sans-serif; font-size:16px; font-weight:800;
                          color:#fff; margin-bottom:8px;">${r.title}</div>
             <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
                 <span style="font-size:10px; font-weight:700; padding:3px 12px; border-radius:20px;
-                             background:rgba(255,255,255,0.15); color:#fff;
-                             border:1px solid rgba(255,255,255,0.25);">${st.label}</span>
-                <span style="font-size:11px; color:rgba(255,255,255,0.6);">${fmtDate(r.created_at)}</span>
+                             background:rgba(255,255,255,0.2); color:#fff;
+                             border:1px solid rgba(255,255,255,0.35);">${st.label}</span>
+                <span style="font-size:11px; color:rgba(255,255,255,0.75);">${fmtDate(r.created_at)}</span>
             </div>
-            <div style="font-size:11.5px; color:rgba(255,255,255,0.6); margin-top:5px;
+            <div style="font-size:11.5px; color:rgba(255,255,255,0.75); margin-top:5px;
                          display:flex; align-items:center; gap:5px;">
                 <i class="fa fa-${parseInt(r.is_anonymous) ? 'user-secret' : 'user'}"></i>
                 ${reporter_disp}
             </div>
             ${purokHtml}
         </div>
-        <div style="padding:16px 18px;">
+        <div style="padding:16px 18px; background:${cat.bg}08;">
             ${imgHtml}
             <div class="field-group" style="margin-bottom:14px;">
                 <label class="field-label">Description</label>
@@ -111,7 +126,7 @@ function renderReports() {
     const catVal    = document.getElementById('catFilter').value;
     const filtered  = reports.filter(r =>
         (statusVal === 'all' || r.status === statusVal) &&
-        (catVal    === 'all' || r.category === catVal)
+        (catVal    === 'all' || catGroup(r.category) === catVal)
     );
     const list  = document.getElementById('reportsList');
     const empty = document.getElementById('emptyState');
@@ -120,13 +135,14 @@ function renderReports() {
     empty.style.display = 'none';
 
     list.innerHTML = filtered.map(r => {
-        const cat           = catColors[r.category]  || catColors['Infrastructure'];
+        const cat           = catStyle(r.category);
         const st            = statusConfig[r.status] || statusConfig['pending'];
         const reporter_disp = parseInt(r.is_anonymous) ? 'Anonymous' : (r.reporter || '');
         const purok_disp    = r.purok ? ` · ${r.purok}` : '';
         const has_img       = r.image_path
             ? '&nbsp;<i class="fa fa-image" style="color:var(--muted);font-size:10px;" title="Has image"></i>' : '';
         const isOpen        = openDetailId === parseInt(r.id);
+        const badgeLabel    = catDisplayLabel(r.category);
 
         return `
         <div class="rpt-inline-card ${isOpen ? 'is-open' : ''}" data-id="${r.id}"
@@ -139,7 +155,7 @@ function renderReports() {
                     <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:4px;">
                         <span class="rpt-cat-badge"
                               style="background:${cat.bg}; color:${cat.color}; border-color:${cat.border}">
-                            ${r.category}
+                            ${badgeLabel}
                         </span>
                         <span class="rpt-status-badge"
                               style="background:${st.bg}; color:${st.color}">${st.label}</span>
