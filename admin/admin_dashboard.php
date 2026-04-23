@@ -91,7 +91,6 @@ if ($cat_res) {
                     <!-- Top Nav -->
                     <div class="top-nav">
                         <div class="top-nav-left">
-                            <a href="../index.html" class="back-btn light">&#8592; Back</a>
                             <span class="top-nav-title">Dashboard Overview</span>
                         </div>
                         <div class="top-nav-pills">
