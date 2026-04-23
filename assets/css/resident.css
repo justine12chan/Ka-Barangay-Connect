@@ -663,24 +663,31 @@ html.page-resident-html { height: 100%; }
 .floating-btn {
     position: fixed;
     bottom: 28px; right: 28px;
-    width: 56px; height: 56px;
+    height: 44px;
+    padding: 0 22px;
+    width: auto;
     background: var(--blue-main);
     color: var(--yellow-vivid);
-    font-size: 28px; font-weight: 300;
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700;
+    letter-spacing: 0.3px;
+    border-radius: 999px;
+    display: inline-flex; align-items: center; justify-content: center;
     box-shadow: 0 6px 20px rgba(8,0,160,0.4), 0 0 0 3px rgba(245,204,0,0.2);
     z-index: 1000;
     border: 2.5px solid var(--yellow-vivid);
     text-decoration: none;
-    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    white-space: nowrap;
+    transition: none;
     line-height: 1;
 }
 
 .floating-btn:hover {
-    transform: scale(1.12) rotate(90deg);
-    box-shadow: 0 10px 32px rgba(8,0,160,0.5), 0 0 0 6px rgba(245,204,0,0.15);
     color: var(--yellow-vivid);
+    text-decoration: none;
+}
+
+.floating-btn:active {
+    box-shadow: 0 0 0 5px rgba(245,204,0,0.5), 0 0 18px 6px rgba(245,204,0,0.35);
 }
 
 

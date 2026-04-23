@@ -39,11 +39,16 @@ if ($monthly_res) {
     while ($row = mysqli_fetch_assoc($monthly_res)) $monthly_data[] = $row;
 }
 
-// --- Category breakdown ---
+// --- Category breakdown (group by broad category, stripping "Group|Specific Issue" to just "Group") ---
 $category_data = [];
-$cat_res = executeQuery("SELECT category, COUNT(*) AS cnt FROM reports GROUP BY category ORDER BY cnt DESC");
+$cat_res = executeQuery("
+    SELECT SUBSTRING_INDEX(category, '|', 1) AS cat_group, COUNT(*) AS cnt
+    FROM reports
+    GROUP BY cat_group
+    ORDER BY cnt DESC
+");
 if ($cat_res) {
-    while ($row = mysqli_fetch_assoc($cat_res)) $category_data[$row['category']] = (int) $row['cnt'];
+    while ($row = mysqli_fetch_assoc($cat_res)) $category_data[$row['cat_group']] = (int) $row['cnt'];
 }
 ?>
 <!DOCTYPE html>
@@ -422,136 +427,14 @@ if ($cat_res) {
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="../assets/js/main.js"></script>
+    <!-- PHP data injected as window globals so admin_dashboard.js stays pure JS -->
     <script>
-    function confirmLogout() {
-        document.getElementById('logoutModal').style.display = 'flex';
-        return false;
-    }
-
-    // Unified modal
-    function openUnifiedModal() {
-        document.getElementById('uStep1').style.display     = '';
-        document.getElementById('uStep2Ann').style.display  = 'none';
-        document.getElementById('uStep2Prog').style.display = 'none';
-        document.getElementById('unifiedModal').classList.add('open');
-    }
-    function closeUnifiedModal() {
-        document.getElementById('unifiedModal').classList.remove('open');
-    }
-    function chooseType(type) {
-        document.getElementById('uStep1').style.display = 'none';
-        document.getElementById('uStep2Ann').style.display  = (type === 'announcement') ? '' : 'none';
-        document.getElementById('uStep2Prog').style.display = (type === 'program')       ? '' : 'none';
-    }
-    function backToTypePicker() {
-        document.getElementById('uStep1').style.display     = '';
-        document.getElementById('uStep2Ann').style.display  = 'none';
-        document.getElementById('uStep2Prog').style.display = 'none';
-    }
-
-    let urgentOn = false;
-    function toggleUrgent() {
-        urgentOn = !urgentOn;
-        const btn   = document.getElementById('urgentBtn');
-        const label = document.getElementById('urgentBtnLabel');
-        document.getElementById('urgentHidden').value = urgentOn ? '1' : '0';
-        btn.style.background  = urgentOn ? '#c0001a' : '#fff3e0';
-        btn.style.color       = urgentOn ? '#fff'    : '#c47200';
-        btn.style.borderColor = urgentOn ? '#c0001a' : '#ffd580';
-        label.textContent     = urgentOn ? '⚠ Urgent ON' : 'Mark as Urgent';
-    }
-
-    // ── Chart setup ──
-    const monthlyData = <?= json_encode($monthly_data) ?>;
-    const monthLabels = [], totals = [], pendingArr = [], progressArr = [], resolvedArr = [];
-    const now = new Date();
-
-    for (let i = 11; i >= 0; i--) {
-        const d   = new Date(now.getFullYear(), now.getMonth() - i, 1);
-        const ym  = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
-        const lbl = d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
-        monthLabels.push(lbl);
-        const found = monthlyData.find(x => x.ym === ym);
-        totals.push(found ? parseInt(found.total)       : 0);
-        pendingArr.push(found ? parseInt(found.pending)     : 0);
-        progressArr.push(found ? parseInt(found.inprogress) : 0);
-        resolvedArr.push(found ? parseInt(found.resolved)   : 0);
-    }
-
-    let chartInstance = null;
-
-    function buildMonthChart() {
-        return {
-            type: 'bar',
-            data: {
-                labels: monthLabels,
-                datasets: [
-                    { label: 'Pending',     data: pendingArr,  backgroundColor: '#f59c23', borderRadius: 4, stack: 'a' },
-                    { label: 'In Progress', data: progressArr, backgroundColor: '#3b7ef8', borderRadius: 4, stack: 'a' },
-                    { label: 'Resolved',    data: resolvedArr, backgroundColor: '#22cc77', borderRadius: 4, stack: 'a' },
-                ]
-            },
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 12 } } },
-                scales: { x: { grid: { display: false } }, y: { beginAtZero: true, ticks: { stepSize: 1 } } }
-            }
-        };
-    }
-
-    function buildCategoryChart() {
-        const cats   = <?= json_encode($category_data) ?>;
-        const labels = Object.keys(cats), data = Object.values(cats);
-        const colors = ['#3b7ef8', '#f59c23', '#22cc77', '#c0001a', '#8b00c7'];
-        return {
-            type: 'doughnut',
-            data: { labels, datasets: [{ data, backgroundColor: colors.slice(0, labels.length), borderWidth: 2 }] },
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 12 } } }
-            }
-        };
-    }
-
-    function buildStatusChart() {
-        return {
-            type: 'bar',
-            data: {
-                labels: ['Pending', 'In Progress', 'Resolved'],
-                datasets: [{
-                    label: 'Reports',
-                    data: [<?= $r_pending ?>, <?= $r_progress ?>, <?= $r_resolved ?>],
-                    backgroundColor: ['#f59c23', '#3b7ef8', '#22cc77'],
-                    borderRadius: 6
-                }]
-            },
-            options: {
-                responsive: true, maintainAspectRatio: false, indexAxis: 'y',
-                plugins: { legend: { display: false } },
-                scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } }, y: { grid: { display: false } } }
-            }
-        };
-    }
-
-    function switchChartView(view, btn) {
-        document.querySelectorAll('.chart-view-btn').forEach(b => {
-            b.style.background = 'var(--faint)';
-            b.style.color      = 'var(--muted)';
-        });
-        btn.style.background = 'var(--blue-main)';
-        btn.style.color      = '#fff';
-        if (chartInstance) chartInstance.destroy();
-        const ctx = document.getElementById('reportsChart').getContext('2d');
-        const cfg = view === 'month'    ? buildMonthChart()
-                  : view === 'category' ? buildCategoryChart()
-                  : buildStatusChart();
-        chartInstance = new Chart(ctx, cfg);
-    }
-
-    window.addEventListener('DOMContentLoaded', () => {
-        const ctx = document.getElementById('reportsChart').getContext('2d');
-        chartInstance = new Chart(ctx, buildMonthChart());
-    });
+        window.MONTHLY_DATA  = <?= json_encode($monthly_data) ?>;
+        window.CATEGORY_DATA = <?= json_encode($category_data) ?>;
+        window.STAT_PENDING  = <?= (int) $r_pending ?>;
+        window.STAT_PROGRESS = <?= (int) $r_progress ?>;
+        window.STAT_RESOLVED = <?= (int) $r_resolved ?>;
     </script>
+    <script src="../assets/js/admin_dashboard.js"></script>
 </body>
 </html>
