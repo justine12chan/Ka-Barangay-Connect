@@ -174,7 +174,7 @@ else:
         </div>
     </section>
 
-    <a href="report.php" class="floating-btn" title="Submit a report">+</a>
+    <a href="report.php" class="floating-btn" title="Submit a report">+ Add Report</a>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         /* ── Filter tabs ── */

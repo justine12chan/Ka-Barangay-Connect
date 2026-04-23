@@ -226,7 +226,7 @@
     });
     </script>
 
-    <a href="report.php" class="floating-btn" title="Submit a report">+</a>
+    <a href="report.php" class="floating-btn" title="Submit a report">+ Add Report</a>
 
     <!-- ── Modal & Lightbox styles ── -->
     <style>
