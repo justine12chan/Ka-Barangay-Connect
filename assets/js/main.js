@@ -20,20 +20,6 @@ function handleFileChange(e) {
     }
 }
 
-/* ── Report page: category badge ── */
-function updateCategoryBadge(select) {
-    const val    = select.value;
-    const badges = ['infra', 'kalikasan', 'serbisyo', 'publiko', 'kapayapaan'];
-    badges.forEach(b => {
-        const el = document.getElementById('badge-' + b);
-        if (el) el.classList.remove('show');
-    });
-    if (!val) return;
-    const prefix = val.split('-')[0];
-    const el     = document.getElementById('badge-' + prefix);
-    if (el) el.classList.add('show');
-}
-
 /* ── Init: wire up file input events ── */
 document.addEventListener('DOMContentLoaded', function () {
     const fileInput   = document.getElementById('fileInput');

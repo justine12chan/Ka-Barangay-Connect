@@ -1,16 +1,5 @@
-/* ============================================================
-   Ka-Barangay Connect — Admin Program Page
-   assets/js/admin_program.js
-   ============================================================ */
-
-/* ── Data (injected by PHP via window globals before this script loads) ──
-   Expected globals set inline in admin_program.php:
-     window.PROGRAMS_DATA = <?= json_encode(array_values($posts)) ?>;
-   ──────────────────────────────────────────────────────────── */
-
 const programs = window.PROGRAMS_DATA || [];
 
-/* ── Config maps ── */
 const catColors = {
     'Infrastructure':   { bg: '#fff3e0', color: '#c47200', border: '#ffd580' },
     'Kalikasan':        { bg: '#e6faed', color: '#128548', border: '#7de0a4' },
@@ -27,7 +16,6 @@ const typeConfig = {
 const statusPill  = { planned: 'pill-planned', ongoing: 'pill-ongoing', completed: 'pill-completed' };
 const statusLabel = { planned: 'Planned',       ongoing: 'Ongoing',      completed: 'Completed' };
 
-/* ── Helpers ── */
 function fmtDate(str) {
     if (!str) return 'TBD';
     return new Date(str + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -42,7 +30,6 @@ function getCatInitials(cat) {
     return w.length === 1 ? cat.substring(0, 2).toUpperCase() : (w[0][0] + w[1][0]).toUpperCase();
 }
 
-/* ── Image grid builder ── */
 function buildImageGrid(imagePath, progId) {
     if (!imagePath) return '';
     let images = [];
@@ -76,16 +63,15 @@ function buildImageGrid(imagePath, progId) {
     return `<div class="prog-social-images ${countClass}">${cells}</div>`;
 }
 
-/* ── Card builder ── */
 function buildCard(r, isLatest) {
-    const postType   = (r.post_type || 'project').toLowerCase();
-    const tc         = typeConfig[postType] || typeConfig['project'];
-    const cat        = r.department || '';
-    const catC       = catColors[cat] || { bg: '#ededff', color: '#0800a0', border: '#c7c8f0' };
+    const postType    = (r.post_type || 'project').toLowerCase();
+    const tc          = typeConfig[postType] || typeConfig['project'];
+    const cat         = r.department || '';
+    const catC        = catColors[cat] || { bg: '#ededff', color: '#0800a0', border: '#c7c8f0' };
     const avatarStyle = `background:${catC.bg}; color:${catC.color}; border-color:${catC.border};`;
-    const initials   = getCatInitials(cat);
-    const dateStr    = fmtDateTime(r.created_at);
-    const imgHtml    = buildImageGrid(r.image_path, r.id);
+    const initials    = getCatInitials(cat);
+    const dateStr     = fmtDateTime(r.created_at);
+    const imgHtml     = buildImageGrid(r.image_path, r.id);
 
     const typeBadge = `<span class="prog-status-pill" style="background:${tc.bg}; color:${tc.color};
                         border:1.5px solid ${tc.border}; display:inline-flex; align-items:center; gap:5px;">
@@ -141,7 +127,6 @@ function buildCard(r, isLatest) {
     </div>`;
 }
 
-/* ── Render programs ── */
 function renderPrograms() {
     const statusVal = document.getElementById('statusFilter').value;
     const sortVal   = document.getElementById('sortFilter').value;
@@ -177,7 +162,6 @@ function renderPrograms() {
     }
 }
 
-/* ── Three-dot dropdown ── */
 function toggleDropdown(e, id) {
     e.stopPropagation();
     const dd     = document.getElementById('dropdown-' + id);
@@ -189,7 +173,6 @@ document.addEventListener('click', () => {
     document.querySelectorAll('.prog-dropdown.open').forEach(d => d.classList.remove('open'));
 });
 
-/* ── Edit modal ── */
 function openEditModal(e, id) {
     e.stopPropagation();
     document.querySelectorAll('.prog-dropdown.open').forEach(d => d.classList.remove('open'));
@@ -230,7 +213,6 @@ function showSaveConfirm() {
 }
 function closeSaveConfirm() { document.getElementById('editSaveConfirm').classList.remove('open'); }
 
-/* ── Delete modal ── */
 let pendingDeleteId   = null;
 let pendingDeleteType = 'project';
 
@@ -256,7 +238,6 @@ function confirmDelete() {
     }
 }
 
-/* ── Lightbox ── */
 let lbImages = [], lbIndex = 0;
 
 function handleImgClick(e, el) {
@@ -301,13 +282,11 @@ function closeLightbox() {
     lbImages = []; lbIndex = 0;
 }
 
-/* ── Logout ── */
 function confirmLogout() {
     document.getElementById('logoutModal').style.display = 'flex';
     return false;
 }
 
-/* ── Unified create modal ── */
 function openUnifiedModal() {
     document.getElementById('uStep1').style.display     = '';
     document.getElementById('uStep2Ann').style.display  = 'none';
@@ -326,7 +305,6 @@ function backToTypePicker() {
     document.getElementById('uStep2Prog').style.display = 'none';
 }
 
-/* ── Urgent toggle ── */
 let urgentOn = false;
 function toggleUrgent() {
     urgentOn = !urgentOn;
@@ -339,7 +317,12 @@ function toggleUrgent() {
     label.textContent     = urgentOn ? '⚠ Urgent ON' : 'Mark as Urgent';
 }
 
-/* ── Init ── */
+function refreshPage() {
+    const btn = document.getElementById('refreshBtn');
+    btn.classList.add('spinning');
+    window.location.reload();
+}
+
 document.addEventListener('DOMContentLoaded', function () {
     renderPrograms();
 });

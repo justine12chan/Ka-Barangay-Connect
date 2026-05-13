@@ -67,7 +67,37 @@ function buildDetailHtml(r) {
                <div class="rpt-img-zoom-hint"><i class="fa fa-search-plus"></i> View full</div>
            </div>` : '';
     const purokHtml = r.purok
-        ? `<div style="font-size:11px; color:rgba(255,255,255,0.7); margin-top:2px;">📍 ${r.purok}</div>` : '';
+        ? `<div style="font-size:11px; color:rgba(255,255,255,0.7); margin-top:2px;"><i class="fa fa-map-marker" style="margin-right:3px;"></i>${r.purok}</div>` : '';
+
+    // Build comments HTML
+    const comments = r.comments || [];
+    const commentsHtml = comments.length === 0
+        ? `<p style="font-size:12.5px; color:var(--muted); margin:0 0 14px;">No comments yet.</p>`
+        : comments.map(c => {
+            const isAdmin = parseInt(c.is_admin);
+            const name    = isAdmin ? (c.commenter_name || 'Barangay Admin') : (c.resident_name || 'Resident');
+            const initStr = isAdmin ? 'BA' : name.split(' ').map(w=>w[0]||'').join('').toUpperCase().slice(0,2);
+            const dt      = c.created_at ? new Date(c.created_at).toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'}) : '';
+            return `
+            <div style="display:flex; gap:9px; margin-bottom:12px;">
+                <div style="width:30px; height:30px; border-radius:50%; flex-shrink:0;
+                            background:${isAdmin ? 'var(--blue-main)' : '#e2e3f0'};
+                            color:${isAdmin ? '#f5cc00' : 'var(--gray-600)'};
+                            font-size:11px; font-weight:700;
+                            display:flex; align-items:center; justify-content:center;
+                            font-family:'Sora',sans-serif;">${initStr}</div>
+                <div style="flex:1; background:${isAdmin ? '#f0f1ff' : '#f8f9fc'};
+                            border:1px solid ${isAdmin ? 'rgba(8,0,160,.15)' : 'var(--border)'};
+                            border-radius:0 10px 10px 10px; padding:8px 12px;">
+                    <p style="font-size:11.5px; font-weight:700; color:var(--blue-main); margin:0 0 3px;">
+                        ${name}
+                        ${isAdmin ? '<span style="display:inline-block;font-size:9px;font-weight:800;background:var(--blue-main);color:#f5cc00;padding:1px 7px;border-radius:20px;margin-left:5px;text-transform:uppercase;letter-spacing:.05em;">Admin</span>' : ''}
+                    </p>
+                    <p style="font-size:12.5px; color:var(--text); margin:0; line-height:1.55;">${c.comment_text || ''}</p>
+                    <span style="font-size:10px; color:var(--muted); margin-top:4px; display:block;">${dt}</span>
+                </div>
+            </div>`;
+        }).join('');
 
     return `
     <div style="border-top:2px solid ${cat.border}; background:#fff;">
@@ -100,7 +130,7 @@ function buildDetailHtml(r) {
                     ${r.description || '—'}
                 </p>
             </div>
-            <div class="field-group">
+            <div class="field-group" style="margin-bottom:14px;">
                 <label class="field-label">Update Status</label>
                 <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;">
                     <button type="button" class="rpt-status-btn pending"
@@ -116,6 +146,42 @@ function buildDetailHtml(r) {
                         <i class="fa fa-check"></i> Resolved
                     </button>
                 </div>
+            </div>
+
+            <!-- Comments thread -->
+            <div style="border-top:1px solid var(--border); padding-top:14px; margin-top:4px;">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:14px;">
+                    <span style="font-size:11px; font-weight:800; text-transform:uppercase;
+                                 letter-spacing:.08em; color:var(--gray-600);">Comments</span>
+                    <span style="font-size:10px; font-weight:700; color:var(--muted);
+                                 background:var(--gray-200); border-radius:20px; padding:1px 8px;">${comments.length}</span>
+                </div>
+                ${commentsHtml}
+
+                <!-- Admin reply form -->
+                <form method="POST" action="admin_report.php"
+                      style="display:flex; gap:8px; margin-top:8px;">
+                    <input type="hidden" name="admin_comment" value="1">
+                    <input type="hidden" name="report_id"    value="${r.id}">
+                    <input type="text" name="comment_text"
+                           placeholder="Reply as Barangay Admin..."
+                           required
+                           style="flex:1; padding:9px 14px; border:1.5px solid var(--border);
+                                  border-radius:10px; font-size:13px; color:var(--text);
+                                  background:#fff; outline:none; font-family:'DM Sans',sans-serif;
+                                  transition:border-color .18s;"
+                           onfocus="this.style.borderColor='var(--blue-main)'"
+                           onblur="this.style.borderColor='var(--border)'">
+                    <button type="submit"
+                            style="padding:9px 16px; background:var(--blue-main); color:#fff;
+                                   font-weight:700; font-size:12.5px; border:none; border-radius:10px;
+                                   cursor:pointer; white-space:nowrap; font-family:'Sora',sans-serif;
+                                   transition:background .18s;"
+                            onmouseover="this.style.background='#0a00c7'"
+                            onmouseout="this.style.background='var(--blue-main)'">
+                        <i class="fa fa-paper-plane"></i> Reply
+                    </button>
+                </form>
             </div>
         </div>
     </div>`;
@@ -214,46 +280,6 @@ function confirmStatusChange() {
     document.getElementById('formReportIdH').value  = pendingStatusId;
     document.getElementById('formNewStatusH').value = pendingStatusVal;
     document.getElementById('statusFormHidden').submit();
-}
-
-/* ── Logout ── */
-function confirmLogout() {
-    document.getElementById('logoutModal').style.display = 'flex';
-    return false;
-}
-
-/* ── Urgent toggle ── */
-let urgentOn = false;
-function toggleUrgent() {
-    urgentOn = !urgentOn;
-    const btn   = document.getElementById('urgentBtn');
-    const label = document.getElementById('urgentBtnLabel');
-    document.getElementById('urgentHidden').value = urgentOn ? '1' : '0';
-    btn.style.background  = urgentOn ? '#c0001a' : '#fff3e0';
-    btn.style.color       = urgentOn ? '#fff'    : '#c47200';
-    btn.style.borderColor = urgentOn ? '#c0001a' : '#ffd580';
-    label.textContent     = urgentOn ? '⚠ Urgent ON' : 'Mark as Urgent';
-}
-
-/* ── Unified create modal ── */
-function openUnifiedModal() {
-    document.getElementById('uStep1').style.display     = '';
-    document.getElementById('uStep2Ann').style.display  = 'none';
-    document.getElementById('uStep2Prog').style.display = 'none';
-    document.getElementById('unifiedModal').classList.add('open');
-}
-function closeUnifiedModal() {
-    document.getElementById('unifiedModal').classList.remove('open');
-}
-function chooseType(type) {
-    document.getElementById('uStep1').style.display = 'none';
-    document.getElementById('uStep2Ann').style.display  = (type === 'announcement') ? '' : 'none';
-    document.getElementById('uStep2Prog').style.display = (type === 'program')       ? '' : 'none';
-}
-function backToTypePicker() {
-    document.getElementById('uStep1').style.display     = '';
-    document.getElementById('uStep2Ann').style.display  = 'none';
-    document.getElementById('uStep2Prog').style.display = 'none';
 }
 
 /* ── Lightbox ── */
