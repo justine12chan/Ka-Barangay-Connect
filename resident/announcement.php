@@ -32,8 +32,6 @@
 
     <section class="announcements-section">
         <div class="announcements-container">
-
-            <!-- Sort & Search -->
             <div class="announcements-toolbar">
                 <div class="sort-dropdown">
                     <label for="sortBy">Sort by:</label>
@@ -48,7 +46,6 @@
                 </div>
             </div>
 
-            <!-- Feed -->
             <div class="announcements-feed" id="announcementsFeed">
 
             <?php
@@ -101,7 +98,7 @@
 
                 </div>
 
-                <!-- Modal for this announcement -->
+                
                 <div class="issue-modal-backdrop" id="ann-modal-<?= $ann_id ?>" onclick="handleAnnBackdropClick(event,<?= $ann_id ?>)">
                     <div class="issue-modal-sheet" role="dialog" aria-modal="true">
                         <div class="modal-handle"></div>
@@ -154,14 +151,14 @@
                 </div>
             <?php endif; ?>
 
-            </div><!-- /announcementsFeed -->
+            </div>
 
         </div>
     </section>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-    /* ── Search ── */
+ 
     const searchBox    = document.getElementById('searchAnnouncements');
     const sortDropdown = document.getElementById('sortBy');
     const feed         = document.getElementById('announcementsFeed');
@@ -173,7 +170,7 @@
         });
     });
 
-    /* ── Sort ── */
+
     sortDropdown.addEventListener('change', function () {
         const val   = this.value;
         const cards = Array.from(feed.querySelectorAll('.ann-social-card'));
@@ -187,14 +184,13 @@
         cards.forEach(c => feed.appendChild(c));
     });
 
-    /* ── Keyboard nav for cards ── */
+
     document.querySelectorAll('.ann-social-card').forEach(card => {
         card.addEventListener('keydown', e => {
             if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); card.click(); }
         });
     });
 
-    /* ── Modal ── */
     function openAnnModal(id) {
         const m = document.getElementById('ann-modal-' + id);
         if (m) { m.classList.add('open'); document.body.style.overflow = 'hidden'; }
