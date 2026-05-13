@@ -89,12 +89,16 @@ body {
     background: transparent;
     border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
-    overflow: hidden; flex-shrink: 0;
+    flex-shrink: 0;
     box-shadow: none;
 }
 
 .header-logo img,
-.logo img { width: 100%; height: 100%; object-fit: contain; }
+.logo img {
+    width: 100%; height: 100%; object-fit: contain;
+    mix-blend-mode: screen;
+    filter: brightness(1.08);
+}
 
 /* Larger logo variant (resident page header) */
 .header-logo.lg {
@@ -224,11 +228,16 @@ body.page-official {
     width: 70px; height: 70px;
     border-radius: 16px;
     display: flex; align-items: center; justify-content: center;
-    overflow: hidden;
+    /* no overflow:hidden — lets mix-blend-mode work correctly */
     margin-bottom: 12px;
+    background: transparent;
 }
 
-.sidebar-logo-wrap img { width: 100%; height: 100%; object-fit: contain; }
+.sidebar-logo-wrap img {
+    width: 100%; height: 100%; object-fit: contain;
+    mix-blend-mode: screen;      /* knocks out the dark navy background of the PNG */
+    filter: brightness(1.08);    /* slight boost so the seal colours stay vivid */
+}
 
 .sidebar-admin {
     font-family: 'Sora', sans-serif;
@@ -439,10 +448,14 @@ body.page-login {
     width: 52px; height: 52px;
     border-radius: 14px;
     display: flex; align-items: center; justify-content: center;
-    overflow: hidden;
     flex-shrink: 0;
+    background: transparent;
 }
-.login-logo img { width: 100%; height: 100%; object-fit: contain; }
+.login-logo img {
+    width: 100%; height: 100%; object-fit: contain;
+    mix-blend-mode: screen;
+    filter: brightness(1.08);
+}
 
 .login-title {
     font-family: 'Sora', sans-serif;
@@ -1189,3 +1202,100 @@ input[type="date"].field-input {
     border-color: var(--blue-main, #0800a0);
     color: #fff;
 }
+/* ════════════════════════════════════════════════════════════
+   DARK MODE — Floating Toggle Button (global)
+   ════════════════════════════════════════════════════════════ */
+
+.dark-mode-fab {
+    position: fixed;
+    bottom: 28px; right: 28px;
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    border: none;
+    background: var(--blue-main);
+    color: var(--yellow-vivid);
+    font-size: 18px;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(8,0,160,.35);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 9000;
+    transition: transform .2s, box-shadow .2s, background .3s, color .3s;
+    -webkit-tap-highlight-color: transparent;
+}
+.dark-mode-fab:hover {
+    transform: scale(1.1) rotate(-15deg);
+    box-shadow: 0 6px 28px rgba(8,0,160,.5);
+}
+.dark-mode-fab:active { transform: scale(0.95); }
+
+body.dark-mode .dark-mode-fab {
+    background: var(--yellow-vivid);
+    color: var(--blue-main);
+    box-shadow: 0 4px 20px rgba(245,204,0,.35);
+}
+
+/* ── Dark Mode global CSS variable overrides ── */
+body.dark-mode {
+    --white:      #12142a;
+    --light:      #0c0d1e;
+    --faint:      #12142a;
+    --border:     #1e2040;
+    --muted:      #4a5290;
+    --text:       #c8cbed;
+    --text-main:  #c8cbed;
+    --gray-50:    #0c0d1e;
+    --gray-100:   #12142a;
+    --gray-200:   #1e2040;
+    --gray-400:   #3a3e68;
+    --gray-600:   #6a72a8;
+    --gray-800:   #c8cbed;
+    background:   #0c0d1e;
+    color:        #c8cbed;
+}
+
+/* Sidebar stays visually unchanged in dark mode (already dark) */
+body.dark-mode .sidebar {
+    background: var(--blue-deep);
+}
+
+/* Content area backgrounds */
+body.dark-mode .content-card,
+body.dark-mode .prog-social-card,
+body.dark-mode .rpt-inline-card {
+    background: #12142a !important;
+    border-color: #1e2040 !important;
+}
+
+body.dark-mode .prog-social-header,
+body.dark-mode .prog-reporter-name { color: #c8cbed !important; }
+body.dark-mode .prog-reporter-time  { color: #4a5290 !important; }
+body.dark-mode .prog-social-desc    { color: #8890c8 !important; }
+
+/* Modal overlays */
+body.dark-mode .modal-overlay       { background: rgba(0,0,0,.7); }
+body.dark-mode .modal-card          { background: #12142a; border-color: #1e2040; }
+body.dark-mode .modal-title         { color: #c8cbed; }
+
+/* Form inputs in dark mode */
+body.dark-mode .field-input {
+    background: #0c0d1e;
+    border-color: #2a2d52;
+    color: #c8cbed;
+}
+body.dark-mode .field-input:focus {
+    border-color: #5b60d4;
+    box-shadow: 0 0 0 3px rgba(91,96,212,.15);
+}
+body.dark-mode .field-input::placeholder { color: #3a3e68; }
+body.dark-mode .field-label             { color: #4a5290; }
+
+/* Login page dark mode */
+body.dark-mode.page-login { background: #0c0d1e; }
+body.dark-mode .login-card {
+    background: #12142a;
+    border-color: #1e2040;
+    box-shadow: 0 8px 40px rgba(0,0,0,.5);
+}
+body.dark-mode .login-title { color: #c8cbed; }
+body.dark-mode .login-sub   { color: #4a5290; }
+body.dark-mode .form-label-custom { color: #6a72a8; }
