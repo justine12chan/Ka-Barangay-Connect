@@ -170,9 +170,8 @@ function toggleDarkMode() {
 }
 
 window.addEventListener('DOMContentLoaded', () => {
-    // Restore dark mode preference
+    // Body class already applied by inline script — just sync the icon
     if (localStorage.getItem('kbc_dark_mode') === '1') {
-        document.body.classList.add('dark-mode');
         const icon = document.getElementById('darkModeIcon');
         if (icon) icon.className = 'fa fa-sun-o';
     }

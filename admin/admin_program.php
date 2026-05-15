@@ -303,6 +303,7 @@ $current_page = 'admin_program';
     </style>
 </head>
 <body>
+<script>if(localStorage.getItem('kbc_dark_mode')==='1'){document.body.classList.add('dark-mode');}</script>
 <?php include __DIR__ . '/includes/admin_navbar.php'; ?>
 
 <div class="page-wrap">
@@ -378,11 +379,6 @@ $current_page = 'admin_program';
     </div>
 
 </div>
-
-<!-- FAB -->
-<button class="rpt-fab" title="Create New" onclick="openUnifiedModal()">
-    <i class="fa fa-plus"></i>
-</button>
 
 <!-- Unified Create Modal -->
 <div class="rpt-modal-overlay" id="unifiedModal" onclick="if(event.target===this) closeUnifiedModal()">
@@ -634,5 +630,10 @@ $current_page = 'admin_program';
 </script>
 <script src="../assets/js/main.js"></script>
 <script src="../assets/js/admin_program.js"></script>
+
+<!-- Floating Dark Mode Toggle -->
+<button id="darkModeToggle" class="dark-mode-fab" onclick="toggleDarkMode()" title="Toggle dark mode" aria-label="Toggle dark mode">
+    <i class="fa fa-moon-o" id="darkModeIcon"></i>
+</button>
 </body>
 </html>

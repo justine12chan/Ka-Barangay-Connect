@@ -31,8 +31,7 @@ $_nav_items = [
     text-decoration: none; flex-shrink: 0; margin-right: 20px;
 }
 .an-brand-logo {
-    width: 36px; height: 36px; border-radius: 50%; overflow: hidden;
-    background: #f0f1ff; border: 1.5px solid rgba(26,86,219,.18);
+    width: 36px; height: 36px;
     display: flex; align-items: center; justify-content: center;
     flex-shrink: 0;
 }

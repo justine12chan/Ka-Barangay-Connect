@@ -287,6 +287,7 @@ $current_page = 'admin_dashboard';
     </style>
 </head>
 <body>
+<script>if(localStorage.getItem('kbc_dark_mode')==='1'){document.body.classList.add('dark-mode');}</script>
 <?php include __DIR__ . '/includes/admin_navbar.php'; ?>
 
 <div class="dash-wrap">

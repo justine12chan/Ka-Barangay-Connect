@@ -323,6 +323,24 @@ function refreshPage() {
     window.location.reload();
 }
 
+/* ── Dark Mode ── */
+function toggleDarkMode() {
+    const isDark = document.body.classList.toggle('dark-mode');
+    const icon   = document.getElementById('darkModeIcon');
+    if (icon) icon.className = isDark ? 'fa fa-sun-o' : 'fa fa-moon-o';
+    localStorage.setItem('kbc_dark_mode', isDark ? '1' : '0');
+}
+
+function confirmLogout() {
+    document.getElementById('logoutModal').style.display = 'flex';
+    return false;
+}
+
 document.addEventListener('DOMContentLoaded', function () {
+    // Restore dark mode icon state (body class already set by inline script)
+    if (localStorage.getItem('kbc_dark_mode') === '1') {
+        const icon = document.getElementById('darkModeIcon');
+        if (icon) icon.className = 'fa fa-sun-o';
+    }
     renderPrograms();
 });

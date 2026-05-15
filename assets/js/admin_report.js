@@ -168,7 +168,7 @@ function buildDetailHtml(r) {
                            required
                            style="flex:1; padding:9px 14px; border:1.5px solid var(--border);
                                   border-radius:10px; font-size:13px; color:var(--text);
-                                  background:#fff; outline:none; font-family:'DM Sans',sans-serif;
+                                  background:var(--white); outline:none; font-family:'DM Sans',sans-serif;
                                   transition:border-color .18s;"
                            onfocus="this.style.borderColor='var(--blue-main)'"
                            onblur="this.style.borderColor='var(--border)'">
@@ -323,4 +323,58 @@ function closeLightbox() {
 /* ── Init ── */
 document.addEventListener('DOMContentLoaded', function () {
     renderReports();
+    // Restore dark mode icon state (body class already set by inline script)
+    if (localStorage.getItem('kbc_dark_mode') === '1') {
+        const icon = document.getElementById('darkModeIcon');
+        if (icon) icon.className = 'fa fa-sun-o';
+    }
 });
+/* ── Dark Mode ── */
+function toggleDarkMode() {
+    const isDark = document.body.classList.toggle('dark-mode');
+    const icon   = document.getElementById('darkModeIcon');
+    if (icon) icon.className = isDark ? 'fa fa-sun-o' : 'fa fa-moon-o';
+    localStorage.setItem('kbc_dark_mode', isDark ? '1' : '0');
+}
+
+function confirmLogout() {
+    document.getElementById('logoutModal').style.display = 'flex';
+    return false;
+}
+
+function refreshPage() {
+    const btn = document.getElementById('refreshBtn');
+    if (btn) btn.classList.add('spinning');
+    window.location.reload();
+}
+
+/* ── Unified Modal (same as program page) ── */
+function openUnifiedModal() {
+    document.getElementById('uStep1').style.display     = '';
+    document.getElementById('uStep2Ann').style.display  = 'none';
+    document.getElementById('uStep2Prog').style.display = 'none';
+    document.getElementById('unifiedModal').classList.add('open');
+}
+function closeUnifiedModal() { document.getElementById('unifiedModal').classList.remove('open'); }
+function chooseType(type) {
+    document.getElementById('uStep1').style.display = 'none';
+    document.getElementById('uStep2Ann').style.display  = (type === 'announcement') ? '' : 'none';
+    document.getElementById('uStep2Prog').style.display = (type === 'program')       ? '' : 'none';
+}
+function backToTypePicker() {
+    document.getElementById('uStep1').style.display     = '';
+    document.getElementById('uStep2Ann').style.display  = 'none';
+    document.getElementById('uStep2Prog').style.display = 'none';
+}
+
+let urgentOn = false;
+function toggleUrgent() {
+    urgentOn = !urgentOn;
+    const btn   = document.getElementById('urgentBtn');
+    const label = document.getElementById('urgentBtnLabel');
+    document.getElementById('urgentHidden').value = urgentOn ? '1' : '0';
+    btn.style.background  = urgentOn ? '#c0001a' : '#fff3e0';
+    btn.style.color       = urgentOn ? '#fff'    : '#c47200';
+    btn.style.borderColor = urgentOn ? '#c0001a' : '#ffd580';
+    label.textContent     = urgentOn ? '⚠ Urgent ON' : 'Mark as Urgent';
+}

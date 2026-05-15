@@ -1208,7 +1208,7 @@ input[type="date"].field-input {
 
 .dark-mode-fab {
     position: fixed;
-    bottom: 28px; right: 28px;
+    bottom: 28px; left: 28px;
     width: 48px; height: 48px;
     border-radius: 50%;
     border: none;
@@ -1299,3 +1299,483 @@ body.dark-mode .login-card {
 body.dark-mode .login-title { color: #c8cbed; }
 body.dark-mode .login-sub   { color: #4a5290; }
 body.dark-mode .form-label-custom { color: #6a72a8; }
+/* ════════════════════════════════════════════════════════════
+   DARK MODE — Admin Navbar
+   ════════════════════════════════════════════════════════════ */
+body.dark-mode .admin-navbar {
+    background: #12142a;
+    border-bottom-color: #1e2040;
+    box-shadow: 0 2px 16px rgba(0,0,0,.35);
+}
+body.dark-mode .an-brand-name { color: #c8cbed; }
+body.dark-mode .an-brand-sub  { color: #4a5290; }
+body.dark-mode .an-links a    { color: #5a6090; }
+body.dark-mode .an-links a:hover { background: #1a1c38; color: #c8cbed; }
+body.dark-mode .an-links a.active { background: #1a2060; color: #7c9ef8; }
+body.dark-mode .an-divider    { background: #1e2040; }
+body.dark-mode .an-user       { background: #0c0d1e; border-color: #1e2040; }
+body.dark-mode .an-user-name  { color: #c8cbed; }
+body.dark-mode .an-user-pos   { color: #4a5290; }
+body.dark-mode .an-logout-btn { background: #12142a; border-color: #2a1a20; color: #e06070; }
+body.dark-mode .an-logout-btn:hover { background: #1a0d12; border-color: #c0001a; color: #ff6070; }
+body.dark-mode .an-hamburger  { border-color: #1e2040; }
+body.dark-mode .an-hamburger span { background: #8890b8; }
+body.dark-mode .an-mobile-menu { background: #12142a; border-bottom-color: #1e2040; }
+body.dark-mode .an-mobile-menu a { color: #8890b8; }
+body.dark-mode .an-mobile-menu a:hover  { background: #1a1c38; color: #c8cbed; }
+body.dark-mode .an-mobile-menu a.active { background: #1a2060; color: #7c9ef8; }
+body.dark-mode .an-mobile-menu .an-mobile-logout { border-top-color: #1e2040; color: #e06070; }
+
+/* ════════════════════════════════════════════════════════════
+   DARK MODE — Report & Program page cards, stat boxes, selects
+   ════════════════════════════════════════════════════════════ */
+
+/* Page backgrounds */
+body.dark-mode .page-wrap,
+body.dark-mode .dash-wrap { background: #0c0d1e; }
+
+/* Stat boxes */
+body.dark-mode .stat-box {
+    background: #12142a !important;
+    border-color: #1e2040 !important;
+}
+body.dark-mode .stat-label { color: #4a5290 !important; }
+body.dark-mode .stat-num   { color: #c8cbed !important; }
+body.dark-mode .stat-sub   { color: #3a3e68 !important; }
+
+/* Main card & headers */
+body.dark-mode .main-card {
+    background: #12142a !important;
+    border-color: #1e2040 !important;
+}
+body.dark-mode .main-card-header {
+    border-bottom-color: #1e2040 !important;
+}
+body.dark-mode .main-card-title { color: #c8cbed !important; }
+body.dark-mode .main-card-body  { background: #12142a !important; }
+
+/* Report inline cards */
+body.dark-mode .rpt-inline-card {
+    background: #12142a !important;
+    border-color: #1e2040 !important;
+}
+body.dark-mode .rpt-inline-card:hover { background: #16193a !important; }
+
+/* Page header titles */
+body.dark-mode .page-title { color: #c8cbed !important; }
+body.dark-mode .page-sub   { color: #4a5290 !important; }
+body.dark-mode .dash-title { color: #c8cbed !important; }
+body.dark-mode .dash-sub   { color: #4a5290 !important; }
+
+/* Filter selects */
+body.dark-mode .rpt-filter-select {
+    background: #12142a !important;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%234a5290' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 8px center !important;
+    border-color: #1e2040 !important;
+    color: #c8cbed !important;
+}
+
+/* Refresh / header buttons */
+body.dark-mode .refresh-btn {
+    background: #12142a !important;
+    border-color: #1e2040 !important;
+    color: #8890b8 !important;
+}
+body.dark-mode .refresh-btn:hover { border-color: #4a52c0 !important; color: #c8cbed !important; }
+
+/* Inline action buttons in header */
+body.dark-mode button[style*="background:#fff"],
+body.dark-mode button[style*="background: #fff"] {
+    background: #12142a !important;
+    border-color: #1e2040 !important;
+    color: #8890b8 !important;
+}
+
+/* Report list text */
+body.dark-mode .rpt-row-title { color: #c8cbed !important; }
+body.dark-mode .rpt-row-meta  { color: #4a5290 !important; }
+
+/* Empty state */
+body.dark-mode .content-empty {
+    background: #0c0d1e !important;
+    border-color: #1e2040 !important;
+}
+body.dark-mode .content-empty p { color: #4a5290 !important; }
+body.dark-mode .empty-state     { color: #4a5290 !important; }
+
+/* Section cards (dashboard recent reports/announcements) */
+body.dark-mode .section-card {
+    background: #12142a !important;
+    border-color: #1e2040 !important;
+}
+body.dark-mode .section-title { color: #c8cbed !important; }
+body.dark-mode .rpt-row       { background: transparent !important; border-bottom-color: #1e2040 !important; }
+body.dark-mode .rpt-title     { color: #c8cbed !important; }
+body.dark-mode .rpt-date      { color: #4a5290 !important; }
+body.dark-mode .ann-row       { border-bottom-color: #1e2040 !important; }
+body.dark-mode .ann-title     { color: #c8cbed !important; }
+body.dark-mode .ann-meta      { color: #4a5290 !important; }
+body.dark-mode .view-all-link { color: #6a7aef !important; }
+
+/* Chart card */
+body.dark-mode .chart-card {
+    background: #12142a !important;
+    border-color: #1e2040 !important;
+}
+body.dark-mode .chart-card-title { color: #c8cbed !important; }
+body.dark-mode .chart-tabs { background: #0c0d1e !important; }
+body.dark-mode .chart-tab  { color: #4a5290 !important; }
+body.dark-mode .chart-tab.active { background: #1a2060 !important; color: #7c9ef8 !important; }
+
+/* Logout modal dark */
+body.dark-mode #logoutModal > div,
+body.dark-mode #statusConfirmModal > div,
+body.dark-mode #deleteConfirmModal > div,
+body.dark-mode .save-confirm-box,
+body.dark-mode .edit-confirm-box {
+    background: #12142a !important;
+    border: 1px solid #1e2040 !important;
+}
+body.dark-mode #logoutModal [style*="font-size:16px"],
+body.dark-mode #statusConfirmModal [style*="font-size:16px"] { color: #e0e2f5 !important; }
+body.dark-mode #logoutModal [style*="font-size:13px"],
+body.dark-mode #statusConfirmModal [style*="font-size:13px"] { color: #6a72a8 !important; }
+body.dark-mode .save-confirm-title { color: #c8cbed !important; }
+body.dark-mode .save-confirm-sub   { color: #6a72a8 !important; }
+body.dark-mode .edit-confirm-title { color: #c8cbed !important; }
+body.dark-mode .edit-field-input,
+body.dark-mode .edit-field-textarea,
+body.dark-mode .edit-field-select {
+    background: #0c0d1e !important;
+    border-color: #2a2d52 !important;
+    color: #c8cbed !important;
+}
+body.dark-mode .edit-cancel-btn,
+body.dark-mode .save-cancel-btn {
+    background: #1a1d38 !important;
+    border-color: #2a2d52 !important;
+    color: #8890c8 !important;
+}
+
+/* Prog social card body text */
+body.dark-mode .prog-social-card { background: #12142a !important; }
+body.dark-mode .prog-social-card:hover { background: #16193a !important; }
+body.dark-mode .prog-dots-btn    { color: #4a5290 !important; }
+body.dark-mode .prog-dots-btn:hover { background: #1a1c38 !important; color: #c8cbed !important; }
+body.dark-mode .prog-dropdown    { background: #12142a !important; border-color: #1e2040 !important; }
+body.dark-mode .prog-dropdown-item { color: #c8cbed !important; }
+body.dark-mode .prog-dropdown-item:hover { background: #1a1c38 !important; }
+
+/* Report detail panel (inline expand) */
+body.dark-mode [id^="detail-"] > div > div:last-child {
+    background: #0c0d1e !important;
+}
+
+/* ════════════════════════════════════════════════════════════
+   DARK MODE — Unified Create Modal body & tiles
+   ════════════════════════════════════════════════════════════ */
+body.dark-mode .rpt-modal {
+    background: #12142a !important;
+    border-top-color: var(--yellow-vivid) !important;
+}
+body.dark-mode .rpt-modal-body {
+    background: #12142a !important;
+}
+body.dark-mode .rpt-modal-footer {
+    background: #12142a !important;
+    border-top-color: #1e2040 !important;
+}
+
+/* Type-picker tiles */
+body.dark-mode .u-type-tile {
+    background: #0c0d1e !important;
+    border-color: #1e2040 !important;
+}
+body.dark-mode .u-type-tile:hover {
+    background: #16193a !important;
+    border-color: #4a52c0 !important;
+}
+body.dark-mode .u-type-label { color: #c8cbed !important; }
+body.dark-mode .u-type-sub   { color: #4a5290 !important; }
+
+/* Back button inside modal header */
+body.dark-mode .u-back-btn {
+    background: rgba(255,255,255,0.1) !important;
+    border-color: rgba(255,255,255,0.2) !important;
+    color: #fff !important;
+}
+
+/* Field groups inside modal */
+body.dark-mode .field-group .field-label { color: #4a5290 !important; }
+body.dark-mode .field-input,
+body.dark-mode textarea.field-input {
+    background: #0c0d1e !important;
+    border-color: #2a2d52 !important;
+    color: #c8cbed !important;
+}
+body.dark-mode .field-input::placeholder,
+body.dark-mode textarea.field-input::placeholder { color: #3a3e68 !important; }
+
+/* Image upload area inside modal */
+body.dark-mode .rpt-modal-body div[onclick*="click()"] {
+    background: #0c0d1e !important;
+    border-color: #2a2d52 !important;
+}
+body.dark-mode .rpt-modal-body div[onclick*="click()"] span { color: #4a5290 !important; }
+
+/* Cancel / submit buttons */
+body.dark-mode .rpt-modal-cancel {
+    background: #0c0d1e !important;
+    border-color: #1e2040 !important;
+    color: #6a72a8 !important;
+}
+body.dark-mode .rpt-modal-cancel:hover {
+    background: #16193a !important;
+    color: #c8cbed !important;
+}
+
+/* ════════════════════════════════════════════════════════════
+   DARK MODE — Force all body text to be readable (white/light)
+   ════════════════════════════════════════════════════════════ */
+
+/* Catch-all: any element inside dark-mode body that has a dark hardcoded color */
+body.dark-mode *:not(.admin-navbar):not(.admin-navbar *):not(#imgLightbox):not(#imgLightbox *) {
+    color: inherit;
+}
+
+body.dark-mode {
+    color: #e0e2f5;
+}
+
+/* Headings and strong text */
+body.dark-mode h1, body.dark-mode h2, body.dark-mode h3,
+body.dark-mode h4, body.dark-mode h5, body.dark-mode h6,
+body.dark-mode .page-title, body.dark-mode .dash-title,
+body.dark-mode .main-card-title, body.dark-mode .chart-card-title,
+body.dark-mode .section-title, body.dark-mode .stat-hero-label,
+body.dark-mode .prog-reporter-name, body.dark-mode .rpt-row-title,
+body.dark-mode .ann-title, body.dark-mode .rpt-title,
+body.dark-mode .u-type-label, body.dark-mode .edit-confirm-title,
+body.dark-mode .save-confirm-title {
+    color: #ffffff !important;
+}
+
+/* Body / secondary text */
+body.dark-mode p, body.dark-mode span, body.dark-mode div,
+body.dark-mode label, body.dark-mode li, body.dark-mode td,
+body.dark-mode .page-sub, body.dark-mode .dash-sub,
+body.dark-mode .stat-label, body.dark-mode .stat-sub,
+body.dark-mode .prog-reporter-time, body.dark-mode .prog-social-desc,
+body.dark-mode .rpt-row-meta, body.dark-mode .ann-meta,
+body.dark-mode .rpt-date, body.dark-mode .prog-social-meta,
+body.dark-mode .field-label, body.dark-mode .edit-field-label,
+body.dark-mode .u-type-sub, body.dark-mode .save-confirm-sub {
+    color: #c8cbed;
+}
+
+/* Stat numbers keep their accent colors */
+body.dark-mode .stat-num[style*="color:#f59c23"] { color: #f59c23 !important; }
+body.dark-mode .stat-num[style*="color:#22cc77"] { color: #22cc77 !important; }
+body.dark-mode .stat-num[style*="color:#7c3aed"] { color: #a78bfa !important; }
+
+/* Inline hardcoded dark text overrides */
+body.dark-mode [style*="color:#0d0e2e"],
+body.dark-mode [style*="color: #0d0e2e"],
+body.dark-mode [style*="color:#1a1c2e"],
+body.dark-mode [style*="color: #1a1c2e"],
+body.dark-mode [style*="color:#1a2340"],
+body.dark-mode [style*="color: #1a2340"],
+body.dark-mode [style*="color:#474960"],
+body.dark-mode [style*="color: #474960"],
+body.dark-mode [style*="color:#4a5280"],
+body.dark-mode [style*="color: #4a5280"],
+body.dark-mode [style*="color:#23243d"],
+body.dark-mode [style*="color: #23243d"] {
+    color: #e0e2f5 !important;
+}
+
+/* Muted/sub text hardcoded */
+body.dark-mode [style*="color:#8890b8"],
+body.dark-mode [style*="color: #8890b8"],
+body.dark-mode [style*="color:#5c5e80"],
+body.dark-mode [style*="color: #5c5e80"] {
+    color: #6a72a8 !important;
+}
+
+/* Report detail expand panel text */
+body.dark-mode .rpt-inline-card [style*="color:var(--text)"],
+body.dark-mode .rpt-inline-card [style*="color: var(--text)"],
+body.dark-mode .rpt-inline-card div[style*="font-size:13px"],
+body.dark-mode .rpt-inline-card div[style*="font-size:13.5px"],
+body.dark-mode .rpt-inline-card div[style*="font-size:11px"],
+body.dark-mode .rpt-inline-card div[style*="font-weight:700"] {
+    color: #e0e2f5 !important;
+}
+body.dark-mode .rpt-inline-card div[style*="background:#fff"] {
+    background: #12142a !important;
+}
+body.dark-mode .rpt-inline-card div[style*="background: #fff"] {
+    background: #12142a !important;
+}
+
+/* Comment bubbles inside report detail */
+body.dark-mode [style*="background:#f0f1ff"],
+body.dark-mode [style*="background: #f0f1ff"],
+body.dark-mode [style*="background:#f8f9fc"],
+body.dark-mode [style*="background: #f8f9fc"] {
+    background: #16193a !important;
+    border-color: #2a2d52 !important;
+}
+
+/* Inline white backgrounds (cards, rows) */
+body.dark-mode [style*="background:#fff"]:not(.an-logout-btn):not([class*="badge"]):not([class*="pill"]):not([class*="status"]),
+body.dark-mode [style*="background: #fff"]:not(.an-logout-btn):not([class*="badge"]):not([class*="pill"]):not([class*="status"]) {
+    background: #12142a !important;
+}
+body.dark-mode [style*="background:white"]:not([class*="badge"]):not([class*="pill"]):not([class*="status"]),
+body.dark-mode [style*="background: white"]:not([class*="badge"]):not([class*="pill"]):not([class*="status"]) {
+    background: #12142a !important;
+}
+
+/* ════════════════════════════════════════════════════════════
+   DARK MODE — Preserve stat card accent colors (orange/blue/green)
+   These must come LAST to override the catch-all rules above
+   ════════════════════════════════════════════════════════════ */
+
+/* Stat hero card backgrounds — keep their gradient but darken slightly */
+body.dark-mode .stat-hero-card.pending {
+    background: linear-gradient(135deg, #1e1406 0%, #1a1200 100%) !important;
+    border-color: #7a5800 !important;
+}
+body.dark-mode .stat-hero-card.inprogress {
+    background: linear-gradient(135deg, #0a0e24 0%, #080c20 100%) !important;
+    border-color: #1a3070 !important;
+}
+body.dark-mode .stat-hero-card.resolved {
+    background: linear-gradient(135deg, #051810 0%, #041208 100%) !important;
+    border-color: #0e5228 !important;
+}
+
+/* Stat hero VALUES — big numbers keep their accent colors */
+body.dark-mode .stat-hero-card.pending   .stat-hero-value  { color: #f59c23 !important; }
+body.dark-mode .stat-hero-card.inprogress .stat-hero-value { color: #4d8ef8 !important; }
+body.dark-mode .stat-hero-card.resolved  .stat-hero-value  { color: #22cc77 !important; }
+
+/* Stat hero LABELS stay white */
+body.dark-mode .stat-hero-label { color: #e0e2f5 !important; }
+body.dark-mode .stat-hero-sub   { color: #6a72a8 !important; }
+body.dark-mode .stat-hero-bar-label { color: #4a5290 !important; }
+
+/* Progress bar fills keep accent color */
+body.dark-mode .stat-hero-card.pending   .stat-hero-bar-fill  { background: #f59c23 !important; }
+body.dark-mode .stat-hero-card.inprogress .stat-hero-bar-fill { background: #4d8ef8 !important; }
+body.dark-mode .stat-hero-card.resolved  .stat-hero-bar-fill  { background: #22cc77 !important; }
+
+/* Stat hero icons keep their glow */
+body.dark-mode .stat-hero-card.pending   .stat-hero-icon { background: #f59c23 !important; color: #fff !important; }
+body.dark-mode .stat-hero-card.inprogress .stat-hero-icon { background: #1a56db !important; color: #fff !important; }
+body.dark-mode .stat-hero-card.resolved  .stat-hero-icon { background: #22cc77 !important; color: #fff !important; }
+
+/* Report/Program page stat boxes (smaller ones) — keep border accent + number color */
+body.dark-mode .stat-box[style*="border-left-color:#f59c23"] .stat-num { color: #f59c23 !important; }
+body.dark-mode .stat-box[style*="border-left-color:#1a56db"] .stat-num { color: #4d8ef8 !important; }
+body.dark-mode .stat-box[style*="border-left-color:#22cc77"] .stat-num { color: #22cc77 !important; }
+body.dark-mode .stat-box[style*="border-left-color:#7c3aed"] .stat-num { color: #a78bfa !important; }
+
+/* Also catch inline style on the num element itself */
+body.dark-mode .stat-num[style*="color:#f59c23"]  { color: #f59c23 !important; }
+body.dark-mode .stat-num[style*="color:#22cc77"]  { color: #22cc77 !important; }
+body.dark-mode .stat-num[style*="color:#1a56db"]  { color: #4d8ef8 !important; }
+body.dark-mode .stat-num[style*="color:#7c3aed"]  { color: #a78bfa !important; }
+body.dark-mode .stat-num[style*="color:#128548"]  { color: #22cc77 !important; }
+body.dark-mode .stat-num[style*="color:#c47200"]  { color: #f59c23 !important; }
+
+/* ════════════════════════════════════════════════════════════
+   DARK MODE — Update Status buttons (Pending / In Progress / Resolved)
+   ════════════════════════════════════════════════════════════ */
+body.dark-mode .rpt-status-btn.pending {
+    background: #2a1800 !important;
+    color: #f59c23 !important;
+    border-color: #a06000 !important;
+}
+body.dark-mode .rpt-status-btn.pending:hover {
+    background: #3a2200 !important;
+    border-color: #f59c23 !important;
+}
+
+body.dark-mode .rpt-status-btn.in-progress {
+    background: #0a1640 !important;
+    color: #6fa3ff !important;
+    border-color: #1a3a90 !important;
+}
+body.dark-mode .rpt-status-btn.in-progress:hover {
+    background: #102060 !important;
+    border-color: #4d8ef8 !important;
+}
+
+body.dark-mode .rpt-status-btn.resolved {
+    background: #021a0a !important;
+    color: #22cc77 !important;
+    border-color: #0a5228 !important;
+}
+body.dark-mode .rpt-status-btn.resolved:hover {
+    background: #042a10 !important;
+    border-color: #22cc77 !important;
+}
+
+body.dark-mode .rpt-status-btn.active {
+    box-shadow: 0 4px 14px rgba(0,0,0,0.4) !important;
+}
+
+/* ════════════════════════════════════════════════════════════
+   DARK MODE — Comment section inside expanded report
+   ════════════════════════════════════════════════════════════ */
+
+/* Comment input field */
+body.dark-mode .comment-reply-input,
+body.dark-mode input.comment-reply-input {
+    background: #0c0d1e !important;
+    border-color: #2a2d52 !important;
+    color: #e0e2f5 !important;
+}
+body.dark-mode .comment-reply-input::placeholder { color: #3a3e68 !important; }
+
+/* Comments thread border-top divider */
+body.dark-mode .rpt-inline-card [style*="border-top:1px solid var(--border)"] {
+    border-top-color: #1e2040 !important;
+}
+
+/* Comment count badge */
+body.dark-mode .rpt-inline-card [style*="background:var(--gray-200)"] {
+    background: #1e2040 !important;
+    color: #6a72a8 !important;
+}
+
+/* "Comments" label text */
+body.dark-mode .rpt-inline-card [style*="color:var(--gray-600)"] {
+    color: #8890b8 !important;
+}
+
+/* Description text inside expanded panel */
+body.dark-mode .rpt-inline-card p[style*="color:var(--text)"] {
+    color: #c8cbed !important;
+}
+
+/* "Description" field label */
+body.dark-mode .rpt-inline-card .field-label,
+body.dark-mode .rpt-inline-card label.field-label {
+    color: #4a5290 !important;
+}
+
+/* "Update Status" label */
+body.dark-mode .rpt-inline-card .field-group label {
+    color: #4a5290 !important;
+}
+
+/* The whole expanded detail white area */
+body.dark-mode .rpt-inline-card > div > div[style*="background:#fff08"],
+body.dark-mode .rpt-inline-card div[style*="padding:16px 18px"] {
+    background: #0e1020 !important;
+}
