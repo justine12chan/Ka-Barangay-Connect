@@ -46,7 +46,7 @@ $proj_status_map = [
             box-shadow: 0 2px 24px rgba(0,0,0,.35);
         }
         .kbc-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; flex-shrink: 0; margin-right: 28px; }
-        .kbc-brand-logo { width: 38px; height: 38px; border-radius: 50%; overflow: hidden; background: rgba(245,204,0,.12); border: 1.5px solid rgba(245,204,0,.3); display: flex; align-items: center; justify-content: center; }
+        .kbc-brand-logo { width: 38px; height: 38px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center; }
         .kbc-brand-logo img { width: 100%; height: 100%; object-fit: contain; }
         .kbc-brand-name { font-family: 'Sora', sans-serif; font-size: 15px; font-weight: 800; color: #fff; line-height: 1.1; display: block; }
         .kbc-brand-sub  { font-size: 10px; color: #f5cc00; font-weight: 600; display: block; }
@@ -176,7 +176,7 @@ $proj_status_map = [
         .kbc-footer-grid { display: grid; grid-template-columns: 2fr 1fr 1.4fr; gap: 40px; max-width: 1100px; margin: 0 auto; padding: 0 32px 48px; }
         @media (max-width: 900px) { .kbc-footer-grid { grid-template-columns: 1fr 1fr; } }
         @media (max-width: 540px) { .kbc-footer-grid { grid-template-columns: 1fr; padding: 0 20px 40px; } }
-        .footer-brand-logo { width: 52px; height: 52px; border-radius: 50%; overflow: hidden; background: rgba(245,204,0,.1); border: 1.5px solid rgba(245,204,0,.3); margin-bottom: 14px; }
+        .footer-brand-logo { width: 52px; height: 52px; border-radius: 50%; overflow: hidden; margin-bottom: 14px; }
         .footer-brand-logo img { width: 100%; height: 100%; object-fit: contain; }
         .footer-brand-name { font-family: 'Sora', sans-serif; font-size: 17px; font-weight: 800; color: #fff; margin-bottom: 2px; }
         .footer-brand-place { font-size: 12px; color: #f5cc00; font-weight: 600; margin-bottom: 14px; }

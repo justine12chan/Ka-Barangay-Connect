@@ -227,77 +227,78 @@
     <!-- ── Modal & Lightbox styles ── -->
     <style>
         .ann-social-card { cursor: pointer; }
-        .ann-social-card:hover { box-shadow: 0 4px 24px rgba(4,0,90,.12); transform: translateY(-1px); transition: box-shadow .18s, transform .18s; }
 
         .issue-modal-backdrop {
             display:none; position:fixed; inset:0;
-            background:rgba(4,0,90,.45); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px);
+            background:rgba(4,0,50,.52); backdrop-filter:blur(7px); -webkit-backdrop-filter:blur(7px);
             z-index:1050; align-items:flex-end; justify-content:center;
         }
         .issue-modal-backdrop.open { display:flex; }
         .issue-modal-sheet {
-            background:#fff; width:100%; max-width:680px; max-height:88vh;
-            border-radius:20px 20px 0 0; overflow-y:auto;
-            box-shadow:0 -8px 40px rgba(4,0,90,.18);
-            animation:slideUp .26s cubic-bezier(.22,.61,.36,1);
+            background:#fff; width:100%; max-width:680px; max-height:90vh;
+            border-radius:24px 24px 0 0; overflow-y:auto;
+            box-shadow:0 -10px 56px rgba(4,0,90,.22);
+            animation:slideUp .28s cubic-bezier(.22,.61,.36,1);
         }
         @keyframes slideUp { from{transform:translateY(100%);opacity:0} to{transform:translateY(0);opacity:1} }
-        .modal-handle { width:40px; height:4px; background:#e2e8f0; border-radius:2px; margin:12px auto 0; }
+        .modal-handle { width:44px; height:4px; background:#e0e3f0; border-radius:2px; margin:14px auto 0; }
         .modal-sheet-header {
             display:flex; align-items:flex-start; justify-content:space-between;
-            padding:14px 20px 12px; border-bottom:1px solid #e2e8f0; gap:10px;
+            padding:16px 22px 14px; border-bottom:1px solid #eceef8; gap:12px;
         }
         .ann-modal-avatar {
             width:44px; height:44px; border-radius:50%;
-            background:linear-gradient(135deg,#4e8ef7,#04005a);
-            color:#fff; font-size:15px; font-weight:700;
+            background:linear-gradient(135deg,#1008b8,#04005a);
+            color:#fff; font-size:15px; font-weight:800;
             display:flex; align-items:center; justify-content:center; flex-shrink:0; overflow:hidden;
+            box-shadow:0 2px 10px rgba(8,0,160,.25);
         }
         .ann-modal-avatar img { width:100%; height:100%; object-fit:cover; }
         .modal-close-btn {
-            width:32px; height:32px; border:none; background:#f1f5f9;
+            width:34px; height:34px; border:none; background:#f4f5fb;
             border-radius:50%; display:flex; align-items:center; justify-content:center;
-            cursor:pointer; flex-shrink:0; color:#64748b; font-size:18px;
-            transition:background .15s;
+            cursor:pointer; flex-shrink:0; color:#5c5e80; font-size:20px;
+            transition:background .18s, color .18s;
         }
-        .modal-close-btn:hover { background:#e2e8f0; }
-        .modal-sheet-body   { padding:20px; }
-        .modal-title        { font-size:17px; font-weight:700; color:#0f172a; margin:0 0 10px; line-height:1.4; }
-        .modal-meta-row     { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:14px; }
+        .modal-close-btn:hover { background:#e2e3f0; color:#0800a0; }
+        .modal-sheet-body   { padding:22px; }
+        .modal-title        { font-size:18px; font-weight:800; color:#0b0c24; margin:0 0 12px; line-height:1.35; letter-spacing:-0.02em; }
+        .modal-meta-row     { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:16px; }
         .modal-detail-grid  {
-            display:grid; grid-template-columns:1fr 1fr; gap:10px;
-            padding:14px 16px; background:#f0f4ff; border-radius:12px; margin-bottom:14px;
+            display:grid; grid-template-columns:1fr 1fr; gap:12px;
+            padding:15px 18px; background:#f4f5fb; border-radius:14px;
+            border:1px solid #e8eaf6; margin-bottom:16px;
         }
-        .modal-detail-label { font-size:10.5px; font-weight:700; color:#8890b8; text-transform:uppercase; letter-spacing:.07em; margin-bottom:3px; }
-        .modal-detail-value { font-size:13.5px; font-weight:600; color:#0f172a; }
-        .modal-desc         { font-size:14px; color:#475569; line-height:1.7; margin:0 0 14px; }
-        .modal-images       { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:8px; border-radius:10px; overflow:hidden; }
-        .modal-img          { width:100%; height:200px; object-fit:cover; border-radius:8px; background:#f1f5f9; }
+        .modal-detail-label { font-size:10px; font-weight:800; color:#a4abcc; text-transform:uppercase; letter-spacing:.09em; margin-bottom:3px; }
+        .modal-detail-value { font-size:13.5px; font-weight:700; color:#0b0c24; }
+        .modal-desc         { font-size:14.5px; color:#4a5280; line-height:1.75; margin:0 0 16px; }
+        .modal-images       { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:8px; border-radius:12px; overflow:hidden; }
+        .modal-img          { width:100%; height:200px; object-fit:cover; border-radius:10px; background:#f1f3fa; }
 
         .clickable-img { cursor: zoom-in; }
 
         .lightbox-backdrop {
             display:none; position:fixed; inset:0;
-            background:rgba(0,0,0,.92); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+            background:rgba(0,0,0,.94); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
             z-index:2000; align-items:center; justify-content:center;
         }
         .lightbox-backdrop.open { display:flex; }
         .lightbox-backdrop img {
             max-width:92vw; max-height:92vh;
-            object-fit:contain; border-radius:10px;
-            box-shadow:0 8px 60px rgba(0,0,0,.6);
+            object-fit:contain; border-radius:14px;
+            box-shadow:0 12px 80px rgba(0,0,0,.7);
             animation:lbZoom .22s cubic-bezier(.22,.61,.36,1);
         }
         @keyframes lbZoom { from{transform:scale(.88);opacity:0} to{transform:scale(1);opacity:1} }
         .lightbox-close {
             position:fixed; top:18px; right:22px;
-            width:40px; height:40px; border-radius:50%;
-            background:rgba(255,255,255,.12); border:none;
+            width:42px; height:42px; border-radius:50%;
+            background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.1);
             color:#fff; font-size:22px; cursor:pointer;
             display:flex; align-items:center; justify-content:center;
-            transition:background .15s;
+            transition:background .18s;
         }
-        .lightbox-close:hover { background:rgba(255,255,255,.25); }
+        .lightbox-close:hover { background:rgba(255,255,255,.28); }
     </style>
 
     <!-- Lightbox -->
