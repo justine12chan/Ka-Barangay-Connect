@@ -11,6 +11,40 @@
 /* ── GOOGLE FONTS (imported here so HTML files don't need it) ── */
 @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap');
 
+/* ════════════════════════════════════════════════════════════
+   FLUID ROOT FONT SCALE
+   This single rule makes the ENTIRE admin UI scale proportionally.
+   All font-size values in px across every admin page shrink/grow
+   because the browser's default 1rem = 16px is replaced here.
+   • Desktop (≥1280px) → 16px  (normal)
+   • Laptop  (≥1024px) → 15px
+   • Tablet  (≥768px)  → 14px
+   • Mobile  (<768px)  → 13px
+   ════════════════════════════════════════════════════════════ */
+html {
+    font-size: clamp(13px, 0.9vw + 7px, 16px);
+}
+
+/* ── CSS custom properties for font-size steps ──────────────
+   Use these anywhere you want a font size that responds:
+   --fs-xs   ~10–11px  (eyebrows, badges, timestamps)
+   --fs-sm   ~11–12px  (labels, meta, captions)
+   --fs-base ~13–14px  (body text, inputs)
+   --fs-md   ~14–15px  (card subtitles, nav items)
+   --fs-lg   ~16–18px  (card titles, section headers)
+   --fs-xl   ~20–24px  (page titles, stat numbers)
+   --fs-2xl  ~26–32px  (hero stat values)
+   ──────────────────────────────────────────────────────────── */
+:root {
+    --fs-xs:   0.688rem;   /* ~11px at 16px root */
+    --fs-sm:   0.75rem;    /* ~12px */
+    --fs-base: 0.8125rem;  /* ~13px */
+    --fs-md:   0.875rem;   /* ~14px */
+    --fs-lg:   1.0625rem;  /* ~17px */
+    --fs-xl:   1.375rem;   /* ~22px */
+    --fs-2xl:  2rem;       /* ~32px */
+}
+
 /* ── CSS VARIABLES ── */
 :root {
     /* Core palette */
@@ -111,7 +145,7 @@ body {
 .header-title,
 .header-name {
     font-family: 'Sora', sans-serif;
-    font-size: 14px; font-weight: 700;
+    font-size: 17px; font-weight: 700;
     color: var(--white);
     letter-spacing: 0.01em;
     margin: 0 0 2px 0;
@@ -120,7 +154,7 @@ body {
 
 .header-sub,
 .header-loc {
-    font-size: 10.5px;
+    font-size: 13px;
     color: var(--yellow-vivid);
     letter-spacing: 0.1em;
     text-transform: uppercase;
@@ -261,7 +295,7 @@ body.page-official {
     padding: 10px 14px;
     border-radius: 10px;
     color: rgba(255,255,255,.6);
-    font-size: 13px; font-weight: 500;
+    font-size: 15px; font-weight: 500;
     text-decoration: none;
     -webkit-tap-highlight-color: transparent;
     border: 1px solid transparent;
@@ -362,7 +396,7 @@ body.page-official {
 }
 
 .stat-label {
-    font-size: 9.5px; font-weight: 700;
+    font-size: 12px; font-weight: 700;
     letter-spacing: 0.1em; text-transform: uppercase;
     color: var(--muted); margin-bottom: 4px;
 }
@@ -725,33 +759,41 @@ body.page-login {
 
 .rpt-cat-badge {
     font-family: 'Sora', sans-serif;
-    font-size: 9.5px; font-weight: 700;
+    font-size: 12px; font-weight: 700;
     letter-spacing: 0.07em; text-transform: uppercase;
-    padding: 3px 10px; border-radius: 20px;
+    padding: 4px 12px; border-radius: 20px;
     border: 1.5px solid;
+}
+
+/* Kapayapaan category — always red */
+.rpt-cat-badge[data-cat="Kapayapaan"],
+.rpt-cat-badge.cat-kapayapaan {
+    background: #fff0f0 !important;
+    color: #c0001a !important;
+    border-color: #f5b8c0 !important;
 }
 
 .rpt-status-badge {
     font-family: 'Sora', sans-serif;
-    font-size: 9.5px; font-weight: 700;
+    font-size: 12px; font-weight: 700;
     letter-spacing: 0.06em; text-transform: uppercase;
-    padding: 3px 10px; border-radius: 20px;
+    padding: 4px 12px; border-radius: 20px;
 }
 
 .rpt-row-title {
     font-family: 'Sora', sans-serif;
-    font-size: 13.5px; font-weight: 700;
+    font-size: 20px; font-weight: 700;
     color: var(--blue-deep);
     margin-bottom: 5px;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
 .rpt-row-meta {
-    font-size: 11px; color: var(--muted);
+    font-size: 14px; color: var(--muted);
     display: flex; align-items: center; gap: 4px;
     flex-wrap: wrap;
 }
-.rpt-row-meta i { font-size: 10px; }
+.rpt-row-meta i { font-size: 13px; }
 
 .rpt-row-arrow {
     color: var(--gray-400);
@@ -1778,4 +1820,247 @@ body.dark-mode .rpt-inline-card .field-group label {
 body.dark-mode .rpt-inline-card > div > div[style*="background:#fff08"],
 body.dark-mode .rpt-inline-card div[style*="padding:16px 18px"] {
     background: #0e1020 !important;
+}
+
+/* ════════════════════════════════════════════════════════════
+   RESPONSIVE FONT SCALING — ALL ADMIN PAGES
+   These breakpoints proportionally scale every hardcoded px
+   font-size used across admin_dashboard, admin_report,
+   admin_program, navbar, modals, and stat cards.
+   ════════════════════════════════════════════════════════════ */
+
+/* ── SHARED: Navbar / header ── */
+.admin-navbar,
+.an-brand-name,
+.an-links a,
+.an-user-name,
+.an-user-pos,
+.an-logout-btn,
+.header-title,
+.header-name,
+.header-sub,
+.header-pill { font-size: var(--fs-sm); }
+
+/* ── SHARED: Sidebar ── */
+.sidebar-admin     { font-size: var(--fs-md); }
+.sidebar-name      { font-size: var(--fs-xs); }
+.sidebar-nav-item  { font-size: var(--fs-md); }
+.sidebar-btn       { font-size: var(--fs-sm); }
+
+/* ── SHARED: Stat boxes ── */
+.stat-label { font-size: var(--fs-sm); }
+.stat-num   { font-size: var(--fs-2xl); }
+.stat-sub   { font-size: var(--fs-sm); }
+
+/* ── SHARED: Top nav pills ── */
+.nav-pill         { font-size: var(--fs-xs); }
+.top-nav-title    { font-size: var(--fs-sm); }
+
+/* ── SHARED: Report rows ── */
+.rpt-row-title { font-size: var(--fs-lg); }
+.rpt-row-meta  { font-size: var(--fs-md); }
+.rpt-cat-badge,
+.rpt-status-badge { font-size: var(--fs-xs); }
+
+/* ── SHARED: Modal ── */
+.rpt-modal-eyebrow { font-size: var(--fs-xs); }
+.rpt-modal-title   { font-size: var(--fs-lg); }
+.rpt-modal-cancel,
+.rpt-modal-submit  { font-size: var(--fs-sm); }
+.field-label       { font-size: var(--fs-xs); }
+.field-input       { font-size: var(--fs-base); }
+
+/* ── DASHBOARD: Page title/sub ── */
+.dash-title  { font-size: clamp(20px, 2.2vw + 6px, 30px); }
+.dash-sub    { font-size: var(--fs-md); }
+.total-pill  { font-size: var(--fs-sm); }
+
+/* ── DASHBOARD: Stat hero cards ── */
+.stat-hero-value     { font-size: clamp(32px, 3.5vw + 8px, 56px); }
+.stat-hero-label     { font-size: var(--fs-md); }
+.stat-hero-sub       { font-size: var(--fs-sm); }
+.stat-hero-bar-label { font-size: var(--fs-xs); }
+
+/* ── DASHBOARD: Chart card ── */
+.chart-card-title { font-size: var(--fs-lg); }
+.chart-tab        { font-size: var(--fs-sm); }
+
+/* ── DASHBOARD: Section cards ── */
+.section-title { font-size: var(--fs-lg); }
+.rpt-title     { font-size: var(--fs-base); }
+.rpt-badge     { font-size: var(--fs-xs); }
+.rpt-date      { font-size: var(--fs-xs); }
+.ann-title     { font-size: var(--fs-base); }
+.ann-meta      { font-size: var(--fs-xs); }
+
+/* ── REPORT PAGE: Page header ── */
+.page-title { font-size: clamp(18px, 2vw + 6px, 28px); }
+.page-sub   { font-size: var(--fs-md); }
+
+/* ── REPORT PAGE: Main card ── */
+.main-card-title { font-size: var(--fs-lg); }
+.rpt-filter-select { font-size: var(--fs-xs); }
+
+/* ── PROGRAM PAGE: Social cards ── */
+.prog-reporter-name  { font-size: var(--fs-lg); }
+.prog-reporter-time  { font-size: var(--fs-md); }
+.prog-status-pill    { font-size: var(--fs-sm); }
+.prog-social-desc    { font-size: var(--fs-md); }
+.prog-social-meta    { font-size: var(--fs-sm); }
+.prog-dots-btn       { font-size: var(--fs-md); }
+.prog-dropdown-item  { font-size: var(--fs-md); }
+
+/* ── PROGRAM PAGE: Edit modal ── */
+.edit-confirm-title  { font-size: var(--fs-lg); }
+.edit-field-label    { font-size: var(--fs-xs); }
+.edit-field-input,
+.edit-field-textarea,
+.edit-field-select   { font-size: var(--fs-base); }
+.edit-cancel-btn,
+.edit-save-btn       { font-size: var(--fs-sm); }
+
+/* ── PROGRAM PAGE: Save confirm ── */
+.save-confirm-title  { font-size: var(--fs-lg); }
+.save-confirm-sub    { font-size: var(--fs-sm); }
+.save-go-btn,
+.save-cancel-btn     { font-size: var(--fs-sm); }
+
+/* ── Unified type-picker tiles ── */
+.u-type-label { font-size: var(--fs-md); }
+.u-type-sub   { font-size: var(--fs-xs); }
+
+/* ── Login page ── */
+.login-title         { font-size: clamp(15px, 1.4vw + 6px, 18px); }
+.login-sub           { font-size: var(--fs-xs); }
+.form-label-custom   { font-size: var(--fs-xs); }
+.form-input          { font-size: var(--fs-md); }
+.btn-login           { font-size: var(--fs-sm); }
+.login-error         { font-size: var(--fs-sm); }
+.login-footer-note   { font-size: var(--fs-xs); }
+
+/* ════════════════════════════════════════════════════════════
+   BREAKPOINT OVERRIDES — Layout & spacing adjustments
+   ════════════════════════════════════════════════════════════ */
+
+/* ── Large desktop (1280px+) — already handled by clamp root ── */
+
+/* ── Medium laptop (1024px–1279px) ── */
+@media (max-width: 1279px) {
+    .dash-wrap   { padding: 20px 18px; }
+    .page-wrap   { padding: 20px 18px; }
+    .stats-hero  { gap: 12px; }
+    .stat-box    { padding: 14px 16px; }
+}
+
+/* ── Small laptop / large tablet (768px–1023px) ── */
+@media (max-width: 1023px) {
+    .dash-wrap       { padding: 16px 14px; }
+    .page-wrap       { padding: 16px 14px; }
+    .stats-hero      { gap: 10px; }
+    .stats-row       { gap: 10px; }
+    .stat-box        { padding: 12px 14px; }
+    .stat-hero-card  { padding: 18px 16px 16px; }
+    .chart-card      { padding: 16px; }
+    .content-area    { padding: 16px; }
+    .main-card-body  { padding: 14px 16px; }
+    .rpt-row         { padding: 12px 14px; gap: 10px; }
+    .prog-social-card { padding: 14px 16px !important; }
+    .rpt-split-detail.has-content { width: 280px; }
+}
+
+/* ── Tablet (640px–767px) ── */
+@media (max-width: 767px) {
+    .dash-wrap       { padding: 14px 12px 60px; }
+    .page-wrap       { padding: 14px 12px 60px; }
+    .stats-hero      { grid-template-columns: 1fr; gap: 8px; }
+    .stats-row       { flex-direction: column; gap: 8px; }
+    .stat-hero-card  { padding: 16px 14px 14px; }
+    .chart-card      { padding: 14px; margin-bottom: 16px; }
+    .chart-card-header { flex-direction: column; align-items: flex-start; }
+    .chart-tabs      { width: 100%; justify-content: stretch; }
+    .chart-tab       { flex: 1; text-align: center; padding: 5px 8px; }
+    .section-card    { padding: 14px; }
+    .rpt-row         { flex-direction: column; align-items: flex-start; gap: 8px; }
+    .rpt-row-meta    { flex-wrap: wrap; gap: 4px; }
+    .main-card-header { padding: 12px 14px; flex-direction: column; align-items: flex-start; }
+    .main-card-body  { padding: 12px 14px; }
+    .rpt-split-detail.has-content { width: 100%; }
+    .rpt-status-row  { gap: 6px; }
+    .rpt-status-btn  { padding: 8px 8px; font-size: 0.7rem; }
+    .prog-social-card{ padding: 12px 14px !important; }
+    .prog-reporter-name { font-size: var(--fs-md); }
+    .prog-social-desc   { font-size: var(--fs-base); }
+    .prog-social-meta   { flex-direction: column; gap: 4px; }
+    .rpt-modal       { max-width: 100%; border-radius: 14px 14px 0 0; }
+    .rpt-modal-overlay { align-items: flex-end; padding: 0; }
+}
+
+/* ── Mobile (≤479px) ── */
+@media (max-width: 479px) {
+    html { font-size: 13px; }
+
+    .dash-wrap       { padding: 10px 10px 72px; }
+    .page-wrap       { padding: 10px 10px 72px; }
+
+    /* Header */
+    .dash-title      { font-size: 19px; }
+    .dash-sub        { font-size: 12px; }
+    .page-title      { font-size: 18px; }
+    .page-sub        { font-size: 12px; }
+
+    /* Stat hero */
+    .stat-hero-value { font-size: 36px; }
+    .stat-hero-icon  { width: 40px; height: 40px; font-size: 16px; }
+
+    /* Stats row */
+    .stat-num        { font-size: 26px; }
+    .stat-label      { font-size: 10px; }
+
+    /* Chart */
+    .chart-card-title { font-size: 14px; }
+    .chart-tab        { font-size: 11px; padding: 4px 8px; }
+
+    /* Report rows */
+    .rpt-row-title   { font-size: 14px; }
+    .rpt-row-meta    { font-size: 11px; }
+
+    /* Program cards */
+    .prog-reporter-name { font-size: 14px; }
+    .prog-social-desc   { font-size: 13px; }
+
+    /* Modal */
+    .rpt-modal-title { font-size: 15px; }
+    .rpt-modal-body  { padding: 14px 14px 4px; }
+    .rpt-modal-footer{ padding: 10px 14px 16px; }
+    .rpt-modal-submit,
+    .rpt-modal-cancel { padding: 9px 14px; font-size: 11px; }
+
+    /* Sidebar */
+    .sidebar-nav-item { font-size: 11px; padding: 6px 10px; }
+
+    /* Nav pills */
+    .nav-pill         { font-size: 10px; padding: 5px 10px; }
+
+    /* Top nav */
+    .top-nav          { padding: 10px 12px; }
+    .top-nav-title    { font-size: 11px; }
+
+    /* Filter selects */
+    .rpt-filter-select { font-size: 11px; padding: 5px 24px 5px 8px; }
+
+    /* Content area */
+    .content-area     { padding: 12px; }
+    .main-card-body   { padding: 10px 12px; }
+
+    /* FAB */
+    .rpt-fab        { width: 48px; height: 48px; font-size: 18px; bottom: 20px; right: 20px; }
+    .dark-mode-fab  { width: 42px; height: 42px; font-size: 16px; bottom: 20px; left: 20px; }
+
+    /* Section cards */
+    .section-card   { padding: 12px; }
+    .section-title  { font-size: 14px; }
+
+    /* Login */
+    .login-card     { padding: 1.25rem 1rem; }
+    .login-title    { font-size: 15px; }
 }
