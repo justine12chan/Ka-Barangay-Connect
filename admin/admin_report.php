@@ -128,20 +128,49 @@ $current_page = 'admin_report';
 
         /* Page header */
         .page-header { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:20px; }
-        .page-title { font-family:'Sora',sans-serif; font-size:20px; font-weight:800; color:#1a1c2e; margin:0; }
-        .page-sub   { font-size:13px; color:#8890b8; margin:2px 0 0; }
+        .page-title { font-family:'Sora',sans-serif; font-size:28px; font-weight:800; color:#1a1c2e; margin:0; }
+        .page-sub   { font-size:16px; color:#8890b8; margin:2px 0 0; }
 
         /* Stats row */
         .stats-row { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:24px; }
         .stat-box   { background:#fff; border-radius:14px; padding:16px 20px; border:1.5px solid #e8eaf0; border-left:4px solid #e8eaf0; box-shadow:0 2px 10px rgba(0,0,0,.05); }
-        .stat-label { font-size:11px; font-weight:700; color:#8890b8; text-transform:uppercase; letter-spacing:.06em; margin-bottom:4px; }
-        .stat-num   { font-family:'Sora',sans-serif; font-size:26px; font-weight:800; color:#1a1c2e; }
+        .stat-label { font-size:13px; font-weight:700; color:#8890b8; text-transform:uppercase; letter-spacing:.06em; margin-bottom:4px; }
+        .stat-num   { font-family:'Sora',sans-serif; font-size:32px; font-weight:800; color:#1a1c2e; }
 
         /* Main card */
         .main-card { background:#fff; border-radius:16px; border:1.5px solid #e8eaf0; box-shadow:0 2px 10px rgba(0,0,0,.05); }
         .main-card-header { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; padding:16px 20px; border-bottom:1.5px solid #e8eaf0; }
-        .main-card-title  { font-family:'Sora',sans-serif; font-size:14px; font-weight:800; color:#1a1c2e; display:flex; align-items:center; gap:8px; }
+        .main-card-title  { font-family:'Sora',sans-serif; font-size:17px; font-weight:800; color:#1a1c2e; display:flex; align-items:center; gap:8px; }
         .main-card-body   { padding:16px 20px; }
+
+        /* Filter tab buttons */
+        .rpt-filter-tab {
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 6px 12px; border-radius: 8px;
+            border: 1.5px solid var(--border); background: transparent;
+            color: var(--muted); font-family: 'Sora', sans-serif;
+            font-size: 12.5px; font-weight: 700; cursor: pointer;
+            transition: all .18s; white-space: nowrap;
+        }
+        .rpt-filter-tab--active {
+            background: #1a56db; color: #fff; border-color: #1a56db;
+        }
+        .rpt-filter-tab--today-active {
+            background: #f59c23; color: #fff; border-color: #f59c23;
+        }
+        .rpt-filter-tab:hover:not(.rpt-filter-tab--active):not(.rpt-filter-tab--today-active) {
+            border-color: #1a56db; color: #1a56db;
+        }
+        /* Calendar day cells */
+        .cal-day {
+            padding: 5px 2px 3px; border-radius: 8px;
+            font-size: 12px; font-weight: 600; line-height: 1.2;
+            text-align: center; transition: background .15s, transform .1s;
+        }
+        .cal-day.has-reports { cursor: pointer; font-weight: 700; }
+        .cal-day.has-reports:hover { transform: scale(1.1); }
+        .cal-day.is-selected { background: #1a56db !important; color: #fff !important; }
+        .cal-day.is-today:not(.is-selected) { color: #f59c23; font-weight: 800; outline: 1.5px solid #f59c23; outline-offset: -1px; }
     </style>
 </head>
 <body>
@@ -157,10 +186,6 @@ $current_page = 'admin_report';
             <p class="page-sub">Manage and update resident-submitted reports</p>
         </div>
         <div style="display:flex; gap:8px; align-items:center;">
-            <button id="refreshBtn" onclick="refreshPage()"
-                    style="display:flex; align-items:center; gap:5px; padding:8px 14px; border-radius:9px; border:1.5px solid #e8eaf0; background:#fff; color:#474960; font-size:12.5px; font-weight:700; cursor:pointer;">
-                <i class="fa fa-refresh"></i> Refresh
-            </button>
             <button onclick="openUnifiedModal()"
                     style="display:flex; align-items:center; gap:6px; padding:8px 16px; border-radius:9px; background:#1a56db; color:#fff; border:none; font-size:12.5px; font-weight:700; cursor:pointer;">
                 <i class="fa fa-plus"></i> New Post
@@ -188,9 +213,49 @@ $current_page = 'admin_report';
     <div class="main-card">
         <div class="main-card-header">
             <div class="main-card-title">
-                <i class="fa fa-list-ul" style="color:#1a56db;"></i> All Reports
+                <i class="fa fa-flag" style="color:#1a56db;"></i>
+                <span id="reportsListTitle">All Reports</span>
             </div>
-            <div style="display:flex; gap:6px;">
+            <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+
+                <!-- Date range filter -->
+                <div style="position:relative;">
+                    <select class="rpt-filter-select" id="dateFilter" onchange="applyDateFilter(this.value)">
+                        <option value="all">&#128197; All Time</option>
+                        <option value="today">Today</option>
+                        <option value="week">This Week</option>
+                        <option value="month">This Month</option>
+                        <option value="pick">&#128198; Pick a Date...</option>
+                    </select>
+                </div>
+
+                <!-- Calendar picker (shown only when "Pick a Date" is chosen) -->
+                <div id="calDropdown" style="display:none; position:absolute; z-index:9999;
+                            background:var(--white); border:1.5px solid var(--border); border-radius:14px;
+                            box-shadow:0 8px 32px rgba(0,0,0,.14); width:252px; overflow:hidden;">
+                    <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 13px; background:linear-gradient(135deg,#0800a0,#1a56db);">
+                        <button onclick="calNav(-1);event.stopPropagation();" style="border:none; background:rgba(255,255,255,0.15); color:#fff; cursor:pointer; width:26px; height:26px; border-radius:7px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                            <i class="fa fa-chevron-left" style="font-size:10px;"></i>
+                        </button>
+                        <div id="calMonthLabel" style="font-family:'Sora',sans-serif; font-size:13px; font-weight:800; color:#fff;"></div>
+                        <button onclick="calNav(1);event.stopPropagation();" style="border:none; background:rgba(255,255,255,0.15); color:#fff; cursor:pointer; width:26px; height:26px; border-radius:7px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                            <i class="fa fa-chevron-right" style="font-size:10px;"></i>
+                        </button>
+                    </div>
+                    <div style="padding:10px 12px 4px;">
+                        <div id="calGrid" style="display:grid; grid-template-columns:repeat(7,1fr); gap:2px; text-align:center;"></div>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:10px; padding:8px 12px 10px; border-top:1px solid var(--border); margin-top:6px;">
+                        <div style="display:flex; align-items:center; gap:4px; font-size:10px; color:var(--muted); font-weight:600;">
+                            <span style="width:6px; height:6px; border-radius:50%; background:#1a56db; display:inline-block;"></span> Reports
+                        </div>
+                        <div style="display:flex; align-items:center; gap:4px; font-size:10px; color:var(--muted); font-weight:600;">
+                            <span style="width:6px; height:6px; border-radius:50%; background:#f59c23; display:inline-block;"></span> Today
+                        </div>
+                        <button onclick="applyDateFilter('all')" style="margin-left:auto; font-size:10px; font-weight:700; color:#1a56db; background:none; border:none; cursor:pointer; padding:0;">Clear</button>
+                    </div>
+                </div>
+
                 <select class="rpt-filter-select" id="statusFilter" onchange="filterReports()">
                     <option value="all">All Status</option>
                     <option value="pending">Pending</option>
@@ -205,17 +270,24 @@ $current_page = 'admin_report';
                     <option value="Kapayapaan">Kapayapaan</option>
                     <option value="Publiko">Publiko</option>
                 </select>
+
+                <!-- Active date chip (shown when a specific day is picked) -->
+                <div id="activeDateLabel" style="display:none; align-items:center; gap:5px; padding:5px 10px; background:#e8f0fe; border:1.5px solid #90aef8; border-radius:8px; font-size:11.5px; font-weight:700; color:#1a56db;">
+                    <i class="fa fa-calendar" style="font-size:10px;"></i>
+                    <span id="activeDateText"></span>
+                    <button onclick="applyDateFilter('all')" style="border:none; background:none; color:#1a56db; cursor:pointer; font-size:11px; padding:0; margin-left:1px; line-height:1;"><i class="fa fa-times"></i></button>
+                </div>
+
             </div>
         </div>
         <div class="main-card-body">
             <div id="reportsList"></div>
             <div class="content-empty" id="emptyState" style="display:none;">
                 <div class="content-empty-icon"><i class="fa fa-flag"></i></div>
-                <p>No reports match the selected filter.</p>
+                <p id="emptyStateMsg">No reports match the selected filter.</p>
             </div>
         </div>
     </div>
-
 </div>
 
 <!-- ══ UNIFIED CREATE MODAL ══ -->

@@ -173,16 +173,16 @@ $current_page = 'admin_program';
 
         /* ── Page header ── */
         .page-header { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:24px; }
-        .page-title  { font-family:'Sora',sans-serif; font-size:20px; font-weight:800; color:#0d0e2e; margin:0 0 3px; }
-        .page-sub    { font-size:13px; color:#8890b8; margin:0; }
+        .page-title  { font-family:'Sora',sans-serif; font-size:28px; font-weight:800; color:#0d0e2e; margin:0 0 3px; }
+        .page-sub    { font-size:16px; color:#8890b8; margin:0; }
 
         /* ── Stats row (3 boxes matching report style) ── */
         .stats-row { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:24px; }
         @media (max-width:560px) { .stats-row { grid-template-columns:1fr; } }
         .stat-box  { background:#fff; border-radius:14px; padding:16px 20px; border:1.5px solid #e8eaf0; border-left:4px solid #e8eaf0; box-shadow:0 2px 10px rgba(0,0,0,.05); }
-        .stat-label { font-size:11px; font-weight:700; color:#8890b8; text-transform:uppercase; letter-spacing:.06em; margin-bottom:4px; }
-        .stat-num  { font-family:'Sora',sans-serif; font-size:26px; font-weight:800; color:#0d0e2e; }
-        .stat-sub  { font-size:11px; color:#b0b8d8; margin-top:2px; }
+        .stat-label { font-size:13px; font-weight:700; color:#8890b8; text-transform:uppercase; letter-spacing:.06em; margin-bottom:4px; }
+        .stat-num  { font-family:'Sora',sans-serif; font-size:32px; font-weight:800; color:#0d0e2e; }
+        .stat-sub  { font-size:13px; color:#b0b8d8; margin-top:2px; }
 
         /* ── Main card ── */
         .main-card { background:#fff; border-radius:16px; border:1.5px solid #e8eaf0; box-shadow:0 2px 10px rgba(0,0,0,.05); }
@@ -190,7 +190,7 @@ $current_page = 'admin_program';
             display:flex; align-items:center; justify-content:space-between;
             flex-wrap:wrap; gap:10px; padding:16px 20px; border-bottom:1.5px solid #e8eaf0;
         }
-        .main-card-title { font-family:'Sora',sans-serif; font-size:14px; font-weight:800; color:#0d0e2e; display:flex; align-items:center; gap:8px; }
+        .main-card-title { font-family:'Sora',sans-serif; font-size:17px; font-weight:800; color:#0d0e2e; display:flex; align-items:center; gap:8px; }
         .main-card-body  { padding:0; }
 
         /* ── Social feed cards ── */
@@ -211,17 +211,17 @@ $current_page = 'admin_program';
             flex-shrink:0; border:2px solid var(--border); text-align:center; line-height:1.2;
         }
         .prog-reporter-meta { flex:1; min-width:0; }
-        .prog-reporter-name { font-family:'Sora',sans-serif; font-size:14px; font-weight:700; color:var(--text-main); margin:0 0 2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-        .prog-reporter-time { font-size:12px; color:var(--muted); margin:0; }
+        .prog-reporter-name { font-family:'Sora',sans-serif; font-size:17px; font-weight:700; color:var(--text-main); margin:0 0 2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .prog-reporter-time { font-size:14px; color:var(--muted); margin:0; }
 
-        .prog-status-pill { font-size:11px; font-weight:700; padding:4px 12px; border-radius:20px; flex-shrink:0; letter-spacing:.03em; text-transform:uppercase; border:1px solid transparent; }
+        .prog-status-pill { font-size:13px; font-weight:700; padding:5px 14px; border-radius:20px; flex-shrink:0; letter-spacing:.03em; text-transform:uppercase; border:1px solid transparent; }
         .pill-planned   { background:#f3e8ff; color:#7c3aed; border-color:#c4b5fd; }
         .pill-ongoing   { background:#e8f0fe; color:#1a56db; border-color:#93b4f7; }
         .pill-completed { background:#e6faed; color:#128548; border-color:#6dd98d; }
 
         .prog-social-body { padding:0 18px 16px; }
-        .prog-social-desc { font-size:13.5px; color:var(--gray-600); margin:0 0 10px; line-height:1.65; }
-        .prog-social-meta { font-size:12px; color:var(--muted); display:flex; gap:14px; flex-wrap:wrap; margin-top:6px; }
+        .prog-social-desc { font-size:16px; color:var(--gray-600); margin:0 0 10px; line-height:1.65; }
+        .prog-social-meta { font-size:14px; color:var(--muted); display:flex; gap:14px; flex-wrap:wrap; margin-top:6px; }
 
         /* ── Image grid ── */
         .prog-social-images { border-radius:10px; overflow:hidden; margin-bottom:8px; display:grid; gap:3px; }
@@ -242,7 +242,7 @@ $current_page = 'admin_program';
         .prog-dots-btn:hover { background:var(--faint); color:var(--blue-main); }
         .prog-dropdown { position:absolute; top:48px; right:14px; background:white; border:1px solid var(--border); border-radius:10px; box-shadow:0 8px 28px rgba(0,0,0,.13); z-index:200; min-width:130px; display:none; overflow:hidden; }
         .prog-dropdown.open { display:block; }
-        .prog-dropdown-item { display:flex; align-items:center; gap:8px; padding:10px 16px; font-size:13.5px; font-weight:600; color:var(--text-main); cursor:pointer; transition:background .13s; border:none; background:none; width:100%; text-align:left; }
+        .prog-dropdown-item { display:flex; align-items:center; gap:8px; padding:10px 16px; font-size:15px; font-weight:600; color:var(--text-main); cursor:pointer; transition:background .13s; border:none; background:none; width:100%; text-align:left; }
         .prog-dropdown-item:hover { background:var(--faint); }
         .prog-dropdown-item i { font-size:13px; color:var(--blue-main); }
         .prog-dropdown-item.delete-item { color:#c0001a; }
@@ -298,7 +298,7 @@ $current_page = 'admin_program';
         .save-cancel-btn { flex:1; padding:10px; border-radius:10px; border:1.5px solid #e0e4f0; background:#f7f8fc; color:#4a5280; font-weight:700; cursor:pointer; font-size:13px; }
 
         /* ── Filter select ── */
-        .rpt-filter-select { padding:7px 12px; border-radius:9px; border:1.5px solid var(--border); background:#fff; font-size:12.5px; font-weight:600; color:var(--text-main); cursor:pointer; outline:none; transition:border-color .15s; }
+        .rpt-filter-select { padding:7px 12px; border-radius:9px; border:1.5px solid var(--border); background:#fff; font-size:14px; font-weight:600; color:var(--text-main); cursor:pointer; outline:none; transition:border-color .15s; }
         .rpt-filter-select:focus { border-color:var(--blue-main); }
     </style>
 </head>
@@ -315,10 +315,6 @@ $current_page = 'admin_program';
             <p class="page-sub">Manage barangay programs, projects and public announcements</p>
         </div>
         <div style="display:flex; gap:8px; align-items:center;">
-            <button id="refreshBtn" onclick="refreshPage()"
-                    style="display:flex; align-items:center; gap:5px; padding:8px 14px; border-radius:9px; border:1.5px solid #e8eaf0; background:#fff; color:#474960; font-size:12.5px; font-weight:700; cursor:pointer;">
-                <i class="fa fa-refresh"></i> Refresh
-            </button>
             <button onclick="openUnifiedModal()"
                     style="display:flex; align-items:center; gap:6px; padding:8px 16px; border-radius:9px; background:#1a56db; color:#fff; border:none; font-size:12.5px; font-weight:700; cursor:pointer;">
                 <i class="fa fa-plus"></i> New Post

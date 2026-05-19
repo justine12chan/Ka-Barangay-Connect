@@ -51,18 +51,9 @@ $current_page = 'admin_dashboard';
 
         /* ── Page header ── */
         .dash-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 28px; }
-        .dash-title  { font-family: 'Sora', sans-serif; font-size: 22px; font-weight: 800; color: #0d0e2e; margin: 0 0 3px; }
-        .dash-sub    { font-size: 13px; color: #8890b8; margin: 0; }
-        .refresh-btn {
-            display: flex; align-items: center; gap: 7px;
-            padding: 9px 18px; border-radius: 10px;
-            border: 1.5px solid #e8eaf0; background: #fff;
-            font-size: 13px; font-weight: 700; color: #474960;
-            cursor: pointer; transition: border-color .2s, color .2s;
-        }
-        .refresh-btn:hover { border-color: #0800a0; color: #0800a0; }
+        .dash-title  { font-family: 'Sora', sans-serif; font-size: 30px; font-weight: 800; color: #0d0e2e; margin: 0 0 3px; }
+        .dash-sub    { font-size: 16px; color: #8890b8; margin: 0; }
         @keyframes fa-spin { 0%{transform:rotate(0deg)} 100%{transform:rotate(360deg)} }
-        #refreshBtn.spinning .fa { animation: fa-spin 0.7s linear infinite; }
 
         /* ── Hero stat cards ── */
         .stats-hero { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 28px; }
@@ -103,15 +94,15 @@ $current_page = 'admin_dashboard';
         .resolved  .stat-hero-icon { background: #22cc77; color: #fff; box-shadow: 0 4px 14px rgba(34,204,119,.35); }
 
         .stat-hero-value {
-            font-family: 'Sora', sans-serif; font-size: 42px; font-weight: 800; line-height: 1;
+            font-family: 'Sora', sans-serif; font-size: 56px; font-weight: 800; line-height: 1;
             margin-bottom: 6px;
         }
         .pending   .stat-hero-value  { color: #c47200; }
         .inprogress .stat-hero-value { color: #1a56db; }
         .resolved  .stat-hero-value  { color: #128548; }
 
-        .stat-hero-label { font-size: 14px; font-weight: 700; color: #0d0e2e; margin-bottom: 3px; }
-        .stat-hero-sub   { font-size: 12px; color: #8890b8; }
+        .stat-hero-label { font-size: 17px; font-weight: 700; color: #0d0e2e; margin-bottom: 3px; }
+        .stat-hero-sub   { font-size: 14px; color: #8890b8; }
 
         /* Decorative blob */
         .stat-hero-card::after {
@@ -131,7 +122,7 @@ $current_page = 'admin_dashboard';
         .pending   .stat-hero-bar-fill  { background: #f59c23; }
         .inprogress .stat-hero-bar-fill { background: #1a56db; }
         .resolved  .stat-hero-bar-fill  { background: #22cc77; }
-        .stat-hero-bar-label { font-size: 10.5px; color: #8890b8; margin-top: 5px; }
+        .stat-hero-bar-label { font-size: 13px; color: #8890b8; margin-top: 5px; }
 
         /* ── Chart card ── */
         .chart-card {
@@ -145,12 +136,12 @@ $current_page = 'admin_dashboard';
             flex-wrap: wrap; gap: 10px; margin-bottom: 18px;
         }
         .chart-card-title {
-            font-family: 'Sora', sans-serif; font-size: 15px; font-weight: 800;
+            font-family: 'Sora', sans-serif; font-size: 18px; font-weight: 800;
             color: #0d0e2e; display: flex; align-items: center; gap: 8px;
         }
         .chart-tabs { display: flex; gap: 4px; background: #f0f2f8; border-radius: 10px; padding: 3px; }
         .chart-tab {
-            padding: 5px 14px; border-radius: 7px; font-size: 12px; font-weight: 700;
+            padding: 5px 14px; border-radius: 7px; font-size: 14px; font-weight: 700;
             border: none; cursor: pointer; color: #8890b8; background: transparent;
             transition: background .18s, color .18s;
         }
@@ -164,13 +155,13 @@ $current_page = 'admin_dashboard';
             height: 100%;
         }
         .section-title {
-            font-family: 'Sora', sans-serif; font-size: 14px; font-weight: 800;
+            font-family: 'Sora', sans-serif; font-size: 17px; font-weight: 800;
             color: #0d0e2e; margin-bottom: 16px;
             display: flex; align-items: center; gap: 8px;
         }
         .section-title-icon {
-            width: 28px; height: 28px; border-radius: 8px;
-            display: flex; align-items: center; justify-content: center; font-size: 13px;
+            width: 32px; height: 32px; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center; font-size: 15px;
         }
 
         .rpt-row {
@@ -179,21 +170,21 @@ $current_page = 'admin_dashboard';
         }
         .rpt-row:last-child { border-bottom: none; }
 
-        .rpt-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+        .rpt-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
         .rpt-title {
-            font-size: 13px; font-weight: 600; color: #0d0e2e;
+            font-size: 16px; font-weight: 600; color: #0d0e2e;
             flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
         .rpt-badge {
             display: inline-flex; align-items: center;
-            padding: 2px 10px; border-radius: 20px;
-            font-size: 10.5px; font-weight: 700; flex-shrink: 0;
+            padding: 3px 12px; border-radius: 20px;
+            font-size: 13px; font-weight: 700; flex-shrink: 0;
         }
-        .rpt-date { font-size: 11px; color: #b0b8d8; white-space: nowrap; flex-shrink: 0; }
+        .rpt-date { font-size: 13px; color: #b0b8d8; white-space: nowrap; flex-shrink: 0; }
 
         .view-all-link {
             display: block; text-align: right;
-            margin-top: 14px; font-size: 12.5px;
+            margin-top: 14px; font-size: 15px;
             color: #1a56db; font-weight: 700; text-decoration: none;
         }
         .view-all-link:hover { text-decoration: underline; }
@@ -205,18 +196,18 @@ $current_page = 'admin_dashboard';
         }
         .ann-row:last-child { border-bottom: none; }
         .ann-icon {
-            width: 32px; height: 32px; border-radius: 10px; flex-shrink: 0;
-            display: flex; align-items: center; justify-content: center; font-size: 13px;
+            width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center; font-size: 15px;
         }
-        .ann-title { font-size: 13px; font-weight: 600; color: #0d0e2e; margin-bottom: 2px; }
-        .ann-meta  { font-size: 11px; color: #8890b8; }
+        .ann-title { font-size: 16px; font-weight: 600; color: #0d0e2e; margin-bottom: 2px; }
+        .ann-meta  { font-size: 13px; color: #8890b8; }
 
         /* Total badge in header */
         .total-pill {
             display: inline-flex; align-items: center; gap: 5px;
-            padding: 4px 12px; border-radius: 20px;
+            padding: 5px 14px; border-radius: 20px;
             background: #e8f0fe; color: #1a56db;
-            font-size: 12px; font-weight: 700;
+            font-size: 14px; font-weight: 700;
         }
 
         /* ── Floating Dark Mode Toggle ── */
@@ -306,11 +297,8 @@ $current_page = 'admin_dashboard';
                 <i class="fa fa-bar-chart"></i>
                 <?= $r_total ?> total report<?= $r_total !== 1 ? 's' : '' ?>
             </span>
-            <button id="refreshBtn" class="refresh-btn" onclick="refreshPage()">
-                <i class="fa fa-refresh"></i> Refresh
-            </button>
         </div>
-    </div>
+    </div><!-- /.dash-header -->
 
     <!-- Hero Stats: only the 3 report statuses -->
     <?php
