@@ -317,10 +317,64 @@ function toggleUrgent() {
     label.textContent     = urgentOn ? '⚠ Urgent ON' : 'Mark as Urgent';
 }
 
-function refreshPage() {
-    const btn = document.getElementById('refreshBtn');
-    btn.classList.add('spinning');
-    window.location.reload();
+/* ── Auto-refresh via AJAX (every 30 seconds) ── */
+let isRefreshing = false;
+
+function startAutoRefresh() {
+    setInterval(fetchLatestData, 30000);
+}
+
+function fetchLatestData() {
+    if (isRefreshing) return;
+    isRefreshing = true;
+    showRefreshIndicator();
+
+    fetch(window.location.href, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+        .then(res => res.text())
+        .then(html => {
+            const newPrograms = extractGlobal(html, 'PROGRAMS_DATA');
+            if (newPrograms !== null) {
+                programs.length = 0;
+                newPrograms.forEach(p => programs.push(p));
+                renderPrograms();
+            }
+            hideRefreshIndicator(true);
+        })
+        .catch(() => hideRefreshIndicator(false))
+        .finally(() => { isRefreshing = false; });
+}
+
+function extractGlobal(html, key) {
+    const m = html.match(new RegExp('window\\.' + key + '\\s*=\\s*(\\[.*?\\]);', 's'));
+    if (!m) return null;
+    try { return JSON.parse(m[1]); } catch(e) { return null; }
+}
+
+function showRefreshIndicator() {
+    let ind = document.getElementById('autoRefreshIndicator');
+    if (!ind) {
+        ind = document.createElement('div');
+        ind.id = 'autoRefreshIndicator';
+        ind.style.cssText = 'position:fixed; bottom:90px; right:28px; background:var(--blue-main); color:#fff;' +
+            'font-family:"Sora",sans-serif; font-size:12px; font-weight:700; padding:7px 14px;' +
+            'border-radius:20px; z-index:8999; display:flex; align-items:center; gap:7px;' +
+            'box-shadow:0 4px 14px rgba(8,0,160,.3); opacity:0; transition:opacity .3s;';
+        ind.innerHTML = '<i class="fa fa-refresh fa-spin"></i> Updating…';
+        document.body.appendChild(ind);
+    }
+    setTimeout(() => { ind.style.opacity = '1'; }, 10);
+}
+function hideRefreshIndicator(success) {
+    const ind = document.getElementById('autoRefreshIndicator');
+    if (!ind) return;
+    ind.innerHTML = success
+        ? '<i class="fa fa-check"></i> Up to date'
+        : '<i class="fa fa-exclamation-triangle"></i> Refresh failed';
+    if (!success) ind.style.background = '#c0001a';
+    setTimeout(() => {
+        ind.style.opacity = '0';
+        setTimeout(() => { if (ind.parentNode) ind.parentNode.removeChild(ind); }, 400);
+    }, 1800);
 }
 
 /* ── Dark Mode ── */
@@ -343,4 +397,5 @@ document.addEventListener('DOMContentLoaded', function () {
         if (icon) icon.className = 'fa fa-sun-o';
     }
     renderPrograms();
+    startAutoRefresh();
 });

@@ -153,10 +153,87 @@ function switchChartView(view, btn) {
     chartInstance = new Chart(ctx, cfg);
 }
 
-function refreshPage() {
-    const btn = document.getElementById('refreshBtn');
-    btn.classList.add('spinning');
-    window.location.reload();
+/* ── Auto-refresh via AJAX (every 30 seconds) ── */
+let isRefreshing = false;
+
+function startAutoRefresh() {
+    setInterval(fetchLatestData, 30000);
+}
+
+function fetchLatestData() {
+    if (isRefreshing) return;
+    isRefreshing = true;
+    showRefreshIndicator();
+
+    fetch(window.location.href, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+        .then(res => res.text())
+        .then(html => {
+            // Extract updated stats
+            const pending  = extractStat(html, 'STAT_PENDING');
+            const progress = extractStat(html, 'STAT_PROGRESS');
+            const resolved = extractStat(html, 'STAT_RESOLVED');
+            const planned  = extractStat(html, 'STAT_PLANNED');
+            const ongoing  = extractStat(html, 'STAT_ONGOING');
+            const completed= extractStat(html, 'STAT_COMPLETED');
+
+            // Update hero stat values in the DOM
+            if (pending  !== null) updateHeroStat('.stat-hero-card.pending   .stat-hero-value',  pending);
+            if (progress !== null) updateHeroStat('.stat-hero-card.inprogress .stat-hero-value', progress);
+            if (resolved !== null) updateHeroStat('.stat-hero-card.resolved  .stat-hero-value',  resolved);
+
+            // Refresh recent reports list from the live page HTML
+            const parser  = new DOMParser();
+            const doc     = parser.parseFromString(html, 'text/html');
+            const newRows = doc.querySelector('.section-card .rpt-row') ? doc.querySelectorAll('.section-card .rpt-row') : null;
+
+            // Re-render chart with fresh data if chart is on monthly/status view
+            if (pending !== null && progress !== null && resolved !== null) {
+                const activeTab = document.querySelector('.chart-tab.active');
+                if (activeTab && (activeTab.id === 'tab-status' || activeTab.id === 'tab-projects')) {
+                    switchChartView(activeTab.id.replace('tab-', ''), activeTab);
+                }
+            }
+
+            hideRefreshIndicator(true);
+        })
+        .catch(() => hideRefreshIndicator(false))
+        .finally(() => { isRefreshing = false; });
+}
+
+function extractStat(html, key) {
+    const m = html.match(new RegExp('window\\.' + key + '\\s*=\\s*(\\d+);'));
+    return m ? parseInt(m[1]) : null;
+}
+function updateHeroStat(selector, value) {
+    const el = document.querySelector(selector);
+    if (el) el.textContent = value;
+}
+
+function showRefreshIndicator() {
+    let ind = document.getElementById('autoRefreshIndicator');
+    if (!ind) {
+        ind = document.createElement('div');
+        ind.id = 'autoRefreshIndicator';
+        ind.style.cssText = 'position:fixed; bottom:90px; right:28px; background:#0800a0; color:#fff;' +
+            'font-family:"Sora",sans-serif; font-size:12px; font-weight:700; padding:7px 14px;' +
+            'border-radius:20px; z-index:8999; display:flex; align-items:center; gap:7px;' +
+            'box-shadow:0 4px 14px rgba(8,0,160,.3); opacity:0; transition:opacity .3s;';
+        ind.innerHTML = '<i class="fa fa-refresh fa-spin"></i> Updating…';
+        document.body.appendChild(ind);
+    }
+    setTimeout(() => { ind.style.opacity = '1'; }, 10);
+}
+function hideRefreshIndicator(success) {
+    const ind = document.getElementById('autoRefreshIndicator');
+    if (!ind) return;
+    ind.innerHTML = success
+        ? '<i class="fa fa-check"></i> Up to date'
+        : '<i class="fa fa-exclamation-triangle"></i> Refresh failed';
+    if (!success) ind.style.background = '#c0001a';
+    setTimeout(() => {
+        ind.style.opacity = '0';
+        setTimeout(() => { if (ind.parentNode) ind.parentNode.removeChild(ind); }, 400);
+    }, 1800);
 }
 
 /* ── Dark Mode ── */
@@ -178,4 +255,5 @@ window.addEventListener('DOMContentLoaded', () => {
 
     const ctx = document.getElementById('reportsChart').getContext('2d');
     chartInstance = new Chart(ctx, buildMonthChart());
+    startAutoRefresh();
 });

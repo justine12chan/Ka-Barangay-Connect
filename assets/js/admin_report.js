@@ -13,6 +13,9 @@
 
 const reports = window.REPORTS_DATA || [];
 
+/* ── Date filter state ── */
+let activeDateFilter = 'all';   // 'all' | 'today' | 'YYYY-MM-DD'
+
 /* ── Config maps ── */
 const catColors = {
     'Infrastructure':   { bg: '#fff3e0', color: '#c47200', border: '#ffd580' },
@@ -107,7 +110,7 @@ function buildDetailHtml(r) {
                          color:rgba(255,255,255,0.75); margin-bottom:${specific ? '1px' : '4px'};">${grp}</div>
             ${specific ? `<div style="font-size:12px; font-weight:600; color:rgba(255,255,255,0.95);
                          margin-bottom:6px; letter-spacing:.01em;">${specific}</div>` : ''}
-            <div style="font-family:'Sora',sans-serif; font-size:16px; font-weight:800;
+            <div style="font-family:'Sora',sans-serif; font-size:26px; font-weight:800;
                          color:#fff; margin-bottom:8px;">${r.title}</div>
             <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
                 <span style="font-size:10px; font-weight:700; padding:3px 12px; border-radius:20px;
@@ -190,14 +193,53 @@ function buildDetailHtml(r) {
 function renderReports() {
     const statusVal = document.getElementById('statusFilter').value;
     const catVal    = document.getElementById('catFilter').value;
-    const filtered  = reports.filter(r =>
-        (statusVal === 'all' || r.status === statusVal) &&
-        (catVal    === 'all' || catGroup(r.category) === catVal)
-    );
+    const filtered  = reports.filter(r => {
+        const statusOk = statusVal === 'all' || r.status === statusVal;
+        const catOk    = catVal    === 'all' || catGroup(r.category) === catVal;
+        let dateOk = true;
+        if (activeDateFilter && activeDateFilter !== 'all' && activeDateFilter !== 'pick') {
+            if (!r.created_at) { dateOk = false; }
+            else {
+                const rd  = new Date(r.created_at);
+                const now = new Date();
+                if (activeDateFilter === 'today') {
+                    dateOk = rd.toDateString() === now.toDateString();
+                } else if (activeDateFilter === 'week') {
+                    const startOfWeek = new Date(now);
+                    startOfWeek.setDate(now.getDate() - now.getDay());
+                    startOfWeek.setHours(0,0,0,0);
+                    dateOk = rd >= startOfWeek;
+                } else if (activeDateFilter === 'month') {
+                    dateOk = rd.getMonth() === now.getMonth() && rd.getFullYear() === now.getFullYear();
+                } else {
+                    // specific date string YYYY-MM-DD
+                    const rStr = rd.getFullYear() + '-' + String(rd.getMonth()+1).padStart(2,'0') + '-' + String(rd.getDate()).padStart(2,'0');
+                    dateOk = rStr === activeDateFilter;
+                }
+            }
+        }
+        return statusOk && catOk && dateOk;
+    });
     const list  = document.getElementById('reportsList');
     const empty = document.getElementById('emptyState');
 
-    if (filtered.length === 0) { list.innerHTML = ''; empty.style.display = ''; return; }
+    if (filtered.length === 0) {
+        list.innerHTML = '';
+        const msg = document.getElementById('emptyStateMsg');
+        if (msg) {
+            const emptyMsgs = {
+                'today': 'No reports submitted today.',
+                'week':  'No reports this week.',
+                'month': 'No reports this month.',
+            };
+            msg.textContent = emptyMsgs[activeDateFilter]
+                || (activeDateFilter && activeDateFilter !== 'all' && activeDateFilter !== 'pick'
+                    ? 'No reports found for this date.'
+                    : 'No reports match the selected filter.');
+        }
+        empty.style.display = '';
+        return;
+    }
     empty.style.display = 'none';
 
     list.innerHTML = filtered.map(r => {
@@ -227,9 +269,9 @@ function renderReports() {
                               style="background:${st.bg}; color:${st.color}">${st.label}</span>
                         ${has_img}
                     </div>
-                    <div style="font-size:13px; font-weight:700; color:var(--text); margin-bottom:3px;
+                    <div style="font-family:'Sora',sans-serif; font-size:20px; font-weight:700; color:var(--text); margin-bottom:3px;
                                 white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${r.title}</div>
-                    <div style="font-size:11px; color:var(--muted); display:flex;
+                    <div style="font-size:14px; color:var(--muted); display:flex;
                                 align-items:center; gap:4px; flex-wrap:wrap;">
                         <i class="fa fa-${parseInt(r.is_anonymous) ? 'user-secret' : 'user'}"></i>
                         ${reporter_disp}${purok_disp}
@@ -263,6 +305,190 @@ function toggleDetail(id) {
 }
 
 function filterReports() { renderReports(); }
+
+
+function applyDateFilter(mode) {
+    const label    = document.getElementById('activeDateLabel');
+    const labelTxt = document.getElementById('activeDateText');
+    const title    = document.getElementById('reportsListTitle');
+    const sel      = document.getElementById('dateFilter');
+
+    if (mode === 'pick') {
+        openCalDropdown();
+        return;
+    }
+
+    activeDateFilter = mode;
+    closeCalDropdown();
+    if (label) label.style.display = 'none';
+
+    const titleMap = {
+        'all':   'All Reports',
+        'today': "Today's Reports",
+        'week':  "This Week's Reports",
+        'month': "This Month's Reports",
+    };
+    if (title) title.textContent = titleMap[mode] || 'All Reports';
+
+    renderReports();
+    renderCalendar();
+}
+
+// Called from calendar day click
+function setDateTab(dateStr) {
+    activeDateFilter = dateStr;
+    const label    = document.getElementById('activeDateLabel');
+    const labelTxt = document.getElementById('activeDateText');
+    const title    = document.getElementById('reportsListTitle');
+    const sel      = document.getElementById('dateFilter');
+
+    closeCalDropdown();
+
+    const d = new Date(dateStr + 'T00:00:00');
+    const formatted = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+    if (label)    label.style.display = 'flex';
+    if (labelTxt) labelTxt.textContent = formatted;
+    if (title)    title.textContent = 'Reports — ' + formatted;
+    if (sel)      sel.value = 'pick';
+
+    renderReports();
+    renderCalendar();
+}
+
+/* ── Calendar ── */
+let calYear, calMonth;
+
+/* ── Calendar dropdown ── */
+let calDropdownOpen = false;
+
+function toggleCalDropdown() {
+    calDropdownOpen ? closeCalDropdown() : openCalDropdown();
+}
+function openCalDropdown() {
+    const dd  = document.getElementById('calDropdown');
+    const sel = document.getElementById('dateFilter');
+    if (!dd) return;
+    // Position under the select
+    if (sel) {
+        const rect = sel.getBoundingClientRect();
+        dd.style.top  = (rect.bottom + window.scrollY + 6) + 'px';
+        dd.style.left = rect.left + 'px';
+        dd.style.position = 'absolute';
+    }
+    dd.style.display = 'block';
+    calDropdownOpen = true;
+    renderCalendar();
+}
+function closeCalDropdown() {
+    const dd = document.getElementById('calDropdown');
+    const ch = document.getElementById('calChevron');
+    if (dd) { dd.style.display = 'none'; calDropdownOpen = false; }
+    if (ch) ch.style.transform = 'rotate(0deg)';
+}
+// Close on outside click
+document.addEventListener('click', function(e) {
+    const dd  = document.getElementById('calDropdown');
+    const sel = document.getElementById('dateFilter');
+    if (calDropdownOpen && dd && !dd.contains(e.target) && (!sel || !sel.contains(e.target))) {
+        closeCalDropdown();
+        // Reset select back to activeDateFilter option if calendar closed without picking
+        if (sel) {
+            const validOpts = ['all','today','week','month','pick'];
+            sel.value = validOpts.includes(activeDateFilter) ? activeDateFilter : 'pick';
+        }
+    }
+});
+
+function calInit() {
+    const now = new Date();
+    calYear  = now.getFullYear();
+    calMonth = now.getMonth();
+    renderCalendar();
+}
+
+function calNav(dir) {
+    calMonth += dir;
+    if (calMonth > 11) { calMonth = 0;  calYear++; }
+    if (calMonth < 0)  { calMonth = 11; calYear--; }
+    renderCalendar();
+}
+
+function getReportDatesSet() {
+    const set = new Set();
+    reports.forEach(r => {
+        if (r.created_at) {
+            const d = new Date(r.created_at);
+            set.add(d.getFullYear() + '-' +
+                    String(d.getMonth()+1).padStart(2,'0') + '-' +
+                    String(d.getDate()).padStart(2,'0'));
+        }
+    });
+    return set;
+}
+
+function renderCalendar() {
+    const grid  = document.getElementById('calGrid');
+    const label = document.getElementById('calMonthLabel');
+    if (!grid || !label) return;
+
+    const now         = new Date();
+    const todayStr    = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
+    const reportDates = getReportDatesSet();
+    const monthNames  = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const dayNames    = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+
+    label.textContent = monthNames[calMonth] + ' ' + calYear;
+
+    const firstDay = new Date(calYear, calMonth, 1).getDay();
+    const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+
+    let html = dayNames.map(d =>
+        `<div style="font-size:10px; font-weight:700; color:#8890b8; padding:3px 0;">${d}</div>`
+    ).join('');
+
+    // Empty cells before first day
+    for (let i = 0; i < firstDay; i++) {
+        html += `<div></div>`;
+    }
+
+    for (let day = 1; day <= daysInMonth; day++) {
+        const dateStr = calYear + '-' + String(calMonth+1).padStart(2,'0') + '-' + String(day).padStart(2,'0');
+        const hasReports = reportDates.has(dateStr);
+        const isToday    = dateStr === todayStr;
+        const isSelected = activeDateFilter === dateStr;
+
+        const classes = ['cal-day',
+            hasReports ? 'has-reports' : '',
+            isToday    ? 'is-today'    : '',
+            isSelected ? 'is-selected' : ''
+        ].filter(Boolean).join(' ');
+
+        const dotColor = isSelected ? 'rgba(255,255,255,0.75)' : (isToday ? '#f59c23' : '#1a56db');
+        const dot = hasReports
+            ? `<div style="width:5px;height:5px;border-radius:50%;background:${dotColor};margin:1px auto 0;"></div>`
+            : `<div style="height:6px;"></div>`;
+
+        const opacity = hasReports ? '1' : '0.38';
+        const color   = (!isSelected && !isToday) ? 'var(--text)' : '';
+
+        html += `<div class="${classes}"
+                      onclick="calSelectDay('${dateStr}')"
+                      title="${hasReports ? 'Has reports · Click to filter' : 'No reports'}"
+                      style="opacity:${opacity}; ${color ? 'color:'+color+';' : ''}">
+                     ${day}${dot}
+                 </div>`;
+    }
+
+    grid.innerHTML = html;
+}
+
+function calSelectDay(dateStr) {
+    const reportDates = getReportDatesSet();
+    if (!reportDates.has(dateStr)) return;
+    if (activeDateFilter === dateStr) { setDateTab('all'); return; }
+    setDateTab(dateStr);  // closeCalDropdown() is called inside setDateTab
+}
 
 /* ── Status change ── */
 let pendingStatusId = null, pendingStatusVal = null;
@@ -323,6 +549,8 @@ function closeLightbox() {
 /* ── Init ── */
 document.addEventListener('DOMContentLoaded', function () {
     renderReports();
+    calInit();
+    startAutoRefresh();
     // Restore dark mode icon state (body class already set by inline script)
     if (localStorage.getItem('kbc_dark_mode') === '1') {
         const icon = document.getElementById('darkModeIcon');
@@ -342,10 +570,99 @@ function confirmLogout() {
     return false;
 }
 
-function refreshPage() {
-    const btn = document.getElementById('refreshBtn');
-    if (btn) btn.classList.add('spinning');
-    window.location.reload();
+/* ── Auto-refresh via AJAX (every 30 seconds) ── */
+let autoRefreshTimer = null;
+let isRefreshing     = false;
+
+function startAutoRefresh() {
+    autoRefreshTimer = setInterval(fetchLatestData, 30000);
+}
+
+function fetchLatestData() {
+    if (isRefreshing) return;
+    isRefreshing = true;
+    showRefreshIndicator();
+
+    fetch(window.location.href, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+        .then(res => res.text())
+        .then(html => {
+            const parser = new DOMParser();
+            const doc    = parser.parseFromString(html, 'text/html');
+
+            // Pull fresh data from the new page's inline script globals
+            const scripts = doc.querySelectorAll('script:not([src])');
+            scripts.forEach(s => {
+                const t = s.textContent;
+                if (t.includes('REPORTS_DATA'))  {
+                    try { eval(t.replace(/window\./g, 'window.')); } catch(e) {}
+                }
+            });
+
+            // Re-inject fresh reports + stats
+            const newReports = extractGlobal(html, 'REPORTS_DATA');
+            const newPending = extractStat(html, 'STAT_PENDING');
+            const newProg    = extractStat(html, 'STAT_PROGRESS');
+            const newRes     = extractStat(html, 'STAT_RESOLVED');
+
+            if (newReports !== null) {
+                reports.length = 0;
+                newReports.forEach(r => reports.push(r));
+                renderReports();
+            }
+
+            // Update stat boxes
+            if (newPending !== null) updateStatBox('stat-pending',  newPending);
+            if (newProg    !== null) updateStatBox('stat-progress', newProg);
+            if (newRes     !== null) updateStatBox('stat-resolved', newRes);
+
+            hideRefreshIndicator(true);
+        })
+        .catch(() => hideRefreshIndicator(false))
+        .finally(() => { isRefreshing = false; });
+}
+
+function extractGlobal(html, key) {
+    const m = html.match(new RegExp('window\\.' + key + '\\s*=\\s*(\\[.*?\\]);', 's'));
+    if (!m) return null;
+    try { return JSON.parse(m[1]); } catch(e) { return null; }
+}
+function extractStat(html, key) {
+    const m = html.match(new RegExp('window\\.' + key + '\\s*=\\s*(\\d+);'));
+    return m ? parseInt(m[1]) : null;
+}
+function updateStatBox(cls, value) {
+    const el = document.querySelector('.' + cls + ' .stat-num');
+    if (el) el.textContent = value;
+}
+
+function showRefreshIndicator() {
+    let ind = document.getElementById('autoRefreshIndicator');
+    if (!ind) {
+        ind = document.createElement('div');
+        ind.id = 'autoRefreshIndicator';
+        ind.style.cssText = 'position:fixed; bottom:90px; right:28px; background:var(--blue-main); color:#fff;' +
+            'font-family:"Sora",sans-serif; font-size:12px; font-weight:700; padding:7px 14px;' +
+            'border-radius:20px; z-index:8999; display:flex; align-items:center; gap:7px;' +
+            'box-shadow:0 4px 14px rgba(8,0,160,.3); opacity:0; transition:opacity .3s;';
+        ind.innerHTML = '<i class="fa fa-refresh fa-spin"></i> Updating…';
+        document.body.appendChild(ind);
+    }
+    setTimeout(() => { ind.style.opacity = '1'; }, 10);
+}
+function hideRefreshIndicator(success) {
+    const ind = document.getElementById('autoRefreshIndicator');
+    if (!ind) return;
+    ind.innerHTML = success
+        ? '<i class="fa fa-check"></i> Up to date'
+        : '<i class="fa fa-exclamation-triangle"></i> Refresh failed';
+    if (!success) ind.style.background = '#c0001a';
+    setTimeout(() => {
+        ind.style.opacity = '0';
+        setTimeout(() => {
+            if (ind.parentNode) ind.parentNode.removeChild(ind);
+            if (!success) ind.style.background = 'var(--blue-main)';
+        }, 400);
+    }, 1800);
 }
 
 /* ── Unified Modal (same as program page) ── */
