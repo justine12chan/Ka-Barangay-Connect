@@ -83,13 +83,13 @@ $page_mode = (isset($_GET['mode']) && $_GET['mode'] === 'register')
     <title>Resident Login — Ka-Barangay Connect</title>
     <link rel="icon" href="../assets/img/logo.png" type="image/x-icon">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;0,800;1,400&family=Lora:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
-            font-family: 'DM Sans', sans-serif;
-            background: #04003a;
+            font-family: 'Lora', serif;
+            background: #3d0606;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
@@ -100,21 +100,21 @@ $page_mode = (isset($_GET['mode']) && $_GET['mode'] === 'register')
             display: flex; align-items: center; gap: 12px;
             padding: 14px 28px;
             border-bottom: 1px solid rgba(255,255,255,.07);
-            background: rgba(4,0,58,.7);
+            background: rgba(92,10,10,.7);
             backdrop-filter: blur(10px);
             position: sticky; top: 0; z-index: 100;
         }
         .top-nav-logo {
-            width: 36px; height: 36px; border-radius: 50%; overflow: hidden;
-            background: rgba(245,204,0,.12); border: 1.5px solid rgba(245,204,0,.3);
+            width: 36px; height: 36px; overflow: hidden;
+            background: transparent; border: none;
             display: flex; align-items: center; justify-content: center;
         }
         .top-nav-logo img { width: 100%; height: 100%; object-fit: contain; }
-        .top-nav-name { font-family: 'Sora', sans-serif; font-size: 14px; font-weight: 800; color: #fff; }
-        .top-nav-sub  { font-size: 11px; color: #f5cc00; font-weight: 600; }
+        .top-nav-name { font-family: 'Cormorant Garamond', serif; font-size: 14px; font-weight: 800; color: #fff; }
+        .top-nav-sub  { font-size: 11px; color: #d4a96a; font-weight: 600; }
         .top-nav-back {
             margin-left: auto;
-            font-size: 12.5px; font-weight: 700; color: #b0b8d8;
+            font-size: 12.5px; font-weight: 700; color: #d4b8a8;
             text-decoration: none; padding: 7px 16px;
             border: 1px solid rgba(255,255,255,.15); border-radius: 8px;
             transition: background .18s, color .18s;
@@ -132,7 +132,7 @@ $page_mode = (isset($_GET['mode']) && $_GET['mode'] === 'register')
             flex: 1; display: none;
             flex-direction: column; justify-content: center; align-items: flex-start;
             padding: 60px 56px;
-            background: linear-gradient(160deg, #0600a0 0%, #04005a 55%, #02003a 100%);
+            background: linear-gradient(160deg, #3d0606 0%, #5c0a0a 55%, #2a0303 100%);
             position: relative; overflow: hidden;
         }
         @media (min-width: 900px) { .auth-left { display: flex; } }
@@ -141,39 +141,39 @@ $page_mode = (isset($_GET['mode']) && $_GET['mode'] === 'register')
         .auth-left::before {
             content: ''; position: absolute; top: -80px; right: -80px;
             width: 340px; height: 340px; border-radius: 50%;
-            background: radial-gradient(circle, rgba(245,204,0,.12), transparent 70%);
+            background: radial-gradient(circle, rgba(212,169,106,.12), transparent 70%);
             pointer-events: none;
         }
         .auth-left::after {
             content: ''; position: absolute; bottom: -60px; left: -60px;
             width: 260px; height: 260px; border-radius: 50%;
-            background: radial-gradient(circle, rgba(8,0,160,.4), transparent 70%);
+            background: radial-gradient(circle, rgba(155,31,31,.4), transparent 70%);
             pointer-events: none;
         }
 
         .al-logo {
-            width: 72px; height: 72px; border-radius: 50%;
-            background: rgba(245,204,0,.1); border: 2px solid rgba(245,204,0,.35);
+            width: 72px; height: 72px;
+            background: transparent; border: none;
             display: flex; align-items: center; justify-content: center;
             margin-bottom: 28px; overflow: hidden;
         }
         .al-logo img { width: 100%; height: 100%; object-fit: contain; }
         .al-eyebrow {
             font-size: 11px; font-weight: 700; text-transform: uppercase;
-            letter-spacing: .12em; color: #f5cc00; margin-bottom: 12px;
+            letter-spacing: .12em; color: #d4a96a; margin-bottom: 12px;
         }
         .al-heading {
-            font-family: 'Sora', sans-serif; font-size: 34px; font-weight: 800;
+            font-family: 'Cormorant Garamond', serif; font-size: 34px; font-weight: 800;
             color: #fff; line-height: 1.2; margin-bottom: 16px;
         }
-        .al-heading span { color: #f5cc00; }
-        .al-desc { font-size: 14px; color: #8890b8; line-height: 1.75; max-width: 340px; margin-bottom: 40px; }
+        .al-heading span { color: #d4a96a; }
+        .al-desc { font-size: 14px; color: #9e7f70; line-height: 1.75; max-width: 340px; margin-bottom: 40px; }
 
         .al-features { display: flex; flex-direction: column; gap: 16px; }
         .al-feature { display: flex; align-items: center; gap: 14px; }
         .al-feature-dot {
             width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
-            background: rgba(245,204,0,.1); border: 1px solid rgba(245,204,0,.25);
+            background: rgba(212,169,106,.1); border: 1px solid rgba(212,169,106,.25);
             display: flex; align-items: center; justify-content: center; font-size: 17px;
         }
         .al-feature-label { font-size: 13px; color: #d0d8f0; font-weight: 500; }
@@ -195,35 +195,35 @@ $page_mode = (isset($_GET['mode']) && $_GET['mode'] === 'register')
         }
         @media (min-width: 900px) { .mobile-brand { display: none; } }
         .mobile-brand-logo {
-            width: 44px; height: 44px; border-radius: 50%; overflow: hidden;
-            background: #f0f1ff; border: 2px solid rgba(8,0,160,.15);
+            width: 44px; height: 44px; overflow: hidden;
+            background: transparent; border: none;
         }
         .mobile-brand-logo img { width: 100%; height: 100%; object-fit: contain; }
-        .mobile-brand-name { font-family: 'Sora', sans-serif; font-size: 15px; font-weight: 800; color: #0d0e2e; }
-        .mobile-brand-sub  { font-size: 11px; color: #8890b8; }
+        .mobile-brand-name { font-family: 'Cormorant Garamond', serif; font-size: 15px; font-weight: 800; color: #0d0e2e; }
+        .mobile-brand-sub  { font-size: 11px; color: #9e7f70; }
 
         /* heading */
         .ar-heading {
-            font-family: 'Sora', sans-serif; font-size: 24px; font-weight: 800;
+            font-family: 'Cormorant Garamond', serif; font-size: 24px; font-weight: 800;
             color: #0d0e2e; margin-bottom: 4px;
         }
-        .ar-sub { font-size: 13px; color: #8890b8; margin-bottom: 28px; }
+        .ar-sub { font-size: 13px; color: #9e7f70; margin-bottom: 28px; }
 
         /* tabs */
         .auth-tabs {
             display: flex; gap: 4px;
-            background: #f0f1f8; border-radius: 10px;
+            background: #f9f3ee; border-radius: 10px;
             padding: 4px; margin-bottom: 26px;
         }
         .auth-tab {
             flex: 1; text-align: center; padding: 9px;
-            border-radius: 8px; font-family: 'Sora', sans-serif;
-            font-size: 13px; font-weight: 700; color: #8890b8;
+            border-radius: 8px; font-family: 'Cormorant Garamond', serif;
+            font-size: 13px; font-weight: 700; color: #9e7f70;
             cursor: pointer; border: none; background: transparent;
             transition: all .2s;
         }
         .auth-tab.active {
-            background: #fff; color: #0800a0;
+            background: #fff; color: #9b1f1f;
             box-shadow: 0 2px 10px rgba(0,0,0,.1);
         }
 
@@ -236,13 +236,13 @@ $page_mode = (isset($_GET['mode']) && $_GET['mode'] === 'register')
         .af-input {
             width: 100%; padding: 11px 14px;
             border: 1.5px solid #e2e3f0; border-radius: 10px;
-            font-size: 14px; font-family: 'DM Sans', sans-serif;
+            font-size: 14px; font-family: 'Lora', serif;
             color: #0d0e2e; background: #f8f9fc; outline: none;
             transition: border-color .2s, box-shadow .2s;
         }
         .af-input:focus {
-            border-color: #0800a0;
-            box-shadow: 0 0 0 3px rgba(8,0,160,.08);
+            border-color: #9b1f1f;
+            box-shadow: 0 0 0 3px rgba(155,31,31,.08);
             background: #fff;
         }
         select.af-input { cursor: pointer; }
@@ -252,20 +252,20 @@ $page_mode = (isset($_GET['mode']) && $_GET['mode'] === 'register')
         .af-pw-wrap .af-input { padding-right: 42px; }
         .af-pw-toggle {
             position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
-            background: none; border: none; cursor: pointer; color: #8890b8;
+            background: none; border: none; cursor: pointer; color: #9e7f70;
             display: flex; align-items: center; padding: 0;
         }
-        .af-pw-toggle:hover { color: #0800a0; }
+        .af-pw-toggle:hover { color: #9b1f1f; }
 
         /* submit button */
         .af-btn {
             width: 100%; padding: 13px; margin-top: 6px;
-            background: linear-gradient(135deg, #0800a0, #1a13c5);
+            background: linear-gradient(135deg, #9b1f1f, #ad2424);
             color: #fff; border: none; border-radius: 12px;
-            font-family: 'Sora', sans-serif; font-size: 14px; font-weight: 700;
+            font-family: 'Cormorant Garamond', serif; font-size: 14px; font-weight: 700;
             cursor: pointer; letter-spacing: .04em;
             transition: opacity .2s, transform .1s;
-            box-shadow: 0 4px 18px rgba(8,0,160,.25);
+            box-shadow: 0 4px 18px rgba(155,31,31,.25);
         }
         .af-btn:hover  { opacity: .9; transform: translateY(-1px); }
         .af-btn:active { transform: translateY(0); }
@@ -294,9 +294,49 @@ $page_mode = (isset($_GET['mode']) && $_GET['mode'] === 'register')
         /* footer */
         .ar-footer {
             margin-top: 24px; text-align: center;
-            font-size: 12px; color: #8890b8;
+            font-size: 12px; color: #9e7f70;
         }
+
+        /* ════════════════════════════════════════════════
+           DARK MODE — resident_login.php specific overrides
+           ════════════════════════════════════════════════ */
+        html[data-theme="dark"] body {
+            background: radial-gradient(circle at top right, #4a0808, #1a0404) !important;
+        }
+        html[data-theme="dark"] .top-nav {
+            background: rgba(20,5,5,0.97) !important;
+            border-bottom-color: rgba(212,169,106,0.22) !important;
+        }
+        html[data-theme="dark"] .top-nav-name { color: #f0e8df !important; }
+        html[data-theme="dark"] .top-nav-sub  { color: #b09080 !important; }
+        html[data-theme="dark"] .top-nav-back { color: #d4a96a !important; border-color: rgba(255,255,255,.15) !important; }
+        html[data-theme="dark"] .auth-left    { background: linear-gradient(160deg,#3d0606 0%,#1a0404 100%) !important; }
+        html[data-theme="dark"] .al-heading   { color: #f5ede3 !important; }
+        html[data-theme="dark"] .al-sub       { color: #b09080 !important; }
+        html[data-theme="dark"] .al-feature-label { color: #c0a898 !important; }
+        html[data-theme="dark"] .auth-right   { background: #1a0808 !important; }
+        html[data-theme="dark"] .ar-heading   { color: #f5ede3 !important; }
+        html[data-theme="dark"] .ar-sub       { color: #b09080 !important; }
+        html[data-theme="dark"] .af-label     { color: #b09080 !important; }
+        html[data-theme="dark"] .af-input     { background: #2a1010 !important; border-color: #4a2020 !important; color: #f0e8df !important; }
+        html[data-theme="dark"] .af-input:focus { background: #321414 !important; border-color: #d4a96a !important; box-shadow: 0 0 0 3px rgba(212,169,106,0.15) !important; }
+        html[data-theme="dark"] .af-input::placeholder { color: #8a6050 !important; }
+        html[data-theme="dark"] .af-input-wrap { background: #2a1010 !important; border-color: #4a2020 !important; }
+        html[data-theme="dark"] .auth-tabs    { background: #2a1010 !important; border-color: #3a2020 !important; }
+        html[data-theme="dark"] .auth-tab     { color: #b09080 !important; }
+        html[data-theme="dark"] .auth-tab.active { background: #3d0606 !important; color: #f0e8df !important; }
+        html[data-theme="dark"] .af-divider   { color: #6a4a40 !important; }
+        html[data-theme="dark"] .af-divider::before,
+        html[data-theme="dark"] .af-divider::after { background: #3a2020 !important; }
+        html[data-theme="dark"] .ar-footer    { color: #7a5a50 !important; }
+        html[data-theme="dark"] .af-alert.error   { background: #2a0808 !important; color: #f09090 !important; border-color: #4a1010 !important; }
+        html[data-theme="dark"] .af-alert.success { background: #082a14 !important; color: #50e090 !important; border-color: #0a4a22 !important; }
+        html[data-theme="dark"] .af-pw-toggle { color: #8a6a5a !important; }
+        html[data-theme="dark"] .mobile-brand-name { color: #f0e8df !important; }
+        html[data-theme="dark"] .mobile-brand-sub  { color: #b09080 !important; }
     </style>
+    <!-- Dark mode: load before first paint to avoid flash -->
+    <script src="../assets/js/main.js"></script>
 </head>
 <body>
 
@@ -405,9 +445,9 @@ $page_mode = (isset($_GET['mode']) && $_GET['mode'] === 'register')
                     <button type="submit" class="af-btn">Log In</button>
                 </form>
                 <div class="af-divider">or</div>
-                <p style="text-align:center; font-size:13px; color:#8890b8;">
+                <p style="text-align:center; font-size:13px; color:#9e7f70;">
                     Don't have an account?
-                    <a href="#" onclick="switchTab('register')" style="color:#0800a0; font-weight:700; text-decoration:none;">Register here</a>
+                    <a href="#" onclick="switchTab('register')" style="color:#9b1f1f; font-weight:700; text-decoration:none;">Register here</a>
                 </p>
             </div>
 
@@ -470,9 +510,9 @@ $page_mode = (isset($_GET['mode']) && $_GET['mode'] === 'register')
                     <button type="submit" class="af-btn">Create Account</button>
                 </form>
                 <div class="af-divider">or</div>
-                <p style="text-align:center; font-size:13px; color:#8890b8;">
+                <p style="text-align:center; font-size:13px; color:#9e7f70;">
                     Already have an account?
-                    <a href="#" onclick="switchTab('login')" style="color:#0800a0; font-weight:700; text-decoration:none;">Log in here</a>
+                    <a href="#" onclick="switchTab('login')" style="color:#9b1f1f; font-weight:700; text-decoration:none;">Log in here</a>
                 </p>
             </div>
 

@@ -7,6 +7,8 @@
     <link rel="icon" href="../assets/img/logo.png" type="image/x-icon">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="../assets/css/resident.css">
+    <!-- Dark mode: load before first paint to avoid flash -->
+    <script src="../assets/js/main.js"></script>
 </head>
 <body class="page-projects">
 
@@ -241,18 +243,19 @@ else:
 
         .issue-modal-backdrop {
             display:none; position:fixed; inset:0;
-            background:rgba(4,0,50,.52); backdrop-filter:blur(7px); -webkit-backdrop-filter:blur(7px);
-            z-index:1050; align-items:flex-end; justify-content:center;
+            background:rgba(0,0,0,.55); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+            z-index:1050; align-items:center; justify-content:center;
+            padding: 20px;
         }
         .issue-modal-backdrop.open { display:flex; }
         .issue-modal-sheet {
-            background:#fff; width:100%; max-width:680px; max-height:90vh;
-            border-radius:24px 24px 0 0; overflow-y:auto;
-            box-shadow:0 -10px 56px rgba(4,0,90,.22);
-            animation:slideUp .28s cubic-bezier(.22,.61,.36,1);
+            background:#fff; width:100%; max-width:600px; max-height:88vh;
+            border-radius:20px; overflow-y:auto;
+            box-shadow:0 24px 72px rgba(0,0,0,.30);
+            animation:modalPop .25s cubic-bezier(.22,.61,.36,1);
         }
-        @keyframes slideUp { from{transform:translateY(100%);opacity:0} to{transform:translateY(0);opacity:1} }
-        .modal-handle { width:44px; height:4px; background:#e0e3f0; border-radius:2px; margin:14px auto 0; }
+        @keyframes modalPop { from{transform:scale(.94) translateY(10px);opacity:0} to{transform:scale(1) translateY(0);opacity:1} }
+        .modal-handle { width:44px; height:4px; background:#e0e3f0; border-radius:2px; margin:14px auto 0; display:none; }
         .modal-sheet-header {
             display:flex; align-items:flex-start; justify-content:space-between;
             padding:16px 22px 14px; border-bottom:1px solid #eceef8; gap:12px;
@@ -310,6 +313,126 @@ else:
             transition:background .18s;
         }
         .lightbox-close:hover { background:rgba(255,255,255,.28); }
+
+        /* ════════════════════════════════
+           PROJECT PAGE — DARK MODE
+           ════════════════════════════════ */
+
+        /* ── Page & section backgrounds ── */
+        html[data-theme="dark"] .projects-section    { background: transparent !important; }
+        html[data-theme="dark"] .projects-container  {
+            background: #1e0f0f !important;
+            border-color: #3a2020 !important;
+        }
+
+        /* ── Filter tabs ── */
+        html[data-theme="dark"] .projects-filter-tabs {
+            background: #1e0f0f !important;
+            border-color: #3a2020 !important;
+        }
+        html[data-theme="dark"] .projects-filter-tabs .filter-tab {
+            background: #2a1010 !important;
+            border-color: #4a2424 !important;
+            color: #b09080 !important;
+        }
+        html[data-theme="dark"] .projects-filter-tabs .filter-tab:hover {
+            border-color: #d4a96a !important;
+            color: #d4a96a !important;
+        }
+        html[data-theme="dark"] .projects-filter-tabs .filter-tab.active {
+            background: linear-gradient(135deg,#5c0a0a,#3d0606) !important;
+            color: #d4a96a !important;
+            border-color: rgba(212,169,106,0.4) !important;
+        }
+
+        /* ── Project social cards ── */
+        html[data-theme="dark"] .proj-social-card {
+            background: #1e0f0f !important;
+            border-color: #3a2020 !important;
+        }
+        html[data-theme="dark"] .proj-social-card:hover {
+            border-color: rgba(212,169,106,0.35) !important;
+            box-shadow: 0 10px 36px rgba(0,0,0,.55) !important;
+        }
+
+        /* ── Card header ── */
+        html[data-theme="dark"] .proj-card-header    { border-bottom-color: #3a2020 !important; }
+        html[data-theme="dark"] .proj-author-name    { color: #f0e8df !important; }
+        html[data-theme="dark"] .proj-date-time      { color: #9a7060 !important; }
+
+        /* ── Card body text ── */
+        html[data-theme="dark"] .proj-social-title   { color: #f5ede3 !important; }
+        html[data-theme="dark"] .proj-social-desc    { color: #c0a898 !important; }
+
+        /* ── Details grid (status / starts row inside card) ── */
+        html[data-theme="dark"] .proj-details-grid   {
+            background: #2a1010 !important;
+            border-color: #3a2020 !important;
+            border-top-color: #3a2020 !important;
+        }
+        html[data-theme="dark"] .proj-detail-item    { border-color: #3a2020 !important; }
+        html[data-theme="dark"] .detail-label        { color: #9a7060 !important; }
+        html[data-theme="dark"] .detail-value        { color: #f0e8df !important; }
+
+        /* ── Status badges ── */
+        html[data-theme="dark"] .status-ongoing   { background: #2a0808 !important; color: #f09090 !important; }
+        html[data-theme="dark"] .status-completed { background: #082a14 !important; color: #50e090 !important; }
+        html[data-theme="dark"] .status-planned   { background: #0a1a2e !important; color: #70b0f0 !important; }
+        html[data-theme="dark"] .status-ongoing-text   { color: #f09090 !important; }
+        html[data-theme="dark"] .status-completed-text { color: #50e090 !important; }
+        html[data-theme="dark"] .status-planned-text   { color: #70b0f0 !important; }
+
+        /* ── Modal sheet & detail grid ── */
+        html[data-theme="dark"] .issue-modal-sheet {
+            background: #1e0f0f !important;
+            box-shadow: 0 24px 72px rgba(0,0,0,.75) !important;
+        }
+        html[data-theme="dark"] .modal-handle        { background: #4a2020 !important; }
+        html[data-theme="dark"] .modal-sheet-header  {
+            background: #1e0f0f !important;
+            border-bottom-color: #3a2020 !important;
+        }
+        html[data-theme="dark"] .modal-close-btn     { background: #2a1010 !important; color: #d4a96a !important; }
+        html[data-theme="dark"] .modal-close-btn:hover { background: #3a1818 !important; color: #f0d090 !important; }
+        html[data-theme="dark"] .modal-title         { color: #f5ede3 !important; }
+        html[data-theme="dark"] .modal-detail-grid   {
+            background: #2a1010 !important;
+            border-color: #3a2020 !important;
+        }
+        html[data-theme="dark"] .modal-detail-label  { color: #8a6a5a !important; }
+        html[data-theme="dark"] .modal-detail-value  { color: #f0e8df !important; }
+        html[data-theme="dark"] .modal-desc          { color: #c0a898 !important; }
+        html[data-theme="dark"] .modal-sheet-body    { background: #1e0f0f !important; }
+
+        /* ── Header & back button ── */
+        html[data-theme="dark"] .header {
+            background: rgba(20,5,5,0.97) !important;
+            border-bottom-color: rgba(212,169,106,0.22) !important;
+        }
+        html[data-theme="dark"] .header-title,
+        html[data-theme="dark"] .header-name { color: #f0e8df !important; }
+        html[data-theme="dark"] .header-sub  { color: #b09080 !important; }
+        html[data-theme="dark"] .back-btn    {
+            border-color: #4a2020 !important;
+            color: #d4a96a !important;
+        }
+        html[data-theme="dark"] .back-btn:hover { background: #2a1010 !important; }
+
+        /* ── Floating btn ── */
+        html[data-theme="dark"] .floating-btn {
+            background: linear-gradient(135deg,#6b0f0f,#3d0606) !important;
+            color: #d4a96a !important;
+            border-color: rgba(212,169,106,0.35) !important;
+        }
+
+        /* ── Page banner tint overlay ── */
+        html[data-theme="dark"] .page-banner-wrapper { position: relative; }
+        html[data-theme="dark"] .page-banner-wrapper::after {
+            content: '';
+            position: absolute; inset: 0;
+            background: rgba(8,19,8,.45);
+            pointer-events: none;
+        }
     </style>
 
     <!-- Lightbox -->
