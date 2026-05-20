@@ -300,10 +300,56 @@ $current_page = 'admin_program';
         /* ── Filter select ── */
         .rpt-filter-select { padding:7px 12px; border-radius:9px; border:1.5px solid var(--border); background:#fff; font-size:14px; font-weight:600; color:var(--text-main); cursor:pointer; outline:none; transition:border-color .15s; }
         .rpt-filter-select:focus { border-color:var(--blue-main); }
+
+        /* ── Admin Dark Mode Toggle ── */
+        #adminDarkToggle {
+            position: fixed;
+            bottom: 28px;
+            left: 28px;
+            z-index: 9001;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            border: 2px solid rgba(245, 204, 0, 0.35);
+            background: linear-gradient(135deg, #0800a0, #04005a);
+            color: #f5cc00;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 6px 20px rgba(8, 0, 160, 0.40);
+            transition: transform  0.22s cubic-bezier(0.22, 0.68, 0, 1.2),
+                        box-shadow 0.22s ease,
+                        background 0.22s ease,
+                        border-color 0.22s ease;
+            -webkit-tap-highlight-color: transparent;
+            font-size: 18px;
+        }
+        #adminDarkToggle:hover {
+            transform: scale(1.12) rotate(-15deg);
+            box-shadow: 0 10px 30px rgba(8, 0, 160, 0.55);
+        }
+        #adminDarkToggle:active { transform: scale(0.94); }
+        body.dark-mode #adminDarkToggle {
+            background: linear-gradient(135deg, #f5cc00, #d4a800);
+            color: #04005a;
+            border-color: rgba(245, 204, 0, 0.65);
+            box-shadow: 0 6px 20px rgba(245, 204, 0, 0.35);
+        }
+        body.dark-mode #adminDarkToggle:hover {
+            box-shadow: 0 10px 30px rgba(245, 204, 0, 0.50);
+        }
+        #adminDarkToggle .adt-moon { display: block; }
+        #adminDarkToggle .adt-sun  { display: none;  }
+        body.dark-mode #adminDarkToggle .adt-moon { display: none;  }
+        body.dark-mode #adminDarkToggle .adt-sun  { display: block; }
+        .dark-mode-fab { display: none !important; }
+        #kbc-dark-toggle { display: none !important; }
+
     </style>
 </head>
 <body>
-<script>if(localStorage.getItem('kbc_dark_mode')==='1'){document.body.classList.add('dark-mode');}</script>
+<script>window.__isAdminPage=true;</script>
 <?php include __DIR__ . '/includes/admin_navbar.php'; ?>
 
 <div class="page-wrap">
@@ -624,12 +670,53 @@ $current_page = 'admin_program';
 <script>
     window.PROGRAMS_DATA = <?= json_encode(array_values($posts)) ?>;
 </script>
+<!-- Guard: tell main.js this is an admin page so it skips resident dark-mode logic -->
+<script>window.__isAdminPage = true;</script>
 <script src="../assets/js/main.js"></script>
 <script src="../assets/js/admin_program.js"></script>
 
-<!-- Floating Dark Mode Toggle -->
-<button id="darkModeToggle" class="dark-mode-fab" onclick="toggleDarkMode()" title="Toggle dark mode" aria-label="Toggle dark mode">
-    <i class="fa fa-moon-o" id="darkModeIcon"></i>
+<!-- Admin Dark Mode FAB -->
+<button id="adminDarkToggle" onclick="toggleAdminDarkMode()" title="Toggle dark mode" aria-label="Toggle dark mode">
+    <svg class="adt-moon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z"/></svg>
+    <svg class="adt-sun"  xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
 </button>
+<script>
+// ── Admin Dark Mode Controller ─────────────────────────────────────────────
+// Uses sessionStorage so dark mode persists when navigating between admin
+// pages (dashboard → report → program) but resets when browser is closed.
+// Resident side controls it via BroadcastChannel('kbc-theme').
+// ──────────────────────────────────────────────────────────────────────────
+(function () {
+    var SESSION_KEY = 'kbc_admin_dark';
+
+    function applyDark(on) {
+        document.body.classList.toggle('dark-mode', on);
+        try { sessionStorage.setItem(SESSION_KEY, on ? '1' : '0'); } catch(e) {}
+    }
+
+    // Apply saved session state immediately on load
+    try {
+        if (sessionStorage.getItem(SESSION_KEY) === '1') {
+            document.body.classList.add('dark-mode');
+        }
+    } catch(e) {}
+
+    // Manual toggle from FAB
+    window.toggleAdminDarkMode = function () {
+        applyDark(!document.body.classList.contains('dark-mode'));
+    };
+    window.toggleDarkMode = window.toggleAdminDarkMode;
+
+    // Listen for resident-side broadcasts
+    try {
+        var ch = new BroadcastChannel('kbc-theme');
+        ch.onmessage = function (e) {
+            if (e.data && typeof e.data.dark !== 'undefined') {
+                applyDark(!!e.data.dark);
+            }
+        };
+    } catch(e) {}
+})();
+</script>
 </body>
 </html>
