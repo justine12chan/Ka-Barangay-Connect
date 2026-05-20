@@ -236,23 +236,13 @@ function hideRefreshIndicator(success) {
     }, 1800);
 }
 
-/* ── Dark Mode ── */
-function toggleDarkMode() {
-    const isDark = document.body.classList.toggle('dark-mode');
-    const icon   = document.getElementById('darkModeIcon');
-    if (icon) {
-        icon.className = isDark ? 'fa fa-sun-o' : 'fa fa-moon-o';
-    }
-    localStorage.setItem('kbc_dark_mode', isDark ? '1' : '0');
-}
+/* ── Dark Mode ──
+   Handled by the inline <script> in admin_dashboard.php (toggleAdminDarkMode).
+   BroadcastChannel listener is set up there too.
+   No localStorage persistence — resets to light on every page load.
+   ─────────────────────────────────────────────────────────────── */
 
 window.addEventListener('DOMContentLoaded', () => {
-    // Body class already applied by inline script — just sync the icon
-    if (localStorage.getItem('kbc_dark_mode') === '1') {
-        const icon = document.getElementById('darkModeIcon');
-        if (icon) icon.className = 'fa fa-sun-o';
-    }
-
     const ctx = document.getElementById('reportsChart').getContext('2d');
     chartInstance = new Chart(ctx, buildMonthChart());
     startAutoRefresh();
