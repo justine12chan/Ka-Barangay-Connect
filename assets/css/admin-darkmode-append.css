@@ -1,0 +1,142 @@
+/* ============================================================
+   Ka-Barangay Connect — ADMIN DARK MODE
+   Append this block to the END of admin.css
+   ─────────────────────────────────────────────────────────────
+   SYSTEM:   body.dark-mode  (class-based)
+   KEY:      localStorage  →  "kbc_admin_dark"  ('1' / '0')
+   TOGGLE:   #adminDarkToggle  (replaces old .dark-mode-fab)
+   SEPARATE from resident dark mode (which uses [data-theme="dark"]
+   on <html> and the "kbc-theme" key).
+   ============================================================ */
+
+
+/* ════════════════════════════════════════════════════════════
+   ADMIN DARK TOGGLE BUTTON
+   Fixed bottom-LEFT corner — mirrored from the resident toggle
+   which sits bottom-RIGHT. Keeps both systems visually distinct.
+   ════════════════════════════════════════════════════════════ */
+
+#adminDarkToggle {
+    position: fixed;
+    bottom: 28px;
+    left:   28px;
+    z-index: 9001;
+    width:  48px;
+    height: 48px;
+    border-radius: 50%;
+    border: 2px solid rgba(245, 204, 0, 0.35);
+    background: linear-gradient(135deg, var(--blue-main, #0800a0), var(--blue-deep, #04005a));
+    color: var(--yellow-vivid, #f5cc00);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(8, 0, 160, 0.40);
+    transition: transform  0.22s cubic-bezier(0.22, 0.68, 0, 1.2),
+                box-shadow 0.22s ease,
+                background 0.22s ease,
+                border-color 0.22s ease;
+    -webkit-tap-highlight-color: transparent;
+    /* Hide the old font-awesome icon approach; we inject SVG via JS */
+    font-size: 18px;
+}
+
+#adminDarkToggle:hover {
+    transform: scale(1.12) rotate(-15deg);
+    box-shadow: 0 10px 30px rgba(8, 0, 160, 0.55);
+}
+
+#adminDarkToggle:active {
+    transform: scale(0.94);
+}
+
+/* When dark mode is ON — flip to yellow/gold background */
+body.dark-mode #adminDarkToggle {
+    background: linear-gradient(135deg, var(--yellow-vivid, #f5cc00), #d4a800);
+    color: var(--blue-deep, #04005a);
+    border-color: rgba(245, 204, 0, 0.65);
+    box-shadow: 0 6px 20px rgba(245, 204, 0, 0.35);
+}
+
+body.dark-mode #adminDarkToggle:hover {
+    box-shadow: 0 10px 30px rgba(245, 204, 0, 0.50);
+}
+
+/* Sun icon (shown in dark mode) / Moon icon (shown in light mode) */
+#adminDarkToggle .adt-moon { display: block; }
+#adminDarkToggle .adt-sun  { display: none;  }
+
+body.dark-mode #adminDarkToggle .adt-moon { display: none;  }
+body.dark-mode #adminDarkToggle .adt-sun  { display: block; }
+
+/* ── Hide the old .dark-mode-fab if it still exists in markup ── */
+/* (Safe fallback — can be removed once PHPs are updated)       */
+.dark-mode-fab { display: none !important; }
+
+
+/* ════════════════════════════════════════════════════════════
+   ADMIN DARK MODE — CSS variable overrides
+   (These already exist in admin.css body.dark-mode block;
+    listed here only as a reference — do NOT duplicate them.)
+   ════════════════════════════════════════════════════════════ */
+/*
+   The existing admin.css dark mode block (body.dark-mode { ... })
+   already covers:  --white, --light, --faint, --border, --muted,
+   --text, --text-main, and all the navbar / card / form overrides.
+   No changes needed to those rules.
+*/
+
+
+/* ════════════════════════════════════════════════════════════
+   ADMIN DARK MODE — Stat-hero card accent preservation patch
+   (Ensures the orange/blue/green stat cards keep their colors
+   when body.dark-mode is active — supplements existing rules.)
+   ════════════════════════════════════════════════════════════ */
+
+/* Confirm/Logout modal inner cards keep white bg in dark mode */
+body.dark-mode #statusConfirmModal > div,
+body.dark-mode #logoutModal > div,
+body.dark-mode #editModal > div,
+body.dark-mode #saveConfirmModal > div {
+    background: #12142a !important;
+    color: #c8cbed !important;
+    border: 1px solid #1e2040;
+}
+
+body.dark-mode #statusConfirmModal > div [style*="background:#fff"],
+body.dark-mode #logoutModal > div [style*="background:#fff"],
+body.dark-mode #statusConfirmModal > div [style*="background: #fff"],
+body.dark-mode #logoutModal > div [style*="background: #fff"] {
+    background: #12142a !important;
+}
+
+/* Modal inline text overrides */
+body.dark-mode #statusConfirmModal [style*="color:#1a2340"],
+body.dark-mode #logoutModal [style*="color:#1a2340"] {
+    color: #e0e2f5 !important;
+}
+body.dark-mode #statusConfirmModal [style*="color:#8890b8"],
+body.dark-mode #logoutModal [style*="color:#8890b8"] {
+    color: #6a72a8 !important;
+}
+body.dark-mode #statusConfirmModal [style*="color:#4a5280"],
+body.dark-mode #logoutModal [style*="color:#4a5280"] {
+    color: #8890b8 !important;
+}
+
+/* Modal Cancel button in dark */
+body.dark-mode #statusConfirmModal button[onclick*="display='none'"],
+body.dark-mode #logoutModal       button[onclick*="display='none'"] {
+    background: #1a1c38 !important;
+    border-color: #2a2d52 !important;
+    color: #c8cbed !important;
+}
+
+/* ════════════════════════════════════════════════════════════
+   ADMIN PAGES — suppress the resident-side dark toggle
+   #kbc-dark-toggle is injected by main.js (resident JS).
+   Admin pages that load main.js must never show it.
+   ════════════════════════════════════════════════════════════ */
+#kbc-dark-toggle {
+    display: none !important;
+}

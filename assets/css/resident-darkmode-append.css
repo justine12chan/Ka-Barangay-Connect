@@ -1,0 +1,440 @@
+/* ============================================================
+   Ka-Barangay Connect — RESIDENT DARK MODE
+   Append this block to the END of resident.css
+   ─────────────────────────────────────────────────────────────
+   SYSTEM:   [data-theme="dark"] on <html>  (attribute-based)
+   KEY:      localStorage  →  "kbc-theme"  ('dark' / 'light')
+   TOGGLE:   #kbc-dark-toggle  (fixed bottom-RIGHT)
+   SEPARATE from admin dark mode (which uses body.dark-mode
+   class and the "kbc_admin_dark" key).
+   ─────────────────────────────────────────────────────────────
+   HOW TO ADD TOGGLE TO A RESIDENT PAGE:
+   1. Add this HTML before </body>:
+      <button id="kbc-dark-toggle" aria-label="Toggle dark mode">
+        <svg class="icon-sun" ...><!-- sun SVG --></svg>
+        <svg class="icon-moon" ...><!-- moon SVG --></svg>
+      </button>
+   2. Add this JS (or put in main.js under "resident" section):
+      (function(){
+        var h = document.documentElement;
+        var t = localStorage.getItem('kbc-theme');
+        if (t === 'dark') h.setAttribute('data-theme','dark');
+        var btn = document.getElementById('kbc-dark-toggle');
+        if (btn) btn.addEventListener('click', function(){
+          var dark = h.getAttribute('data-theme') === 'dark';
+          h.setAttribute('data-theme', dark ? 'light' : 'dark');
+          localStorage.setItem('kbc-theme', dark ? 'light' : 'dark');
+        });
+      })();
+   ============================================================ */
+
+
+/* ── FONT SIZE BOOST (readability) — applies to ALL themes ── */
+body {
+    font-size: 15px;
+    line-height: 1.7;
+}
+
+.vm-text            { font-size: 14px    !important; }
+.panel-top-title    { font-size: 14px    !important; }
+.panel-top-sub      { font-size: 12px    !important; }
+.issue-text         { font-size: 13.5px  !important; }
+.issues-subtitle    { font-size: 13px    !important; }
+.i-stat-label       { font-size: 10.5px  !important; }
+.announcement-title { font-size: 17px    !important; }
+.announcement-excerpt{ font-size: 14px   !important; }
+.field-label        { font-size: 12px    !important; }
+.field-input        { font-size: 14.5px  !important; }
+.picker-title       { font-size: 14px    !important; }
+.picker-sub         { font-size: 12.5px  !important; }
+.kbc-links a        { font-size: 14px    !important; }
+.kbc-brand-name     { font-size: 16px    !important; }
+.kbc-brand-sub      { font-size: 11px    !important; }
+.header-title,
+.header-name        { font-size: 15px    !important; }
+.header-sub,
+.header-loc         { font-size: 11.5px  !important; }
+.sort-dropdown label  { font-size: 13px  !important; }
+.sort-dropdown select { font-size: 14px  !important; }
+.search-box input   { font-size: 14px    !important; }
+.section-eyebrow    { font-size: 11.5px  !important; }
+.vm-label           { font-size: 11px    !important; }
+.panel-count        { font-size: 12.5px  !important; }
+.scroll-hint        { font-size: 12px    !important; }
+.floating-btn       { font-size: 14.5px  !important; }
+.btn-submit         { font-size: 15px    !important; }
+.card-hero-title    { font-size: 20px    !important; }
+.card-hero-eyebrow  { font-size: 10.5px  !important; }
+.issues-title       { font-size: 21px    !important; }
+
+
+/* ════════════════════════════════════════════════════════════
+   DARK MODE TOKEN OVERRIDES
+   ════════════════════════════════════════════════════════════ */
+
+[data-theme="dark"] {
+    /* ── Text ── */
+    --text:         #f0e8df;
+    --text-main:    #f0e8df;
+    --kbc-text:     #f0e8df;
+    --kbc-muted:    #b09080;
+    --kbc-faint:    #8a6a5a;
+
+    /* ── Backgrounds ── */
+    --light:        #1a0e0e;
+    --faint:        #231212;
+    --white:        #1e1010;
+    --kbc-white:    #1e1010;
+    --kbc-surface:  #1a0e0e;
+    --kbc-surface-2:#231212;
+    --gray-50:      #1a0e0e;
+    --gray-100:     #2a1818;
+    --gray-200:     #3a2020;
+    --gray-400:     #7a5040;
+    --gray-600:     #a07060;
+    --gray-800:     #d0b0a0;
+
+    /* ── Borders ── */
+    --border:               #3a2020;
+    --kbc-border-light:     #3a2020;
+    --kbc-border-cream:     rgba(212,169,106,0.15);
+
+    /* ── Muted / maroon ── */
+    --muted:        #b09080;
+    --maroon-faint: #231212;
+    --maroon-light: #2a1010;
+
+    /* ── Shadows ── */
+    --kbc-shadow-sm:  0 2px 8px  rgba(0,0,0,0.45);
+    --kbc-shadow-md:  0 8px 28px rgba(0,0,0,0.55);
+    --kbc-shadow-lg:  0 20px 56px rgba(0,0,0,0.65);
+}
+
+
+/* ── BODY / PAGE BACKGROUNDS ── */
+[data-theme="dark"] body,
+[data-theme="dark"] body.page-report,
+[data-theme="dark"] body.page-community-issues,
+[data-theme="dark"] body.page-announcements,
+[data-theme="dark"] body.page-projects,
+[data-theme="dark"] body.page-resident {
+    background: #130808 !important;
+    color: #f0e8df;
+}
+
+[data-theme="dark"] body.page-index {
+    background: radial-gradient(circle at top right, #4a0808, #1a0404) !important;
+}
+
+
+/* ── NAVBAR ── */
+[data-theme="dark"] .kbc-nav {
+    background: rgba(30, 8, 8, 0.97) !important;
+    border-bottom-color: rgba(212,169,106,.20) !important;
+}
+
+[data-theme="dark"] .kbc-mobile-menu {
+    background: rgba(22, 6, 6, 0.99) !important;
+}
+
+
+/* ── CARDS ── */
+[data-theme="dark"] .panel-card,
+[data-theme="dark"] .issues-card,
+[data-theme="dark"] .report-card,
+[data-theme="dark"] .report-item-card,
+[data-theme="dark"] .announcement-card,
+[data-theme="dark"] .project-card,
+[data-theme="dark"] .submit-card,
+[data-theme="dark"] .projects-container,
+[data-theme="dark"] .announcements-section > div,
+[data-theme="dark"] .ann-social-card,
+[data-theme="dark"] .proj-social-card {
+    background: #1e0f0f !important;
+    border-color: #3a2020 !important;
+    color: #f0e8df !important;
+}
+
+[data-theme="dark"] .panel-card:hover,
+[data-theme="dark"] .issues-card:hover,
+[data-theme="dark"] .report-item-card:hover,
+[data-theme="dark"] .announcement-card:hover,
+[data-theme="dark"] .project-card:hover {
+    border-color: rgba(212,169,106,0.35) !important;
+    box-shadow: 0 10px 36px rgba(0,0,0,0.55) !important;
+}
+
+
+/* ── PANEL ── */
+[data-theme="dark"] .panel-footer {
+    border-top-color: #3a2020 !important;
+    background: linear-gradient(180deg, transparent, rgba(20,8,8,0.5)) !important;
+}
+
+[data-theme="dark"] .panel-body { background: #1e0f0f !important; }
+
+
+/* ── ISSUE ROWS & STATS ── */
+[data-theme="dark"] .i-stat {
+    background: linear-gradient(180deg, #2a1010 0%, #1e0a0a 100%) !important;
+    border-right-color: #3a2020 !important;
+}
+
+[data-theme="dark"] .issue-row {
+    background: linear-gradient(135deg, #2a1010, #1e0808) !important;
+    border-color: #3a2020 !important;
+}
+
+[data-theme="dark"] .issues-card:hover .issue-row {
+    background: #2e1212 !important;
+    border-color: rgba(212,169,106,0.18) !important;
+}
+
+[data-theme="dark"] .issues-footer {
+    border-top-color: #3a2020 !important;
+}
+
+
+/* ── STATUS BADGES ── */
+[data-theme="dark"] .b-open     { background: #2e1a00 !important; color: #e8c070 !important; }
+[data-theme="dark"] .b-progress { background: #2a0808 !important; color: #f09090 !important; }
+[data-theme="dark"] .b-done     { background: #082a14 !important; color: #50e090 !important; }
+
+[data-theme="dark"] .status-ongoing   { background: #2a0808 !important; color: #f09090 !important; }
+[data-theme="dark"] .status-completed { background: #082a14 !important; color: #50e090 !important; }
+[data-theme="dark"] .status-planned   { background: #0a1a2e !important; color: #70b0f0 !important; }
+
+[data-theme="dark"] .urgent-badge { background: #2e1a00 !important; color: #e8c070 !important; }
+
+
+/* ── PAGE BODY WRAPPER ── */
+[data-theme="dark"] .page-body { background: transparent !important; }
+
+
+/* ── FORM ELEMENTS ── */
+[data-theme="dark"] .field-input,
+[data-theme="dark"] .sf-input,
+[data-theme="dark"] .comment-input,
+[data-theme="dark"] .af-input {
+    background: #2a1010 !important;
+    border-color: #4a2020 !important;
+    color: #f0e8df !important;
+}
+
+[data-theme="dark"] .field-input:focus,
+[data-theme="dark"] .sf-input:focus,
+[data-theme="dark"] .comment-input:focus,
+[data-theme="dark"] .af-input:focus {
+    background: #321414 !important;
+    border-color: var(--kbc-cream-400) !important;
+    box-shadow: 0 0 0 3px rgba(212,169,106,0.15) !important;
+}
+
+[data-theme="dark"] .field-input::placeholder,
+[data-theme="dark"] .af-input::placeholder { color: #8a6a5a !important; }
+
+[data-theme="dark"] select.field-input option,
+[data-theme="dark"] .sort-dropdown select option {
+    background: #2a1010 !important;
+    color: #f0e8df !important;
+}
+
+[data-theme="dark"] .sort-dropdown select,
+[data-theme="dark"] .search-box input {
+    background: #2a1010 !important;
+    border-color: #4a2020 !important;
+    color: #f0e8df !important;
+}
+
+[data-theme="dark"] .search-box input:focus {
+    background: #321414 !important;
+    border-color: var(--kbc-cream-400) !important;
+}
+
+
+/* ── IMAGE PICKER ── */
+[data-theme="dark"] .image-picker {
+    background: #2a1010 !important;
+    border-color: #5a2828 !important;
+}
+
+
+/* ── SECTION / FORM LINES ── */
+[data-theme="dark"] .section-line {
+    background: linear-gradient(90deg, #3a2020 0%, transparent 100%) !important;
+}
+
+[data-theme="dark"] .form-line { background: #3a2020 !important; }
+
+
+/* ── BOARD WRAP ── */
+[data-theme="dark"] .board-wrap { background: #1a0a0a !important; }
+
+
+/* ── COMMUNITY ISSUES CONTAINER ── */
+[data-theme="dark"] .issues-section,
+[data-theme="dark"] .issues-wrapper {
+    background: #1e0f0f !important;
+    border-color: #3a2020 !important;
+}
+
+[data-theme="dark"] .filter-tabs-wrap,
+[data-theme="dark"] .report-filters {
+    background: #1e0f0f !important;
+    border-color: #3a2020 !important;
+}
+
+
+/* ── FILTER TABS ── */
+[data-theme="dark"] .projects-filter-tabs .filter-tab {
+    background: #2a1010 !important;
+    border-color: #4a2020 !important;
+    color: #b09080 !important;
+}
+
+[data-theme="dark"] .projects-filter-tabs .filter-tab:hover {
+    border-color: var(--kbc-cream-400) !important;
+    color: var(--kbc-cream-400) !important;
+}
+
+
+/* ── ANNOUNCEMENTS ── */
+[data-theme="dark"] .announcement-meta {
+    border-top-color: #3a2020 !important;
+    border-bottom-color: #3a2020 !important;
+    color: #8a6a5a !important;
+}
+
+[data-theme="dark"] .announcement-title   { color: #f0e8df !important; }
+[data-theme="dark"] .announcement-excerpt { color: #c0a898 !important; }
+[data-theme="dark"] .announcement-date    { color: #8a6a5a !important; }
+
+
+/* ── MY REPORTS NAV BAR ── */
+[data-theme="dark"] .rp-nav {
+    background: linear-gradient(90deg, #2e0808 0%, #3a0a0a 100%) !important;
+}
+
+
+/* ── CARD GLASS (index / login) ── */
+[data-theme="dark"] .card-glass {
+    background: rgba(40, 10, 10, 0.55) !important;
+    border-color: rgba(212,169,106,0.12) !important;
+}
+
+
+/* ── LOGIN / AUTH TABS ── */
+[data-theme="dark"] .auth-tab {
+    background: #2a1010 !important;
+    color: #b09080 !important;
+    border-color: #3a2020 !important;
+}
+
+[data-theme="dark"] .auth-tab.active {
+    background: #3d0606 !important;
+    color: #f0e8df !important;
+}
+
+
+/* ── ANONYMOUS BADGE & TOGGLE ── */
+[data-theme="dark"] .anon-badge {
+    background: rgba(212,169,106,0.08) !important;
+    border-color: rgba(212,169,106,0.22) !important;
+    color: var(--kbc-cream-400) !important;
+}
+
+[data-theme="dark"] .anon-toggle {
+    background: #2a1010 !important;
+    border-color: #4a2020 !important;
+    color: var(--kbc-cream-400) !important;
+}
+
+
+/* ── PAGINATION ── */
+[data-theme="dark"] .announcements-pagination {
+    border-top-color: #3a2020 !important;
+}
+
+
+/* ── WEBKIT SCROLLBAR ── */
+[data-theme="dark"] ::-webkit-scrollbar              { width: 8px; }
+[data-theme="dark"] ::-webkit-scrollbar-track        { background: #1a0808; }
+[data-theme="dark"] ::-webkit-scrollbar-thumb        { background: #4a2020; border-radius: 4px; }
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover  { background: #6a3030; }
+
+
+/* ── PLACEHOLDER BARS ── */
+[data-theme="dark"] .ph { background: #3a2020 !important; }
+
+
+/* ── MODAL / OFFCANVAS ── */
+[data-theme="dark"] .modal-content,
+[data-theme="dark"] .offcanvas {
+    background: #1e0f0f !important;
+    color: #f0e8df !important;
+    border-color: #3a2020 !important;
+}
+
+
+/* ── BACK BUTTON — light variant ── */
+[data-theme="dark"] .back-btn.light {
+    background: #2a1010 !important;
+    border-color: #4a2020 !important;
+    color: var(--kbc-cream-400) !important;
+}
+
+
+/* ════════════════════════════════════════════════════════════
+   RESIDENT DARK MODE TOGGLE BUTTON
+   ID:       #kbc-dark-toggle
+   Position: fixed bottom-RIGHT (above .floating-btn if present)
+   ════════════════════════════════════════════════════════════ */
+
+#kbc-dark-toggle {
+    position: fixed;
+    bottom: 86px;   /* sits above the floating-btn (28px + 46px + 12px gap) */
+    right:  28px;
+    z-index: 1001;
+    width:  44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 2px solid rgba(212,169,106,0.35);
+    background: linear-gradient(135deg, #6b0f0f, #3d0606);
+    color: var(--kbc-cream-400);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(92,10,10,0.45);
+    transition: transform  0.22s cubic-bezier(0.22, 0.68, 0, 1.2),
+                box-shadow 0.22s ease,
+                background 0.22s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+
+#kbc-dark-toggle:hover {
+    transform: scale(1.10);
+    box-shadow: 0 10px 30px rgba(92,10,10,0.55);
+}
+
+#kbc-dark-toggle:active { transform: scale(0.93); }
+
+/* When dark mode is ON — cream/gold background */
+[data-theme="dark"] #kbc-dark-toggle {
+    background: linear-gradient(135deg, #d4a96a, #c49a45);
+    color: #2a0303;
+    border-color: rgba(212,169,106,0.6);
+    box-shadow: 0 6px 20px rgba(212,169,106,0.35);
+}
+
+/* Sun icon (visible in dark mode) / Moon icon (visible in light mode) */
+#kbc-dark-toggle .icon-sun  { display: none;  }
+#kbc-dark-toggle .icon-moon { display: block; }
+
+[data-theme="dark"] #kbc-dark-toggle .icon-sun  { display: block; }
+[data-theme="dark"] #kbc-dark-toggle .icon-moon { display: none;  }
+
+/* On pages WITHOUT a floating-btn, drop toggle to normal bottom */
+body:not(.page-resident):not(.page-report) #kbc-dark-toggle {
+    bottom: 28px;
+}
