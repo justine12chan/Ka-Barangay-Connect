@@ -31,6 +31,54 @@ $p_planned   = mysqli_fetch_row(executeQuery("SELECT COUNT(*) FROM programs WHER
 $p_ongoing   = mysqli_fetch_row(executeQuery("SELECT COUNT(*) FROM programs WHERE status='ongoing'"))[0]    ?? 0;
 $p_completed = mysqli_fetch_row(executeQuery("SELECT COUNT(*) FROM programs WHERE status='completed'"))[0]  ?? 0;
 
+// ── Turnaround time ────────────────────────────────────────────────────────
+// Overall avg minutes to resolve (all time)
+$tat_row = mysqli_fetch_assoc(executeQuery(
+    "SELECT AVG(TIMESTAMPDIFF(MINUTE, created_at, resolved_at)) AS avg_min
+     FROM reports WHERE status='resolved' AND resolved_at IS NOT NULL"));
+$avg_tat_min = $tat_row ? (float)($tat_row['avg_min'] ?? 0) : 0;
+
+// This month avg
+$tat_month_row = mysqli_fetch_assoc(executeQuery(
+    "SELECT AVG(TIMESTAMPDIFF(MINUTE, created_at, resolved_at)) AS avg_min
+     FROM reports WHERE status='resolved' AND resolved_at IS NOT NULL
+     AND MONTH(resolved_at)=MONTH(NOW()) AND YEAR(resolved_at)=YEAR(NOW())"));
+$avg_tat_month = $tat_month_row ? (float)($tat_month_row['avg_min'] ?? 0) : 0;
+
+// Last month avg (for trend arrow)
+$tat_last_row = mysqli_fetch_assoc(executeQuery(
+    "SELECT AVG(TIMESTAMPDIFF(MINUTE, created_at, resolved_at)) AS avg_min
+     FROM reports WHERE status='resolved' AND resolved_at IS NOT NULL
+     AND MONTH(resolved_at)=MONTH(DATE_SUB(NOW(), INTERVAL 1 MONTH))
+     AND YEAR(resolved_at)=YEAR(DATE_SUB(NOW(), INTERVAL 1 MONTH))"));
+$avg_tat_last = $tat_last_row ? (float)($tat_last_row['avg_min'] ?? 0) : 0;
+
+// Monthly turnaround trend (last 12 months) for chart
+$tat_monthly_data = [];
+$tat_monthly_res  = executeQuery(
+    "SELECT DATE_FORMAT(resolved_at,'%Y-%m') AS ym,
+            ROUND(AVG(TIMESTAMPDIFF(HOUR, created_at, resolved_at)), 1) AS avg_hours
+     FROM reports WHERE status='resolved' AND resolved_at IS NOT NULL
+       AND resolved_at >= DATE_SUB(NOW(), INTERVAL 12 MONTH)
+     GROUP BY ym ORDER BY ym ASC");
+if ($tat_monthly_res) while ($row = mysqli_fetch_assoc($tat_monthly_res)) $tat_monthly_data[] = $row;
+
+// Format helper: minutes → "Xd Yh" or "Xh Ym" or "Xm"
+function fmt_tat(float $mins): string {
+    if ($mins <= 0) return '—';
+    $m = (int)round($mins);
+    $d = intdiv($m, 1440); $h = intdiv($m % 1440, 60); $r = $m % 60;
+    if ($d > 0) return $d . 'd ' . $h . 'h';
+    if ($h > 0) return $h . 'h ' . $r . 'm';
+    return $r . 'm';
+}
+$avg_tat_display       = fmt_tat($avg_tat_min);
+$avg_tat_month_display = fmt_tat($avg_tat_month);
+// Trend: improving = this month faster than last (lower is better)
+$tat_trend = ($avg_tat_last > 0 && $avg_tat_month > 0)
+    ? ($avg_tat_month < $avg_tat_last ? 'faster' : ($avg_tat_month > $avg_tat_last ? 'slower' : 'same'))
+    : 'none';
+
 $current_page = 'admin_dashboard';
 ?>
 <!DOCTYPE html>
@@ -56,8 +104,9 @@ $current_page = 'admin_dashboard';
         @keyframes fa-spin { 0%{transform:rotate(0deg)} 100%{transform:rotate(360deg)} }
 
         /* ── Hero stat cards ── */
-        .stats-hero { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 28px; }
-        @media (max-width: 640px) { .stats-hero { grid-template-columns: 1fr; } }
+        .stats-hero { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+        @media (max-width: 900px) { .stats-hero { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 500px) { .stats-hero { grid-template-columns: 1fr; } }
 
         .stat-hero-card {
             position: relative; overflow: hidden;
@@ -114,6 +163,23 @@ $current_page = 'admin_dashboard';
         .pending::after    { background: #f59c23; }
         .inprogress::after { background: #1a56db; }
         .resolved::after   { background: #22cc77; }
+        /* Turnaround — purple */
+        .stat-hero-card.turnaround {
+            background: linear-gradient(135deg, #f6f0ff 0%, #ede5ff 100%);
+            border-color: #c4a0f7;
+        }
+        .turnaround .stat-hero-icon { background: #8b00c7; color: #fff; box-shadow: 0 4px 14px rgba(139,0,199,.35); }
+        .turnaround .stat-hero-value { color: #6b00a0; font-size: 36px; line-height: 1.1; padding-top: 4px; }
+        .turnaround::after { background: #8b00c7; }
+        .turnaround .stat-hero-bar-fill { background: #8b00c7; }
+        .tat-trend-pill {
+            display: inline-flex; align-items: center; gap: 4px;
+            font-size: 11px; font-weight: 800; padding: 2px 9px;
+            border-radius: 20px; margin-top: 6px;
+        }
+        .tat-trend-faster { background: #e3faee; color: #128548; border: 1px solid #a3e8c0; }
+        .tat-trend-slower { background: #fff0f0; color: #c0001a; border: 1px solid #f7a0aa; }
+        .tat-trend-same   { background: #f0f2f8; color: #8890b8; border: 1px solid #d0d4e8; }
 
         /* Progress bar under stats */
         .stat-hero-bar { margin-top: 14px; }
@@ -268,6 +334,17 @@ $current_page = 'admin_dashboard';
         body.dark-mode .stat-hero-card.pending    { background: linear-gradient(135deg,#1e1400 0%,#201700 100%); border-color: #5a3a00; }
         body.dark-mode .stat-hero-card.inprogress { background: linear-gradient(135deg,#0b1330 0%,#0d1640 100%); border-color: #1e3a7a; }
         body.dark-mode .stat-hero-card.resolved   { background: linear-gradient(135deg,#001810 0%,#001e14 100%); border-color: #0e4d28; }
+        body.dark-mode .stat-hero-card.turnaround { background: linear-gradient(135deg,#140020 0%,#1a002a 100%); border-color: #4a007a; }
+        body.dark-mode .turnaround .stat-hero-value { color: #c97aff; }
+        body.dark-mode .turnaround .stat-hero-icon  { background: #6a00a8; box-shadow: 0 4px 14px rgba(139,0,199,.5); }
+        body.dark-mode .turnaround .stat-hero-bar-fill { background: #a040e8; }
+        body.dark-mode .turnaround::after           { background: #a040e8; opacity: .18; }
+
+        /* Trend pills — dark mode */
+        body.dark-mode .tat-trend-faster { background: #0a2e1a; color: #4ade80; border: 1px solid #166534; }
+        body.dark-mode .tat-trend-slower { background: #2e0a0a; color: #f87171; border: 1px solid #7f1d1d; }
+        body.dark-mode .tat-trend-same   { background: #1a1d38; color: #8890b8; border: 1px solid #2a2d52; }
+
         body.dark-mode .stat-hero-label           { color: #cdd0ef; }
         body.dark-mode .stat-hero-sub             { color: #5a6090; }
         body.dark-mode .stat-hero-bar-label       { color: #5a6090; }
@@ -365,7 +442,33 @@ $current_page = 'admin_dashboard';
                 <div class="stat-hero-bar-label"><?= $pct_resolved ?>% of total reports</div>
             </div>
         </div>
-    </div>
+
+        <!-- Turnaround Time -->
+        <?php
+        $trend_class = $tat_trend === 'faster' ? 'tat-trend-faster' : ($tat_trend === 'slower' ? 'tat-trend-slower' : 'tat-trend-same');
+        $trend_icon  = $tat_trend === 'faster' ? 'fa-arrow-down' : ($tat_trend === 'slower' ? 'fa-arrow-up' : 'fa-minus');
+        $trend_label = $tat_trend === 'faster' ? 'Faster this month' : ($tat_trend === 'slower' ? 'Slower this month' : 'No change');
+        ?>
+        <div class="stat-hero-card turnaround">
+            <div class="stat-hero-icon"><i class="fa fa-hourglass-half"></i></div>
+            <div class="stat-hero-value"><?= $avg_tat_display ?></div>
+            <div class="stat-hero-label">Avg. Resolution Time</div>
+            <div class="stat-hero-sub">
+                This month: <strong><?= $avg_tat_month_display ?></strong>
+            </div>
+            <?php if ($tat_trend !== 'none'): ?>
+            <div class="tat-trend-pill <?= $trend_class ?>">
+                <i class="fa <?= $trend_icon ?>"></i> <?= $trend_label ?>
+            </div>
+            <?php endif; ?>
+            <div class="stat-hero-bar" style="margin-top:10px;">
+                <div class="stat-hero-bar-track">
+                    <div class="stat-hero-bar-fill" style="width:<?= $r_resolved > 0 ? min(100, round($r_resolved / max($r_total,1) * 100)) : 0 ?>%;"></div>
+                </div>
+                <div class="stat-hero-bar-label"><?= $r_resolved ?> of <?= $r_total ?> report<?= $r_total !== 1 ? 's' : '' ?> resolved</div>
+            </div>
+        </div>
+    </div><!-- /.stats-hero -->
 
     <!-- Chart -->
     <div class="chart-card">
@@ -375,10 +478,11 @@ $current_page = 'admin_dashboard';
                 Reports Overview
             </div>
             <div class="chart-tabs">
-                <button class="chart-tab active" id="tab-month"    onclick="switchChartView('month',this)">Monthly</button>
-                <button class="chart-tab"         id="tab-category" onclick="switchChartView('category',this)">By Category</button>
-                <button class="chart-tab"         id="tab-status"   onclick="switchChartView('status',this)">By Status</button>
-                <button class="chart-tab"         id="tab-projects" onclick="switchChartView('projects',this)">Projects</button>
+                <button class="chart-tab active" id="tab-month"      onclick="switchChartView('month',this)">Monthly</button>
+                <button class="chart-tab"         id="tab-category"  onclick="switchChartView('category',this)">By Category</button>
+                <button class="chart-tab"         id="tab-status"    onclick="switchChartView('status',this)">By Status</button>
+                <button class="chart-tab"         id="tab-projects"  onclick="switchChartView('projects',this)">Projects</button>
+                <button class="chart-tab"         id="tab-turnaround" onclick="switchChartView('turnaround',this)">Turnaround</button>
             </div>
         </div>
         <div style="height:270px; position:relative;">
@@ -469,14 +573,16 @@ $current_page = 'admin_dashboard';
 </div>
 
 <script>
-window.MONTHLY_DATA  = <?= json_encode($monthly_data) ?>;
-window.CATEGORY_DATA = <?= json_encode($category_data) ?>;
-window.STAT_PENDING  = <?= $r_pending ?>;
-window.STAT_PROGRESS = <?= $r_progress ?>;
-window.STAT_RESOLVED = <?= $r_resolved ?>;
+window.MONTHLY_DATA   = <?= json_encode($monthly_data) ?>;
+window.CATEGORY_DATA  = <?= json_encode($category_data) ?>;
+window.STAT_PENDING   = <?= $r_pending ?>;
+window.STAT_PROGRESS  = <?= $r_progress ?>;
+window.STAT_RESOLVED  = <?= $r_resolved ?>;
 window.STAT_PLANNED   = <?= $p_planned ?>;
 window.STAT_ONGOING   = <?= $p_ongoing ?>;
 window.STAT_COMPLETED = <?= $p_completed ?>;
+window.TAT_MONTHLY    = <?= json_encode($tat_monthly_data) ?>;
+window.AVG_TAT_MIN    = <?= round($avg_tat_min, 1) ?>;
 </script>
 <script src="../assets/js/admin_dashboard.js"></script>
 

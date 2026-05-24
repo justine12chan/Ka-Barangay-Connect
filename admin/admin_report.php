@@ -3,13 +3,33 @@ session_start();
 if (!isset($_SESSION['userID'])) { header("Location: admin_login.php"); exit(); }
 include __DIR__ . '/../connection.php';
 
+// --- Ensure resolved_at column exists ---
+$col_rat = @mysqli_query($conn, "SHOW COLUMNS FROM `reports` LIKE 'resolved_at'");
+if ($col_rat && mysqli_num_rows($col_rat) === 0) {
+    mysqli_query($conn, "ALTER TABLE `reports` ADD COLUMN `resolved_at` DATETIME NULL DEFAULT NULL AFTER `status`");
+}
+
 // --- Handle status update ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_status'])) {
     $id      = (int) $_POST['report_id'];
     $status  = mysqli_real_escape_string($conn, $_POST['new_status']);
     $allowed = ['pending', 'in-progress', 'resolved'];
+    $ok = false;
+    $resolved_at = null;
     if (in_array($status, $allowed) && $id > 0) {
-        executeQuery("UPDATE reports SET status='$status' WHERE id=$id");
+        if ($status === 'resolved') {
+            executeQuery("UPDATE reports SET status='$status', resolved_at = COALESCE(resolved_at, NOW()) WHERE id=$id");
+            $row = mysqli_fetch_assoc(executeQuery("SELECT resolved_at FROM reports WHERE id=$id"));
+            $resolved_at = $row['resolved_at'] ?? null;
+        } else {
+            executeQuery("UPDATE reports SET status='$status', resolved_at = NULL WHERE id=$id");
+        }
+        $ok = true;
+    }
+    if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
+        header('Content-Type: application/json');
+        echo json_encode(['success' => $ok, 'report_id' => $id, 'new_status' => $status, 'resolved_at' => $resolved_at]);
+        exit;
     }
     header('Location: admin_report.php');
     exit;
@@ -27,10 +47,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admin_comment'])) {
     $report_id   = (int) ($_POST['report_id'] ?? 0);
     $comment_txt = trim($_POST['comment_text'] ?? '');
     $admin_name  = mysqli_real_escape_string($conn, 'Barangay Admin');
+    $new_comment = null;
     if ($report_id > 0 && $comment_txt !== '') {
         $comm_esc = mysqli_real_escape_string($conn, $comment_txt);
         executeQuery("INSERT INTO report_comments (report_id, resident_id, resident_name, comment_text, is_admin, commenter_name)
                       VALUES ($report_id, 0, 'Barangay Admin', '$comm_esc', 1, '$admin_name')");
+        $new_id = mysqli_insert_id($conn);
+        $new_comment = [
+            'id'             => $new_id,
+            'report_id'      => $report_id,
+            'resident_name'  => 'Barangay Admin',
+            'comment_text'   => $comment_txt,
+            'is_admin'       => 1,
+            'commenter_name' => 'Barangay Admin',
+            'created_at'     => date('Y-m-d H:i:s'),
+        ];
+    }
+    if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
+        header('Content-Type: application/json');
+        echo json_encode(['success' => $new_comment !== null, 'comment' => $new_comment]);
+        exit;
     }
     header('Location: admin_report.php');
     exit;
@@ -70,7 +106,7 @@ $r_progress = mysqli_fetch_row(executeQuery("SELECT COUNT(*) FROM reports WHERE 
 $r_resolved = mysqli_fetch_row(executeQuery("SELECT COUNT(*) FROM reports WHERE status='resolved'"))[0]    ?? 0;
 
 // --- All reports with comments ---
-$result  = executeQuery("SELECT * FROM reports ORDER BY created_at DESC");
+$result  = executeQuery("SELECT *, resolved_at FROM reports ORDER BY created_at DESC");
 $reports = [];
 if ($result) {
     while ($row = mysqli_fetch_assoc($result)) {
