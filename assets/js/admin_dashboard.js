@@ -11,6 +11,8 @@ const statResolved = window.STAT_RESOLVED || 0;
 const statPlanned   = window.STAT_PLANNED   || 0;
 const statOngoing   = window.STAT_ONGOING   || 0;
 const statCompleted = window.STAT_COMPLETED || 0;
+const tatMonthly    = window.TAT_MONTHLY    || [];
+const avgTatMin     = window.AVG_TAT_MIN    || 0;
 
 const monthLabels = [], pendingArr = [], progressArr = [], resolvedArr = [];
 const now = new Date();
@@ -139,6 +141,65 @@ function buildProjectsChart() {
     };
 }
 
+function buildTurnaroundChart() {
+    // Build the last-12-months labels (same as monthly chart)
+    const tatLabels = [], tatValues = [];
+    const now = new Date();
+    for (let i = 11; i >= 0; i--) {
+        const d   = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const ym  = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+        const lbl = d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+        tatLabels.push(lbl);
+        const found = tatMonthly.find(x => x.ym === ym);
+        // avg_hours from PHP; convert to days for display if large
+        tatValues.push(found ? parseFloat(found.avg_hours) : null);
+    }
+    return {
+        type: 'bar',
+        data: {
+            labels: tatLabels,
+            datasets: [{
+                label: 'Avg. Hours to Resolve',
+                data: tatValues,
+                backgroundColor: tatValues.map(v =>
+                    v === null ? 'transparent' :
+                    v <= 24   ? '#22cc77' :
+                    v <= 72   ? '#f59c23' : '#c0001a'),
+                borderRadius: 6,
+                borderSkipped: false,
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: ctx => {
+                            const h = ctx.parsed.y;
+                            if (h === null) return ' No data';
+                            const d = Math.floor(h / 24), r = Math.round(h % 24);
+                            return d > 0 ? ` ${d}d ${r}h avg` : ` ${Math.round(h)}h avg`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+                y: {
+                    beginAtZero: true,
+                    grid: { color: '#f0f2f8' },
+                    ticks: {
+                        font: { size: 11 },
+                        callback: v => v + 'h'
+                    },
+                    title: { display: true, text: 'Avg. Hours', font: { size: 11 }, color: '#8890b8' }
+                }
+            }
+        }
+    };
+}
+
 function switchChartView(view, btn) {
     // Update tab buttons
     document.querySelectorAll('.chart-tab').forEach(b => b.classList.remove('active'));
@@ -146,9 +207,10 @@ function switchChartView(view, btn) {
 
     if (chartInstance) chartInstance.destroy();
     const ctx = document.getElementById('reportsChart').getContext('2d');
-    const cfg = view === 'month'    ? buildMonthChart()
-              : view === 'category' ? buildCategoryChart()
-              : view === 'projects' ? buildProjectsChart()
+    const cfg = view === 'month'       ? buildMonthChart()
+              : view === 'category'    ? buildCategoryChart()
+              : view === 'projects'    ? buildProjectsChart()
+              : view === 'turnaround'  ? buildTurnaroundChart()
               : buildStatusChart();
     chartInstance = new Chart(ctx, cfg);
 }

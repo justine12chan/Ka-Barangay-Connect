@@ -54,6 +54,22 @@ function escapeJs(str) {
     return (str || '').replace(/'/g, "\\'").replace(/"/g, '\\"');
 }
 
+/* ── Turnaround time helper ── */
+function fmtTurnaround(createdAt, resolvedAt) {
+    if (!createdAt) return null;
+    const start = new Date(createdAt);
+    const end   = resolvedAt ? new Date(resolvedAt) : new Date();
+    const ms    = end - start;
+    if (isNaN(ms) || ms < 0) return null;
+    const totalMins = Math.floor(ms / 60000);
+    const days  = Math.floor(totalMins / 1440);
+    const hours = Math.floor((totalMins % 1440) / 60);
+    const mins  = totalMins % 60;
+    if (days > 0)  return days  + 'd ' + hours + 'h';
+    if (hours > 0) return hours + 'h ' + mins  + 'm';
+    return mins + 'm';
+}
+
 /* ── Report rendering ── */
 let openDetailId = null;
 
@@ -71,6 +87,19 @@ function buildDetailHtml(r) {
            </div>` : '';
     const purokHtml = r.purok
         ? `<div style="font-size:11px; color:rgba(255,255,255,0.7); margin-top:2px;"><i class="fa fa-map-marker" style="margin-right:3px;"></i>${r.purok}</div>` : '';
+
+    // Turnaround pill — only shown for resolved reports
+    const isResolved = r.status === 'resolved';
+    const tat        = isResolved ? fmtTurnaround(r.created_at, r.resolved_at) : null;
+    const tatHtml    = tat ? `
+        <div style="display:inline-flex; align-items:center; gap:5px; margin-top:8px;
+                    padding:4px 12px; border-radius:20px;
+                    background:${isResolved ? 'rgba(34,204,119,0.2)' : 'rgba(255,255,255,0.15)'};
+                    border:1px solid ${isResolved ? 'rgba(34,204,119,0.5)' : 'rgba(255,255,255,0.3)'};
+                    font-size:11px; font-weight:700; color:${isResolved ? '#a8ffd4' : 'rgba(255,255,255,0.9)'};">
+            <i class="fa fa-${isResolved ? 'check-circle' : 'clock-o'}"></i>
+            ${isResolved ? 'Resolved in ' + tat : 'Open for ' + tat}
+        </div>` : '';
 
     // Build comments HTML
     const comments = r.comments || [];
@@ -124,6 +153,7 @@ function buildDetailHtml(r) {
                 ${reporter_disp}
             </div>
             ${purokHtml}
+            ${tatHtml}
         </div>
         <div style="padding:16px 18px; background:${cat.bg}08;">
             ${imgHtml}
@@ -162,7 +192,8 @@ function buildDetailHtml(r) {
                 ${commentsHtml}
 
                 <!-- Admin reply form -->
-                <form method="POST" action="admin_report.php"
+                <form id="commentForm-${r.id}" method="POST" action="admin_report.php"
+                      onsubmit="submitAdminComment(event, ${r.id})"
                       style="display:flex; gap:8px; margin-top:8px;">
                     <input type="hidden" name="admin_comment" value="1">
                     <input type="hidden" name="report_id"    value="${r.id}">
@@ -503,9 +534,93 @@ function askStatusChange(reportId, newStatus, title) {
 }
 
 function confirmStatusChange() {
-    document.getElementById('formReportIdH').value  = pendingStatusId;
-    document.getElementById('formNewStatusH').value = pendingStatusVal;
-    document.getElementById('statusFormHidden').submit();
+    document.getElementById('statusConfirmModal').style.display = 'none';
+
+    const fd = new FormData();
+    fd.append('update_status', '1');
+    fd.append('report_id',     pendingStatusId);
+    fd.append('new_status',    pendingStatusVal);
+
+    fetch('admin_report.php', {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        body: fd
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (!data.success) return;
+        // Update the in-memory report object
+        const rpt = reports.find(r => parseInt(r.id) === parseInt(data.report_id));
+        if (rpt) { rpt.status = data.new_status; rpt.resolved_at = data.resolved_at || null; }
+        renderReports();
+        // Re-open the same report detail
+        setTimeout(() => {
+            const el = document.querySelector(`.rpt-inline-card[data-id="${data.report_id}"]`);
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 50);
+        // Update stat counters
+        refreshStatCounts();
+    })
+    .catch(err => console.error('Status update failed:', err));
+}
+
+/* ── Admin Comment (AJAX — no page reset) ── */
+function submitAdminComment(e, reportId) {
+    e.preventDefault();
+    const form  = document.getElementById('commentForm-' + reportId);
+    const input = form.querySelector('input[name="comment_text"]');
+    const text  = input ? input.value.trim() : '';
+    if (!text) return;
+
+    const submitBtn = form.querySelector('button[type="submit"]');
+    if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Sending…'; }
+
+    const fd = new FormData();
+    fd.append('admin_comment', '1');
+    fd.append('report_id',     reportId);
+    fd.append('comment_text',  text);
+
+    fetch('admin_report.php', {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        body: fd
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (!data.success || !data.comment) return;
+        // Append new comment to the in-memory report
+        const rpt = reports.find(r => parseInt(r.id) === parseInt(reportId));
+        if (rpt) {
+            if (!rpt.comments) rpt.comments = [];
+            rpt.comments.push(data.comment);
+        }
+        // Re-render keeping the same report open
+        renderReports();
+        setTimeout(() => {
+            const el = document.querySelector(`.rpt-inline-card[data-id="${reportId}"]`);
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 50);
+    })
+    .catch(err => console.error('Comment submit failed:', err))
+    .finally(() => {
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fa fa-paper-plane"></i> Reply';
+        }
+    });
+}
+
+/* ── Refresh stat count boxes after in-place status change ── */
+function refreshStatCounts() {
+    const pending    = reports.filter(r => r.status === 'pending').length;
+    const inProgress = reports.filter(r => r.status === 'in-progress').length;
+    const resolved   = reports.filter(r => r.status === 'resolved').length;
+    const pEl = document.querySelector('.stat-box:nth-child(1) .stat-num');
+    const iEl = document.querySelector('.stat-box:nth-child(2) .stat-num');
+    const rEl = document.querySelector('.stat-box:nth-child(3) .stat-num');
+    if (pEl) pEl.textContent = pending;
+    if (iEl) iEl.textContent = inProgress;
+    if (rEl) rEl.textContent = resolved;
 }
 
 /* ── Lightbox ── */
