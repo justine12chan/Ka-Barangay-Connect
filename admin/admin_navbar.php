@@ -5,70 +5,31 @@ $_current_page = $current_page ?? basename($_SERVER['PHP_SELF'], '.php');
 $_admin_name   = htmlspecialchars($_SESSION['admin_full_name'] ?? $_SESSION['admin_user'] ?? 'Admin');
 $_admin_pos    = htmlspecialchars($_SESSION['admin_position']  ?? 'Administrator');
 
-// ── Mark a resident comment as read when admin clicks the notification ──
-if (isset($_GET['mark_comment_read']) && isset($conn)) {
-    $mcr_id = (int) $_GET['mark_comment_read'];
-    if ($mcr_id > 0) {
-        @mysqli_query($conn, "UPDATE report_comments SET admin_is_read = 1 WHERE id = $mcr_id AND is_admin = 0");
-    }
-}
-
 $_nav_items = [
     'admin_dashboard' => ['label' => 'Dashboard', 'icon' => 'fa-tachometer',  'href' => 'admin_dashboard.php'],
     'admin_report'    => ['label' => 'Reports',   'icon' => 'fa-flag',        'href' => 'admin_report.php'],
-    'admin_program'   => ['label' => 'Projects',  'icon' => 'fa-briefcase',   'href' => 'admin_program.php'],
+    'admin_program'   => ['label' => 'Programs',  'icon' => 'fa-briefcase',   'href' => 'admin_program.php'],
 ];
 
-// ── Ensure report_comments has admin_is_read column (one-time migration) ──
-if (isset($conn)) {
-    $col_air = @mysqli_query($conn, "SHOW COLUMNS FROM `report_comments` LIKE 'admin_is_read'");
-    if ($col_air && mysqli_num_rows($col_air) === 0) {
-        mysqli_query($conn, "ALTER TABLE `report_comments` ADD COLUMN `admin_is_read` TINYINT(1) NOT NULL DEFAULT 0 AFTER `is_read`");
-        mysqli_query($conn, "UPDATE `report_comments` SET `admin_is_read` = 0 WHERE is_admin = 0");
-        mysqli_query($conn, "UPDATE `report_comments` SET `admin_is_read` = 1 WHERE is_admin = 1");
-    }
-}
-
-// ── Notification query — new reports (last 10 min) + unread resident comments ──
+// ── Notification query — only reports from the last 10 minutes ──
 $_notif_count = 0;
 $_notif_items = [];
 
-// 1) New pending reports in the last 10 minutes
-$_new_reports = [];
-$_report_res = isset($conn)
-    ? @mysqli_query($conn, "SELECT id, reporter, title, created_at, 'new_report' as notif_type FROM reports WHERE status = 'pending' AND created_at >= NOW() - INTERVAL 10 MINUTE ORDER BY created_at DESC LIMIT 5")
+$_notif_count_res = isset($conn)
+    ? @mysqli_query($conn, "SELECT COUNT(*) as total FROM reports WHERE status = 'pending' AND created_at >= NOW() - INTERVAL 10 MINUTE")
     : false;
-if ($_report_res) {
-    while ($r = mysqli_fetch_assoc($_report_res)) {
-        $_new_reports[] = $r;
-    }
+if ($_notif_count_res) {
+    $_notif_count = (int) mysqli_fetch_assoc($_notif_count_res)['total'];
 }
 
-// 2) Unread resident comments (is_admin = 0, admin_is_read = 0)
-$_comment_items = [];
-$_comment_res = isset($conn)
-    ? @mysqli_query($conn, "
-        SELECT rc.id, rc.report_id, rc.resident_name, rc.comment_text, rc.created_at,
-               r.title AS report_title, 'resident_comment' as notif_type
-        FROM report_comments rc
-        JOIN reports r ON r.id = rc.report_id
-        WHERE rc.is_admin = 0
-          AND rc.admin_is_read = 0
-        ORDER BY rc.created_at DESC
-        LIMIT 5
-    ")
+$_notif_res = isset($conn)
+    ? @mysqli_query($conn, "SELECT id, reporter, title, created_at FROM reports WHERE status = 'pending' AND created_at >= NOW() - INTERVAL 10 MINUTE ORDER BY created_at DESC LIMIT 5")
     : false;
-if ($_comment_res) {
-    while ($c = mysqli_fetch_assoc($_comment_res)) {
-        $_comment_items[] = $c;
+if ($_notif_res) {
+    while ($r = mysqli_fetch_assoc($_notif_res)) {
+        $_notif_items[] = $r;
     }
 }
-
-// Merge, sort by created_at descending, cap at 8
-$_all_notifs = array_merge($_new_reports, $_comment_items);
-usort($_all_notifs, fn($a, $b) => strtotime($b['created_at']) - strtotime($a['created_at']));
-$_notif_items = array_slice($_all_notifs, 0, 8);
-$_notif_count = count($_new_reports) + count($_comment_items);
 
 function _notif_time_ago(string $datetime): string {
     $diff = time() - strtotime($datetime);
@@ -436,8 +397,8 @@ body.dark-mode .an-mobile-bell-row:hover  { background: #2a0808; color: #f0ddd8;
             <div class="an-notif-dropdown" id="anNotifDropdown">
                 <div class="an-notif-head">
                     <div>
-                        <div class="an-notif-head-title">🔔 Notifications</div>
-                        <div class="an-notif-head-sub">New reports &amp; resident comments</div>
+                        <div class="an-notif-head-title">🔔 New Reports</div>
+                        <div class="an-notif-head-sub">Last 10 minutes</div>
                     </div>
                     <?php if ($_notif_count > 0): ?>
                     <span class="an-notif-head-badge"><?= $_notif_count ?> new</span>
@@ -447,45 +408,23 @@ body.dark-mode .an-mobile-bell-row:hover  { background: #2a0808; color: #f0ddd8;
                 <?php if (empty($_notif_items)): ?>
                 <div class="an-notif-empty">
                     <i class="fa fa-check-circle"></i>
-                    All caught up — nothing new right now
+                    No new reports in the last 10 minutes
                 </div>
                 <?php else: ?>
                     <?php foreach ($_notif_items as $n): ?>
-                        <?php if ($n['notif_type'] === 'resident_comment'): ?>
-                        <a class="an-notif-item" href="admin_report.php?id=<?= (int)$n['report_id'] ?>&mark_comment_read=<?= (int)$n['id'] ?>">
-                            <span class="an-notif-dot" style="background:#d4a96a;"></span>
-                            <div style="min-width:0; flex:1;">
-                                <p class="an-notif-title">
-                                    <i class="fa fa-comment" style="font-size:10px; color:#d4a96a;"></i>
-                                    <?= htmlspecialchars($n['resident_name']) ?> commented
-                                </p>
-                                <p class="an-notif-meta" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:230px;">
-                                    on: <?= htmlspecialchars($n['report_title']) ?>
-                                </p>
-                                <p class="an-notif-meta">
-                                    <i class="fa fa-clock-o" style="font-size:10px;"></i>
-                                    <?= _notif_time_ago($n['created_at']) ?>
-                                </p>
-                            </div>
-                        </a>
-                        <?php else: ?>
-                        <a class="an-notif-item" href="admin_report.php?id=<?= (int)$n['id'] ?>">
-                            <span class="an-notif-dot"></span>
-                            <div style="min-width:0; flex:1;">
-                                <p class="an-notif-title">
-                                    <i class="fa fa-flag" style="font-size:10px; color:#c0001a;"></i>
-                                    <?= htmlspecialchars($n['title']) ?>
-                                </p>
-                                <p class="an-notif-meta">
-                                    <i class="fa fa-user" style="font-size:10px;"></i>
-                                    <?= htmlspecialchars($n['reporter']) ?>
-                                    &middot;
-                                    <i class="fa fa-clock-o" style="font-size:10px;"></i>
-                                    <?= _notif_time_ago($n['created_at']) ?>
-                                </p>
-                            </div>
-                        </a>
-                        <?php endif; ?>
+                    <a class="an-notif-item" href="admin_report.php?id=<?= (int)$n['id'] ?>">
+                        <span class="an-notif-dot"></span>
+                        <div style="min-width:0; flex:1;">
+                            <p class="an-notif-title"><?= htmlspecialchars($n['title']) ?></p>
+                            <p class="an-notif-meta">
+                                <i class="fa fa-user" style="font-size:10px;"></i>
+                                <?= htmlspecialchars($n['reporter']) ?>
+                                &middot;
+                                <i class="fa fa-clock-o" style="font-size:10px;"></i>
+                                <?= _notif_time_ago($n['created_at']) ?>
+                            </p>
+                        </div>
+                    </a>
                     <?php endforeach; ?>
                 <?php endif; ?>
 

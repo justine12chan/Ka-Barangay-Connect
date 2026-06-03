@@ -1,6 +1,7 @@
 <?php
 // resident/report.php
 session_start();
+date_default_timezone_set('Asia/Manila');
 
 // ── Auth gate ───────────────────────────────────────────────
 if (!isset($_SESSION['resident_id'])) {
@@ -12,7 +13,16 @@ $resident_id    = (int) $_SESSION['resident_id'];
 $resident_name  = $_SESSION['resident_name'];
 $resident_purok = $_SESSION['resident_purok'] ?? '';
 
+// ── Safety guard: if session ID is somehow 0 or negative, force re-login ──
+if ($resident_id <= 0) {
+    session_destroy();
+    header('Location: resident_login.php?redirect=report.php');
+    exit;
+}
+
 require_once __DIR__ . '/../connection.php';
+// Force MySQL session timezone to PH time so CURRENT_TIMESTAMP defaults store the correct time
+mysqli_query($conn, "SET time_zone = '+08:00'");
 
 // ── Ensure resident_id column exists in reports table ───────
 // This is a one-time safe migration: if the column is missing it gets added.
@@ -33,6 +43,139 @@ $col2 = @mysqli_query($conn, "SHOW COLUMNS FROM `report_comments` LIKE 'is_admin
 if ($col2 && mysqli_num_rows($col2) === 0) {
     mysqli_query($conn, "ALTER TABLE `report_comments` ADD COLUMN `is_admin` TINYINT(1) NOT NULL DEFAULT 0 AFTER `comment_text`");
     mysqli_query($conn, "ALTER TABLE `report_comments` ADD COLUMN `commenter_name` VARCHAR(120) NULL DEFAULT NULL AFTER `is_admin`");
+}
+
+// ── Ensure report_comments has is_read column (one-time migration) ──
+$col3 = @mysqli_query($conn, "SHOW COLUMNS FROM `report_comments` LIKE 'is_read'");
+if ($col3 && mysqli_num_rows($col3) === 0) {
+    mysqli_query($conn, "ALTER TABLE `report_comments` ADD COLUMN `is_read` TINYINT(1) NOT NULL DEFAULT 0 AFTER `is_admin`");
+}
+
+// ── Ensure reports has updated_at column (one-time migration) ──
+$col_upd = @mysqli_query($conn, "SHOW COLUMNS FROM `reports` LIKE 'updated_at'");
+if ($col_upd && mysqli_num_rows($col_upd) === 0) {
+    mysqli_query($conn, "ALTER TABLE `reports` ADD COLUMN `updated_at` DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP AFTER `created_at`");
+    mysqli_query($conn, "UPDATE `reports` SET `updated_at` = `created_at`");
+}
+
+// ── Ensure reports has last_notified_status column (one-time migration) ──
+// This tracks what status the resident last "saw" so we can detect unseen changes.
+$col4 = @mysqli_query($conn, "SHOW COLUMNS FROM `reports` LIKE 'last_notified_status'");
+if ($col4 && mysqli_num_rows($col4) === 0) {
+    mysqli_query($conn, "ALTER TABLE `reports` ADD COLUMN `last_notified_status` VARCHAR(30) NULL DEFAULT NULL AFTER `status`");
+    // Back-fill: set last_notified_status = status so existing reports don't all fire at once
+    mysqli_query($conn, "UPDATE `reports` SET `last_notified_status` = `status`");
+}
+
+// ── Helper: human-readable status label ─────────────────────────
+function _status_label(string $s): string {
+    $map = [
+        'pending'     => 'Pending',
+        'in-progress' => 'In Progress',
+        'resolved'    => 'Resolved',
+    ];
+    return $map[$s] ?? ucfirst($s);
+}
+
+// ── AJAX: fetch notifications (admin comments + status changes) ──
+if (isset($_GET['action']) && $_GET['action'] === 'get_notifications') {
+    header('Content-Type: application/json');
+    $notifs = [];
+
+    // 1) Admin comments on this resident's reports
+    $res = executeQuery("
+        SELECT rc.id, rc.report_id, rc.created_at, rc.is_read,
+               r.title AS report_title
+        FROM report_comments rc
+        JOIN reports r ON r.id = rc.report_id
+        WHERE r.resident_id = $resident_id
+          AND rc.is_admin = 1
+        ORDER BY rc.created_at DESC
+        LIMIT 30
+    ");
+    if ($res) {
+        while ($n = mysqli_fetch_assoc($res)) {
+            $notifs[] = [
+                'id'         => 'c' . $n['id'],   // prefix to avoid ID clash with status notifs
+                'report_id'  => $n['report_id'],
+                'type'       => 'admin_comment',
+                'message'    => 'Admin replied on: ' . htmlspecialchars($n['report_title']),
+                'is_read'    => $n['is_read'],
+                'created_at' => $n['created_at'],
+            ];
+        }
+    }
+
+    // 2) Status changes — reports where current status differs from last_notified_status
+    $sres = executeQuery("
+        SELECT id, title, status, updated_at
+        FROM reports
+        WHERE resident_id = $resident_id
+          AND last_notified_status IS NOT NULL
+          AND status != last_notified_status
+        ORDER BY updated_at DESC
+        LIMIT 30
+    ");
+    $status_unread = 0;
+    if ($sres) {
+        while ($r = mysqli_fetch_assoc($sres)) {
+            $notifs[] = [
+                'id'         => 's' . $r['id'],
+                'report_id'  => $r['id'],
+                'type'       => 'status_change',
+                'message'    => '"' . htmlspecialchars($r['title']) . '" is now ' . _status_label($r['status']),
+                'is_read'    => 0,   // always unread until dismissed
+                'created_at' => $r['updated_at'],
+            ];
+            $status_unread++;
+        }
+    }
+
+    // Sort all notifications by created_at descending
+    usort($notifs, fn($a, $b) => strtotime($b['created_at']) - strtotime($a['created_at']));
+
+    // Unread count = unread admin comments + unread status changes
+    $comment_unread_res = executeQuery("
+        SELECT COUNT(*) FROM report_comments rc
+        JOIN reports r ON r.id = rc.report_id
+        WHERE r.resident_id = $resident_id
+          AND rc.is_admin = 1
+          AND rc.is_read = 0
+    ");
+    $comment_unread = (int)(mysqli_fetch_row($comment_unread_res)[0] ?? 0);
+    $unread = $comment_unread + $status_unread;
+
+    $statuses = [];
+    $stres = executeQuery("SELECT id, status FROM reports WHERE resident_id = $resident_id AND resident_id > 0");
+    if ($stres) { while ($sr = mysqli_fetch_assoc($stres)) $statuses[(int)$sr['id']] = $sr['status']; }
+    echo json_encode(['notifications' => $notifs, 'unread' => $unread, 'report_statuses' => $statuses]);
+    exit;
+}
+
+// ── AJAX: mark notifications as read ────────────────────────────
+if (isset($_GET['action']) && $_GET['action'] === 'mark_read') {
+    header('Content-Type: application/json');
+
+    // Mark admin comments as read
+    executeQuery("
+        UPDATE report_comments rc
+        JOIN reports r ON r.id = rc.report_id
+        SET rc.is_read = 1
+        WHERE r.resident_id = $resident_id
+          AND rc.is_admin = 1
+          AND rc.is_read = 0
+    ");
+
+    // Acknowledge status changes — sync last_notified_status to current status
+    executeQuery("
+        UPDATE reports
+        SET last_notified_status = status
+        WHERE resident_id = $resident_id
+          AND status != last_notified_status
+    ");
+
+    echo json_encode(['success' => true]);
+    exit;
 }
 
 // ── Handle comment submission ────────────────────────────────
@@ -108,8 +251,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 }
 
 // ── Fetch this resident's reports + comments ─────────────────
+// FIX: Added `AND resident_id > 0` as an extra guard so orphaned rows (resident_id = 0)
+//      from before the login system was added never leak into any resident's view.
 $my_reports = [];
-$res = executeQuery("SELECT * FROM reports WHERE resident_id = $resident_id ORDER BY created_at DESC");
+$res = executeQuery("SELECT * FROM reports WHERE resident_id = $resident_id AND resident_id > 0 ORDER BY created_at DESC");
 if ($res && mysqli_num_rows($res) > 0) {
     while ($row = mysqli_fetch_assoc($res)) {
         $rid = (int) $row['id'];
@@ -147,743 +292,10 @@ function initials($name) {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../assets/css/resident.css">
+    <link rel="stylesheet" href="../assets/css/resident-darkmode-append.css">
     <!-- Dark mode: load before first paint to avoid flash -->
     <script src="../assets/js/main.js"></script>
-    <style>
-        :root {
-            --primary:      #7c1d1d;
-            --primary-dark: #5a1313;
-            --primary-mid:  #9b2424;
-            --primary-glow: rgba(124,29,29,.10);
-            --gold:         #c4922a;
-            --gold-light:   #f5e6c8;
-            --gold-pale:    #fdf8ee;
-            --ink:          #0f172a;
-            --ink-2:        #334155;
-            --muted:        #64748b;
-            --faint:        #94a3b8;
-            --border:       #e2e8f0;
-            --border-light: #f1f5f9;
-            --surface:      #f8fafc;
-            --white:        #ffffff;
-            --bg:           #eef1f7;
-            --sidebar-w:    400px;
-            --nav-h:        68px;
-            --r:            10px;
-            --r-lg:         16px;
-            --r-xl:         22px;
-            --shadow-xs: 0 1px 2px rgba(0,0,0,.04);
-            --shadow-sm: 0 1px 4px rgba(0,0,0,.06), 0 2px 8px rgba(0,0,0,.04);
-            --shadow-md: 0 4px 16px rgba(0,0,0,.08), 0 2px 4px rgba(0,0,0,.04);
-            --shadow-lg: 0 12px 36px rgba(0,0,0,.10), 0 4px 8px rgba(0,0,0,.05);
-            --transition: 180ms cubic-bezier(0.4,0,0.2,1);
-        }
-        /* ─── Base ─────────────────────────────────────── */
-        html { scroll-behavior: smooth; }
-        body.page-report {
-            font-family: 'DM Sans', system-ui, sans-serif;
-            background: var(--bg);
-            color: var(--ink);
-            min-height: 100vh;
-            -webkit-font-smoothing: antialiased;
-        }
-        p, span, div { line-height: 1.5; }
-        h1,h2,h3,h4,h5 { font-family: 'DM Serif Display', Georgia, serif; }
-
-
-        /* ─── Navbar ──────────────────────────────────── */
-        .rp-nav {
-            height: var(--nav-h);
-            background: var(--primary-dark);
-            border-bottom: 2px solid rgba(196,146,42,.3);
-            padding: 0 32px;
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            position: sticky;
-            top: 0;
-            z-index: 200;
-            box-shadow: 0 2px 24px rgba(0,0,0,.2);
-        }
-        .rp-nav-logo {
-            width: 36px; height: 36px; border-radius: 8px;
-            overflow: hidden; flex-shrink: 0;
-            display: flex; align-items: center; justify-content: center;
-        }
-        .rp-nav-logo img { width: 100%; height: 100%; object-fit: contain; filter: brightness(1.2) drop-shadow(0 0 4px rgba(255,255,255,.2)); }
-        .rp-nav-wordmark { flex: 1; min-width: 0; }
-        .rp-nav-title {
-            font-family: 'DM Serif Display', serif;
-            font-size: 16px; font-weight: 400; color: #fff;
-            letter-spacing: .01em; line-height: 1.2;
-        }
-        .rp-nav-sub {
-            font-size: 10px; font-weight: 500; color: rgba(196,146,42,.85);
-            text-transform: uppercase; letter-spacing: .12em;
-        }
-        .rp-nav-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
-        .rp-nav-user {
-            font-size: 12.5px; font-weight: 500;
-            color: rgba(255,255,255,.5); display: none;
-        }
-        @media (min-width: 520px) { .rp-nav-user { display: block; } }
-        .rp-nav-btn {
-            font-size: 12px; font-weight: 600;
-            padding: 7px 16px; border-radius: 8px;
-            text-decoration: none;
-            transition: background var(--transition), color var(--transition);
-            white-space: nowrap;
-            color: rgba(255,255,255,.75);
-            background: rgba(255,255,255,.08);
-            border: 1px solid rgba(255,255,255,.12);
-        }
-        .rp-nav-btn:hover { background: rgba(255,255,255,.16); color: #fff; }
-        .rp-nav-btn.logout {
-            color: #fca5a5;
-            background: rgba(239,68,68,.10);
-            border-color: rgba(239,68,68,.22);
-        }
-        .rp-nav-btn.logout:hover { background: rgba(239,68,68,.20); color: #fca5a5; }
-
-        /* ─── Compact Tab Bar (replaces hero) ──────────────── */
-        .compact-tab-bar {
-            background: var(--white);
-            border-bottom: 1.5px solid var(--border);
-            box-shadow: var(--shadow-xs);
-        }
-        .compact-tab-inner {
-            max-width: 100%;
-            margin: 0;
-            padding: 0 24px;
-            display: flex;
-            gap: 4px;
-        }
-        .compact-tab-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 7px;
-            padding: 14px 20px;
-            font-family: 'DM Sans', sans-serif;
-            font-size: 13.5px;
-            font-weight: 600;
-            color: var(--muted);
-            background: transparent;
-            border: none;
-            border-bottom: 2.5px solid transparent;
-            cursor: pointer;
-            transition: color var(--transition), border-color var(--transition);
-            white-space: nowrap;
-            margin-bottom: -1.5px;
-        }
-        .compact-tab-btn:hover { color: var(--primary); }
-        .compact-tab-btn.active {
-            color: var(--primary);
-            border-bottom-color: var(--primary);
-        }
-        .compact-tab-count {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            min-width: 20px;
-            height: 20px;
-            padding: 0 6px;
-            border-radius: 99px;
-            font-size: 11px;
-            font-weight: 700;
-            background: var(--primary-glow);
-            color: var(--primary);
-            border: 1px solid rgba(124,29,29,.15);
-        }
-        .compact-tab-btn.active .compact-tab-count {
-            background: var(--primary);
-            color: #fff;
-            border-color: transparent;
-        }
-
-        /* ─── Page layout ──────────────────────────────── */
-        .page-body {
-            min-height: calc(100vh - var(--nav-h));
-        }
-
-        /* ── Full-width Hero Banner ── */
-        .page-hero {
-            width: 100%;
-            background: linear-gradient(118deg, #2d0606 0%, #5a1313 40%, #7c1d1d 75%, #4a0e0e 100%);
-            padding: 56px 0 0;
-            position: relative;
-            overflow: hidden;
-        }
-        /* Crosshatch texture */
-        .page-hero::before {
-            content: '';
-            position: absolute; inset: 0;
-            background-image:
-                linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
-            background-size: 40px 40px;
-            pointer-events: none;
-        }
-        /* Gold glow top-right */
-        .page-hero::after {
-            content: '';
-            position: absolute;
-            top: -80px; right: -80px;
-            width: 480px; height: 480px;
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(196,146,42,.16) 0%, transparent 65%);
-            pointer-events: none;
-        }
-        .page-hero-inner {
-            position: relative;
-            max-width: 100%;
-            margin: 0;
-            padding: 0 24px;
-        }
-        .page-hero-eyebrow {
-            display: inline-flex; align-items: center; gap: 8px;
-            font-size: 10px; font-weight: 700;
-            text-transform: uppercase; letter-spacing: .18em;
-            color: rgba(196,146,42,.9);
-            border: 1px solid rgba(196,146,42,.28);
-            background: rgba(196,146,42,.08);
-            padding: 5px 16px; border-radius: 99px;
-            margin-bottom: 20px;
-        }
-        .page-hero-eyebrow-dot {
-            width: 5px; height: 5px; border-radius: 50%;
-            background: var(--gold);
-            box-shadow: 0 0 6px rgba(196,146,42,.7);
-            animation: hero-pulse 2s ease-in-out infinite;
-        }
-        @keyframes hero-pulse {
-            0%,100% { opacity:1; transform:scale(1); }
-            50% { opacity:.5; transform:scale(1.4); }
-        }
-        .page-hero-title {
-            font-family: 'DM Serif Display', serif;
-            font-size: clamp(32px, 5vw, 48px);
-            font-weight: 400; color: #fff;
-            line-height: 1.15; margin-bottom: 12px;
-            letter-spacing: -.01em;
-        }
-        .page-hero-title em {
-            font-style: italic;
-            color: rgba(196,146,42,.9);
-        }
-        .page-hero-sub {
-            font-size: 14px; color: rgba(255,255,255,.5);
-            margin-bottom: 36px; line-height: 1.6;
-        }
-        .page-hero-sub strong { color: rgba(255,255,255,.85); font-weight: 600; }
-
-        /* Stat row */
-        .page-hero-stats {
-            display: flex; gap: 0;
-            border-top: 1px solid rgba(255,255,255,.08);
-            margin-top: 0;
-        }
-        .page-hero-stat {
-            flex: 1; padding: 18px 0;
-            border-right: 1px solid rgba(255,255,255,.08);
-            text-align: center;
-        }
-        .page-hero-stat:last-child { border-right: none; }
-        .page-hero-stat-val {
-            font-family: 'DM Serif Display', serif;
-            font-size: 26px; color: #fff; line-height: 1;
-            margin-bottom: 4px;
-        }
-        .page-hero-stat-lbl {
-            font-size: 10px; font-weight: 600;
-            color: rgba(255,255,255,.38);
-            text-transform: uppercase; letter-spacing: .1em;
-        }
-
-        /* Tab switcher bar */
-        .tab-bar {
-            width: 100%;
-            background: rgba(0,0,0,.25);
-            border-top: 1px solid rgba(255,255,255,.07);
-            position: relative;
-        }
-        .tab-bar-inner {
-            max-width: 100%;
-            margin: 0;
-            padding: 0 24px;
-            display: flex; gap: 0;
-        }
-        .tab-btn {
-            padding: 14px 24px;
-            font-family: inherit; font-size: 13px; font-weight: 600;
-            color: rgba(255,255,255,.45);
-            background: none; border: none; cursor: pointer;
-            border-bottom: 2.5px solid transparent;
-            transition: color var(--transition), border-color var(--transition);
-            display: flex; align-items: center; gap: 8px;
-            letter-spacing: .01em;
-        }
-        .tab-btn .tab-count {
-            font-size: 10px; font-weight: 700;
-            background: rgba(255,255,255,.1);
-            border-radius: 99px; padding: 1px 8px;
-        }
-        .tab-btn.active {
-            color: #fff;
-            border-bottom-color: var(--gold);
-        }
-        .tab-btn.active .tab-count {
-            background: rgba(196,146,42,.25);
-            color: var(--gold);
-        }
-        .tab-btn:hover:not(.active) { color: rgba(255,255,255,.72); }
-
-        /* ── Main content area (single column) ── */
-        .page-content {
-            max-width: 100%;
-            margin: 0;
-            padding: 28px 24px 80px;
-        }
-
-        /* Tab panels */
-        .tab-panel { display: none; }
-        .tab-panel.active { display: block; }
-
-        @media (max-width: 600px) {
-            .page-hero-inner { padding: 0 16px; }
-            .tab-bar-inner { padding: 0 8px; }
-            .page-content { padding: 16px 12px 64px; }
-            .page-hero { padding: 40px 0 0; }
-            .tab-btn { padding: 12px 14px; font-size: 12px; }
-            .page-hero-stats { display: none; }
-        }
-
-        /* ─── Submit card ──────────────────────────────── */
-        .submit-card {
-            background: var(--white);
-            border: 1px solid var(--border);
-            border-radius: var(--r-xl);
-            overflow: hidden;
-            box-shadow: var(--shadow-md);
-        }
-        .submit-card-head {
-            padding: 28px 28px 24px;
-            background: linear-gradient(140deg, #3d0a0a 0%, #7c1d1d 100%);
-            position: relative;
-            overflow: hidden;
-        }
-        .submit-card-head::after {
-            content: '';
-            position: absolute;
-            top: -60px; right: -60px;
-            width: 240px; height: 240px;
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(196,146,42,.18) 0%, transparent 65%);
-            pointer-events: none;
-        }
-        /* Bottom gold divider */
-        .submit-card-head::before {
-            content: '';
-            position: absolute;
-            bottom: 0; left: 28px; right: 28px;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(196,146,42,.4), transparent);
-            pointer-events: none;
-        }
-        .submit-card-eyebrow {
-            font-size: 9.5px; font-weight: 700;
-            text-transform: uppercase; letter-spacing: .15em;
-            color: rgba(196,146,42,.85); margin-bottom: 8px;
-            position: relative;
-        }
-        .submit-card-title {
-            font-family: 'DM Serif Display', serif;
-            font-size: 22px; font-weight: 400; color: #fff;
-            letter-spacing: .01em; line-height: 1.25;
-            margin-bottom: 6px; position: relative;
-        }
-        .submit-card-sub {
-            font-size: 12px; color: rgba(255,255,255,.44);
-            position: relative;
-        }
-        .submit-card-sub strong { color: rgba(255,255,255,.82); font-weight: 600; }
-
-        .submit-form-body { padding: 24px 28px 28px; }
-        /* placeholder - already replaced above */
-
-        /* ─── Alerts ────────────────────────────────────── */
-        .sf-alert {
-            display: flex; align-items: flex-start; gap: 10px;
-            padding: 12px 16px; border-radius: var(--r);
-            font-size: 13px; font-weight: 500; margin-bottom: 20px;
-            border: 1px solid;
-        }
-        .sf-alert.success { background: #f0fdf4; color: #15803d; border-color: #86efac; }
-        .sf-alert.error   { background: #fff1f2; color: #991b1b; border-color: #fecdd3; }
-        .sf-alert-icon {
-            width: 18px; height: 18px; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 10px; font-weight: 900; flex-shrink: 0; margin-top: 1px;
-        }
-        .sf-alert.success .sf-alert-icon { background: #16a34a; color: #fff; }
-        .sf-alert.error   .sf-alert-icon { background: #dc2626; color: #fff; }
-
-        /* ─── Section labels ────────────────────────────── */
-        .sf-section {
-            display: flex; align-items: center; gap: 10px;
-            margin: 22px 0 14px;
-        }
-        .sf-section:first-child { margin-top: 0; }
-        .sf-section-pill {
-            font-size: 9.5px; font-weight: 700; text-transform: uppercase;
-            letter-spacing: .12em; white-space: nowrap;
-            color: var(--primary); background: var(--primary-glow);
-            border: 1px solid rgba(124,29,29,.16);
-            padding: 3px 11px; border-radius: 99px;
-        }
-        .sf-section-line { flex: 1; height: 1px; background: var(--border); }
-
-        /* ─── Form controls ─────────────────────────────── */
-        .sf-label {
-            display: block; font-size: 11.5px; font-weight: 600;
-            color: var(--ink-2); margin-bottom: 6px; letter-spacing: .02em;
-            text-transform: uppercase;
-        }
-        .sf-input {
-            display: block; width: 100%;
-            padding: 10px 14px;
-            font-family: inherit; font-size: 13.5px;
-            color: var(--ink);
-            background: var(--surface);
-            border: 1.5px solid var(--border);
-            border-radius: var(--r);
-            outline: none;
-            transition: border-color var(--transition), box-shadow var(--transition), background var(--transition);
-            appearance: none;
-        }
-        .sf-input::placeholder { color: var(--faint); }
-        .sf-input:focus {
-            background: var(--white);
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px var(--primary-glow);
-        }
-        .sf-input:disabled {
-            background: var(--border-light);
-            color: var(--muted);
-            cursor: not-allowed;
-        }
-        select.sf-input {
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 12px center;
-            padding-right: 34px;
-        }
-        textarea.sf-input { min-height: 96px; resize: vertical; }
-
-        /* ─── Category badges ───────────────────────────── */
-        .cat-badge-row { margin-top: 8px; min-height: 22px; }
-        .cat-badge {
-            display: none; font-size: 11px; font-weight: 600;
-            padding: 3px 10px; border-radius: 99px; letter-spacing: .03em;
-        }
-        .cat-badge.infra      { background: #fff7ed; color: #9a3412; border: 1px solid #fdba74; }
-        .cat-badge.kalikasan  { background: #f0fdf4; color: #166534; border: 1px solid #86efac; }
-        .cat-badge.serbisyo   { background: #eff6ff; color: #1d4ed8; border: 1px solid #93c5fd; }
-        .cat-badge.publiko    { background: #fff1f2; color: #9f1239; border: 1px solid #fda4af; }
-        .cat-badge.kapayapaan { background: #faf5ff; color: #7e22ce; border: 1px solid #d8b4fe; }
-
-        /* ─── Image picker ──────────────────────────────── */
-        .sf-picker {
-            display: flex; align-items: center; gap: 14px;
-            padding: 16px 18px;
-            background: var(--surface);
-            border: 1.5px dashed var(--border);
-            border-radius: var(--r); cursor: pointer;
-            transition: border-color var(--transition), background var(--transition);
-        }
-        .sf-picker:hover { border-color: var(--primary); background: var(--white); }
-        .sf-picker-icon {
-            width: 44px; height: 44px; border-radius: 11px;
-            background: var(--primary-glow);
-            border: 1px solid rgba(124,29,29,.14);
-            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-        }
-        .sf-picker-title { font-size: 13.5px; font-weight: 600; color: var(--ink); margin-bottom: 2px; }
-        .sf-picker-sub   { font-size: 11.5px; color: var(--faint); }
-
-        .file-selected-label {
-            display: none; margin-top: 8px;
-            font-size: 12px; font-weight: 600; color: #15803d;
-            padding: 6px 12px; border-radius: 8px;
-            background: #f0fdf4; border: 1px solid #86efac;
-        }
-
-        /* ─── Submit button ─────────────────────────────── */
-        .sf-submit {
-            width: 100%; margin-top: 22px;
-            padding: 13px 20px;
-            font-family: inherit; font-size: 14px; font-weight: 700;
-            color: #fff;
-            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
-            border: none; border-radius: var(--r);
-            cursor: pointer; letter-spacing: .02em;
-            display: flex; align-items: center; justify-content: center; gap: 8px;
-            transition: opacity var(--transition), transform var(--transition), box-shadow var(--transition);
-            box-shadow: 0 3px 12px rgba(124,29,29,.30), 0 1px 3px rgba(0,0,0,.12);
-        }
-        .sf-submit:hover  { opacity: .92; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(124,29,29,.36); }
-        .sf-submit:active { transform: translateY(0); box-shadow: none; }
-
-        /* ─── Right column header ───────────────────────── */
-        .section-head {
-            display: flex; align-items: center; gap: 10px;
-        }
-        .section-head-title {
-            font-family: 'DM Serif Display', serif;
-            font-size: 18px; font-weight: 400; color: var(--ink);
-            letter-spacing: .01em; white-space: nowrap;
-        }
-        .section-head-count {
-            font-size: 11px; font-weight: 700; color: var(--primary);
-            background: var(--primary-glow); border: 1px solid rgba(124,29,29,.15);
-            border-radius: 99px; padding: 2px 10px;
-        }
-        .section-head-line { flex: 1; height: 1px; background: var(--border); }
-
-        /* ─── Report card ───────────────────────────────── */
-        .report-post {
-            background: var(--white);
-            border: 1px solid var(--border);
-            border-radius: var(--r-xl);
-            overflow: hidden;
-            box-shadow: var(--shadow-sm);
-            transition: box-shadow var(--transition), transform var(--transition), border-color var(--transition);
-        }
-        .report-post:hover {
-            box-shadow: var(--shadow-lg);
-            transform: translateY(-2px);
-            border-color: #cbd5e1;
-        }
-
-        .rp-header {
-            display: flex; align-items: flex-start;
-            justify-content: space-between;
-            padding: 18px 20px 16px; gap: 12px;
-            border-bottom: 1px solid var(--border-light);
-            background: var(--surface);
-        }
-        .rp-header-left { display: flex; gap: 12px; align-items: flex-start; flex: 1; min-width: 0; }
-        .rp-avatar {
-            width: 40px; height: 40px; border-radius: 11px;
-            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
-            color: #fff; font-size: 13px; font-weight: 700;
-            display: flex; align-items: center; justify-content: center;
-            flex-shrink: 0; letter-spacing: .02em;
-            box-shadow: 0 2px 8px rgba(124,29,29,.28);
-        }
-        .rp-meta { min-width: 0; }
-        .rp-meta-name { font-size: 14px; font-weight: 700; color: var(--ink); line-height: 1.3; }
-        .rp-meta-loc {
-            font-size: 11.5px; color: var(--muted);
-            display: flex; align-items: center; gap: 3px; margin-top: 1px;
-        }
-        .rp-meta-date { font-size: 11px; color: var(--faint); margin-top: 1px; }
-
-        .rp-status-badge {
-            display: inline-flex; align-items: center; gap: 5px;
-            font-size: 11px; font-weight: 600;
-            padding: 4px 10px; border-radius: 99px;
-            border: 1px solid; flex-shrink: 0; white-space: nowrap;
-        }
-        .rp-status-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
-
-        .rp-body { padding: 16px 20px 18px; }
-        .rp-cat-pill {
-            display: inline-block; font-size: 10px; font-weight: 700;
-            text-transform: uppercase; letter-spacing: .08em;
-            padding: 3px 11px; border-radius: 99px; margin-bottom: 10px;
-            background: var(--primary-glow); color: var(--primary);
-            border: 1px solid rgba(124,29,29,.16);
-        }
-        .rp-title {
-            font-family: 'DM Serif Display', serif;
-            font-size: 17px; font-weight: 400; color: var(--ink);
-            letter-spacing: .01em; line-height: 1.35; margin-bottom: 8px;
-        }
-        .rp-desc { font-size: 13.5px; color: var(--muted); line-height: 1.7; }
-        .rp-img {
-            width: 100%; max-height: 260px; object-fit: cover;
-            border-radius: 10px; margin-top: 14px; cursor: zoom-in;
-            border: 1px solid var(--border);
-            transition: opacity var(--transition);
-            display: block;
-        }
-        .rp-img:hover { opacity: .88; }
-
-        /* ─── Comments ──────────────────────────────────── */
-        .rp-comments {
-            border-top: 1px solid var(--border-light);
-            padding: 16px 20px 20px;
-            background: var(--surface);
-        }
-        .rp-comments-head {
-            display: flex; align-items: center; gap: 8px; margin-bottom: 16px;
-        }
-        .rp-comments-label {
-            font-size: 10.5px; font-weight: 700; text-transform: uppercase;
-            letter-spacing: .10em; color: var(--muted);
-        }
-        .rp-comments-count {
-            font-size: 10px; font-weight: 700; color: var(--primary);
-            background: var(--primary-glow); border: 1px solid rgba(124,29,29,.14);
-            border-radius: 99px; padding: 1px 8px;
-        }
-        .comment-empty {
-            font-size: 13px; color: var(--faint); margin: 0 0 14px;
-            font-style: italic;
-        }
-        .comment-item { display: flex; gap: 10px; margin-bottom: 12px; }
-        .comment-avatar {
-            width: 30px; height: 30px; border-radius: 8px;
-            background: var(--border); color: var(--muted);
-            font-size: 10.5px; font-weight: 700;
-            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-        }
-        .comment-avatar.admin-avatar {
-            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
-            color: #f9c97a;
-        }
-        .comment-bubble {
-            flex: 1; background: var(--white);
-            border: 1px solid var(--border);
-            border-radius: 4px 10px 10px 10px;
-            padding: 9px 13px;
-        }
-        .comment-bubble.admin-comment {
-            background: linear-gradient(135deg, #fefce8 0%, #fffbf0 100%);
-            border-color: #fde68a;
-        }
-        .comment-name {
-            font-size: 12px; font-weight: 700; color: var(--primary); margin-bottom: 3px;
-        }
-        .comment-name .admin-badge {
-            display: inline-block;
-            font-size: 8.5px; font-weight: 700;
-            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
-            color: #f9c97a;
-            padding: 1px 7px; border-radius: 99px;
-            margin-left: 6px; vertical-align: middle;
-            text-transform: uppercase; letter-spacing: .06em;
-        }
-        .comment-text { font-size: 13px; color: var(--ink-2); line-height: 1.6; }
-        .comment-time { font-size: 10px; color: var(--faint); margin-top: 4px; display: block; }
-
-        .comment-form { display: flex; gap: 8px; margin-top: 14px; }
-        .comment-input {
-            flex: 1; padding: 10px 13px;
-            font-family: inherit; font-size: 13px; color: var(--ink);
-            background: var(--white); border: 1.5px solid var(--border);
-            border-radius: var(--r); outline: none;
-            transition: border-color var(--transition), box-shadow var(--transition);
-        }
-        .comment-input::placeholder { color: var(--faint); }
-        .comment-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-glow); }
-        .comment-send {
-            padding: 10px 18px;
-            font-family: inherit; font-size: 13px; font-weight: 700;
-            color: #fff;
-            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
-            border: none; border-radius: var(--r); cursor: pointer;
-            white-space: nowrap;
-            transition: opacity var(--transition), transform var(--transition);
-            box-shadow: 0 1px 4px rgba(124,29,29,.25);
-        }
-        .comment-send:hover { opacity: .90; transform: translateY(-1px); }
-        .comment-send:active { transform: translateY(0); }
-        .comment-send {
-            padding: 9px 18px;
-            font-family: inherit; font-size: 13px; font-weight: 700;
-            color: #fff; background: var(--primary);
-            border: none; border-radius: var(--r); cursor: pointer;
-            white-space: nowrap;
-            transition: background .15s, transform .1s;
-            box-shadow: 0 1px 4px rgba(124,29,29,.25);
-        }
-        .comment-send:hover { background: var(--primary-mid); transform: translateY(-1px); }
-        .comment-send:active { transform: translateY(0); }
-
-        /* ─── Empty state ───────────────────────────────── */
-        .empty-state {
-            text-align: center; padding: 60px 24px;
-            background: var(--white);
-            border: 1.5px dashed var(--border);
-            border-radius: var(--r-xl);
-        }
-        .empty-icon {
-            width: 60px; height: 60px; border-radius: 16px;
-            background: var(--surface);
-            border: 1px solid var(--border);
-            display: flex; align-items: center; justify-content: center;
-            margin: 0 auto 16px;
-        }
-        .empty-state p { font-family: 'DM Serif Display', serif; font-size: 16px; color: var(--muted); font-weight: 400; }
-        .empty-state span { font-size: 12.5px; color: var(--faint); display: block; margin-top: 5px; }
-
-        /* ─── Responsive ────────────────────────────────── */
-        @media (max-width: 560px) {
-            .submit-card-head { padding: 22px 20px 20px; }
-            .submit-form-body { padding: 18px 20px 22px; }
-            .rp-header { padding: 14px 15px 13px; }
-            .rp-body { padding: 14px 15px 16px; }
-            .rp-comments { padding: 13px 15px 17px; }
-            .comment-form { flex-direction: column; }
-            .comment-send { width: 100%; text-align: center; }
-        }
-
-        /* ════════════════════════════════════════════════
-           DARK MODE — report.php specific overrides
-           ════════════════════════════════════════════════ */
-        html[data-theme="dark"] body.page-report {
-            background: #130808 !important;
-        }
-        html[data-theme="dark"] {
-            --ink:          #f0e8df;
-            --ink-2:        #d4c8be;
-            --muted:        #b09080;
-            --faint:        #8a6a5a;
-            --border:       #3a2020;
-            --border-light: #2e1818;
-            --surface:      #1e0f0f;
-            --white:        #1a0a0a;
-            --bg:           #130808;
-        }
-        html[data-theme="dark"] .rp-nav {
-            background: linear-gradient(90deg,#2e0808,#3a0a0a) !important;
-            border-bottom-color: rgba(212,169,106,0.18) !important;
-        }
-        html[data-theme="dark"] .rp-nav-name  { color: #f0e8df !important; }
-        html[data-theme="dark"] .rp-nav-sub   { color: #b09080 !important; }
-        html[data-theme="dark"] .back-btn     { border-color: #4a2020 !important; color: #d4a96a !important; }
-        html[data-theme="dark"] .back-btn:hover { background: #2a1010 !important; }
-        html[data-theme="dark"] .rp-item-card {
-            background: #1e0f0f !important;
-            border-color: #3a2020 !important;
-        }
-        html[data-theme="dark"] .rp-item-card:hover { border-color: rgba(212,169,106,0.35) !important; }
-        html[data-theme="dark"] .rp-header    { border-bottom-color: #3a2020 !important; }
-        html[data-theme="dark"] .rp-title     { color: #f0e8df !important; }
-        html[data-theme="dark"] .rp-desc      { color: #b09080 !important; }
-        html[data-theme="dark"] .rp-comments  { background: #1a0a0a !important; border-top-color: #3a2020 !important; }
-        html[data-theme="dark"] .comment-item-body { background: #2a1010 !important; border-color: #3a2020 !important; }
-        html[data-theme="dark"] .comment-text  { color: #c0a898 !important; }
-        html[data-theme="dark"] .comment-name  { color: #f0e8df !important; }
-        html[data-theme="dark"] .comment-time  { color: #8a6a5a !important; }
-        html[data-theme="dark"] .comment-input { background: #2a1010 !important; border-color: #4a2020 !important; color: #f0e8df !important; }
-        html[data-theme="dark"] .empty-state   { background: #1e0f0f !important; border-color: #3a2020 !important; }
-        html[data-theme="dark"] .empty-state p { color: #b09080 !important; }
-        html[data-theme="dark"] .sf-alert.success { background: #082a14 !important; color: #50e090 !important; border-color: #0a4a22 !important; }
-        html[data-theme="dark"] .sf-alert.error   { background: #2a0808 !important; color: #f09090 !important; border-color: #4a1010 !important; }
-        html[data-theme="dark"] .submit-form-body { background: #1e0f0f !important; }
-    </style>
+    <link rel="stylesheet" href="../assets/css/report.css">
 </head>
 <body class="page-report">
 
@@ -899,8 +311,38 @@ function initials($name) {
         </div>
         <div class="rp-nav-right">
             <span class="rp-nav-user"><?= htmlspecialchars($resident_name) ?></span>
-            <a href="resident.php" class="rp-nav-btn">← Back</a>
-            <a href="resident_logout.php" class="rp-nav-btn logout">Log Out</a>
+
+            <!-- ── Notification Bell ── -->
+            <div class="rp-notif-wrap" id="notifWrap">
+                <button class="rp-notif-btn" id="notifBtn" onclick="toggleNotifDropdown()" aria-label="Notifications">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                         stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                    </svg>
+                    <span class="rp-notif-badge" id="notifBadge" style="display:none;">0</span>
+                </button>
+
+                <!-- Dropdown -->
+                <div class="rp-notif-dropdown" id="notifDropdown">
+                    <div class="rnd-header">
+                        <span class="rnd-title">Notifications</span>
+                        <button class="rnd-mark-read" onclick="markAllRead()">Mark all read</button>
+                    </div>
+                    <div class="rnd-list" id="notifList">
+                        <div class="rnd-empty">Loading…</div>
+                    </div>
+                </div>
+            </div>
+
+            <a href="resident.php" class="rp-nav-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="14" height="14"><polyline points="15 18 9 12 15 6"/></svg>
+                <span class="btn-label">Back</span>
+            </a>
+            <a href="resident_logout.php" class="rp-nav-btn logout">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="14" height="14"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                <span class="btn-label">Log Out</span>
+            </a>
         </div>
     </nav>
 
@@ -938,10 +380,11 @@ function initials($name) {
                 <div class="submit-form-body">
 
                     <?php if ($success_msg): ?>
-                    <div class="sf-alert success">
-                        <span class="sf-alert-icon">&#10003;</span>
-                        <?= htmlspecialchars($success_msg) ?>
-                    </div>
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                            document.getElementById('submitSuccessModal').classList.add('open');
+                        });
+                    </script>
                     <?php endif; ?>
 
                     <?php if ($error_msg): ?>
@@ -1136,7 +579,7 @@ function initials($name) {
                     $init      = initials($resident_name);
                     $rid       = (int) $rpt['id'];
                 ?>
-                <div class="report-post">
+                <div class="report-post" id="report-<?= $rid ?>">
 
                     <!-- Header -->
                     <div class="rp-header">
@@ -1236,55 +679,57 @@ function initials($name) {
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-    /* ── Tab switching ── */
-    function switchTab(tab) {
-        document.querySelectorAll('.compact-tab-btn').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-        document.getElementById('tab-' + tab).classList.add('active');
-        document.getElementById('panel-' + tab).classList.add('active');
-    }
 
-    /* If page loaded with a comment success/error, show the reports tab */
+    <!-- ── Notification System ── -->
+    <script src="../assets/js/report.js"></script>
+
+    <!-- Dark Mode Toggle -->
+    <button id="kbc-dark-toggle" aria-label="Toggle dark mode">
+        <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        <svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z"/></svg>
+    </button>
+
     <?php if ($comment_success || $comment_error): ?>
-    document.addEventListener('DOMContentLoaded', () => switchTab('reports'));
+    <!-- Auto-switch to My Reports tab after comment submission -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => switchTab('reports'));
+    </script>
     <?php endif; ?>
 
-    /* ── Category badge ── */
-    function updateCategoryBadge(sel) {
-        const group = sel.value.split('|')[0];
-        document.querySelectorAll('.cat-badge').forEach(b => b.style.display = 'none');
-        const map = {
-            'Infrastructure':   'badge-infra',
-            'Kalikasan':        'badge-kalikasan',
-            'Serbisyo Publiko': 'badge-serbisyo',
-            'Publiko':          'badge-publiko',
-            'Kapayapaan':       'badge-kapayapaan',
-        };
-        if (map[group]) document.getElementById(map[group]).style.display = 'inline-block';
-    }
+    <!-- ── Submit Success Modal ── -->
+    <div id="submitSuccessModal" class="ssm-overlay">
+        <div class="ssm-card">
+            <div class="ssm-icon">
+                <svg viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle class="ssm-circle" cx="26" cy="26" r="24" stroke="#34a853" stroke-width="3" fill="none"/>
+                    <polyline class="ssm-check" points="14,27 22,35 38,18" stroke="#34a853" stroke-width="3.5"
+                              stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                </svg>
+            </div>
+            <h2 class="ssm-title">Report Submitted!</h2>
+            <p class="ssm-sub">Your report has been received and will be reviewed by the barangay within 24&#8211;48 hours.</p>
+            <div class="ssm-actions">
+                <button class="ssm-btn ssm-btn-primary" onclick="
+                    document.getElementById('submitSuccessModal').classList.remove('open');
+                    switchTab('reports');
+                ">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                         stroke-linecap="round" width="15" height="15">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                    </svg>
+                    View My Reports
+                </button>
+                <a class="ssm-btn ssm-btn-secondary" href="resident.php">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                         stroke-linecap="round" width="15" height="15">
+                        <polyline points="15 18 9 12 15 6"/>
+                    </svg>
+                    Go Back
+                </a>
+            </div>
+        </div>
+    </div>
 
-    /* ── File select ── */
-    function handleFileSelect(input) {
-        const label = document.getElementById('fileSelectedLabel');
-        if (input.files[0]) {
-            label.style.display = 'block';
-            label.textContent = 'Selected: ' + input.files[0].name;
-        }
-    }
-
-    /* ── Lightbox ── */
-    function openLightbox(src) {
-        const lb = document.getElementById('lightbox');
-        document.getElementById('lightbox-img').src = src;
-        lb.style.display = 'flex';
-        document.body.style.overflow = 'hidden';
-    }
-    function closeLightbox() {
-        document.getElementById('lightbox').style.display = 'none';
-        document.body.style.overflow = '';
-    }
-    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
-    </script>
 </body>
 </html>

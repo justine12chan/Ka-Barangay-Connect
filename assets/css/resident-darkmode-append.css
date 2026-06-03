@@ -392,8 +392,8 @@ body {
 
 #kbc-dark-toggle {
     position: fixed;
-    bottom: 86px;   /* sits above the floating-btn (28px + 46px + 12px gap) */
-    right:  28px;
+    bottom: 28px;
+    left:   28px;
     z-index: 1001;
     width:  44px;
     height: 44px;
@@ -434,7 +434,4 @@ body {
 [data-theme="dark"] #kbc-dark-toggle .icon-sun  { display: block; }
 [data-theme="dark"] #kbc-dark-toggle .icon-moon { display: none;  }
 
-/* On pages WITHOUT a floating-btn, drop toggle to normal bottom */
-body:not(.page-resident):not(.page-report) #kbc-dark-toggle {
-    bottom: 28px;
-}
+/* Toggle sits at bottom-left on all pages */

@@ -17,7 +17,9 @@ const avgTatMin     = window.AVG_TAT_MIN    || 0;
 const monthLabels = [], pendingArr = [], progressArr = [], resolvedArr = [];
 const now = new Date();
 
-for (let i = 11; i >= 0; i--) {
+const isMobile = window.innerWidth < 640;
+const monthCount = isMobile ? 6 : 12;
+for (let i = monthCount - 1; i >= 0; i--) {
     const d   = new Date(now.getFullYear(), now.getMonth() - i, 1);
     const ym  = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
     const lbl = d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
@@ -42,9 +44,9 @@ function buildMonthChart() {
         data: {
             labels: monthLabels,
             datasets: [
-                { label: 'Pending',     data: pendingArr,  backgroundColor: CHART_COLORS.pending,    borderRadius: 4, stack: 'a' },
-                { label: 'In Progress', data: progressArr, backgroundColor: CHART_COLORS.inprogress, borderRadius: 4, stack: 'a' },
-                { label: 'Resolved',    data: resolvedArr, backgroundColor: CHART_COLORS.resolved,   borderRadius: 4, stack: 'a' },
+                { label: 'Pending',     data: pendingArr,  backgroundColor: CHART_COLORS.pending,    borderRadius: 4, stack: 'a', maxBarThickness: 28 },
+                { label: 'In Progress', data: progressArr, backgroundColor: CHART_COLORS.inprogress, borderRadius: 4, stack: 'a', maxBarThickness: 28 },
+                { label: 'Resolved',    data: resolvedArr, backgroundColor: CHART_COLORS.resolved,   borderRadius: 4, stack: 'a', maxBarThickness: 28 },
             ]
         },
         options: {
@@ -54,7 +56,7 @@ function buildMonthChart() {
                 tooltip: { mode: 'index', intersect: false }
             },
             scales: {
-                x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+                x: { grid: { display: false }, ticks: { font: { size: isMobile ? 9 : 11 }, maxRotation: 45, minRotation: 0 } },
                 y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 11 } }, grid: { color: '#f0f2f8' } }
             }
         }
@@ -145,13 +147,14 @@ function buildTurnaroundChart() {
     // Build the last-12-months labels (same as monthly chart)
     const tatLabels = [], tatValues = [];
     const now = new Date();
-    for (let i = 11; i >= 0; i--) {
+    const isMobileTat = window.innerWidth < 640;
+    const tatCount = isMobileTat ? 6 : 12;
+    for (let i = tatCount - 1; i >= 0; i--) {
         const d   = new Date(now.getFullYear(), now.getMonth() - i, 1);
         const ym  = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
         const lbl = d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
         tatLabels.push(lbl);
         const found = tatMonthly.find(x => x.ym === ym);
-        // avg_hours from PHP; convert to days for display if large
         tatValues.push(found ? parseFloat(found.avg_hours) : null);
     }
     return {
@@ -167,6 +170,7 @@ function buildTurnaroundChart() {
                     v <= 72   ? '#f59c23' : '#c0001a'),
                 borderRadius: 6,
                 borderSkipped: false,
+                maxBarThickness: 28,
             }]
         },
         options: {
@@ -227,28 +231,38 @@ function fetchLatestData() {
     isRefreshing = true;
     showRefreshIndicator();
 
-    fetch(window.location.href, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
-        .then(res => res.text())
+    fetch(window.location.href, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        redirect: 'follow',
+        credentials: 'same-origin'
+    })
+        .then(res => {
+            // If we got redirected to login (or any non-200), bail gracefully
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            return res.text();
+        })
         .then(html => {
+            // Guard: if the response doesn't contain our data variables
+            // (e.g. we got the login page after a session timeout), skip silently
+            if (!html.includes('window.STAT_PENDING')) {
+                hideRefreshIndicator(true); // stay quiet — session expired, not a real error
+                return;
+            }
+
             // Extract updated stats
-            const pending  = extractStat(html, 'STAT_PENDING');
-            const progress = extractStat(html, 'STAT_PROGRESS');
-            const resolved = extractStat(html, 'STAT_RESOLVED');
-            const planned  = extractStat(html, 'STAT_PLANNED');
-            const ongoing  = extractStat(html, 'STAT_ONGOING');
-            const completed= extractStat(html, 'STAT_COMPLETED');
+            const pending   = extractStat(html, 'STAT_PENDING');
+            const progress  = extractStat(html, 'STAT_PROGRESS');
+            const resolved  = extractStat(html, 'STAT_RESOLVED');
+            const planned   = extractStat(html, 'STAT_PLANNED');
+            const ongoing   = extractStat(html, 'STAT_ONGOING');
+            const completed = extractStat(html, 'STAT_COMPLETED');
 
             // Update hero stat values in the DOM
-            if (pending  !== null) updateHeroStat('.stat-hero-card.pending   .stat-hero-value',  pending);
+            if (pending  !== null) updateHeroStat('.stat-hero-card.pending    .stat-hero-value', pending);
             if (progress !== null) updateHeroStat('.stat-hero-card.inprogress .stat-hero-value', progress);
-            if (resolved !== null) updateHeroStat('.stat-hero-card.resolved  .stat-hero-value',  resolved);
+            if (resolved !== null) updateHeroStat('.stat-hero-card.resolved   .stat-hero-value', resolved);
 
-            // Refresh recent reports list from the live page HTML
-            const parser  = new DOMParser();
-            const doc     = parser.parseFromString(html, 'text/html');
-            const newRows = doc.querySelector('.section-card .rpt-row') ? doc.querySelectorAll('.section-card .rpt-row') : null;
-
-            // Re-render chart with fresh data if chart is on monthly/status view
+            // Re-render chart with fresh data if on a stat-driven view
             if (pending !== null && progress !== null && resolved !== null) {
                 const activeTab = document.querySelector('.chart-tab.active');
                 if (activeTab && (activeTab.id === 'tab-status' || activeTab.id === 'tab-projects')) {
@@ -258,7 +272,10 @@ function fetchLatestData() {
 
             hideRefreshIndicator(true);
         })
-        .catch(() => hideRefreshIndicator(false))
+        .catch(err => {
+            console.warn('[AutoRefresh] fetch failed:', err);
+            hideRefreshIndicator(false);
+        })
         .finally(() => { isRefreshing = false; });
 }
 

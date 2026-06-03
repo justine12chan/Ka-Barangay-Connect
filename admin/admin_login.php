@@ -45,93 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="../assets/css/admin.css">
-    <style>
-        /* ── Login-only extras not in admin.css ── */
-        .login-error {
-            display: none;
-            align-items: center; gap: 9px;
-            padding: 11px 14px;
-            border-radius: var(--radius-sm);
-            background: rgba(224,80,80,.08);
-            border: 1px solid rgba(224,80,80,.18);
-            color: #f08080;
-            font-size: 13px;
-            margin-bottom: 16px;
-            font-family: var(--font-body);
-        }
-        .login-error.show { display: flex; }
-        .login-error svg  { flex-shrink: 0; width: 16px; height: 16px; }
-
-        .form-extras {
-            display: flex; align-items: center; justify-content: space-between;
-            margin-bottom: 18px;
-        }
-        .remember-label {
-            display: flex; align-items: center; gap: 7px;
-            font-size: 12.5px; color: var(--text-muted);
-            cursor: pointer; user-select: none;
-            font-family: var(--font-body);
-        }
-        .remember-label input[type="checkbox"] {
-            accent-color: var(--gold);
-            width: 14px; height: 14px;
-        }
-
-        .toggle-pw {
-            position: absolute; right: 13px; top: 50%;
-            transform: translateY(-50%);
-            background: none; border: none; cursor: pointer;
-            color: var(--text-muted); display: flex; align-items: center;
-            padding: 0; transition: color 0.18s;
-        }
-        .toggle-pw:hover { color: var(--text-secondary); }
-        .toggle-pw svg { width: 16px; height: 16px; }
-
-        .btn-login {
-            width: 100%;
-            display: flex; align-items: center; justify-content: center; gap: 8px;
-            padding: 13px;
-            background: var(--gold);
-            color: var(--obsidian-deep);
-            border: none; border-radius: var(--radius-sm);
-            font-family: var(--font-body);
-            font-size: 14px; font-weight: 700;
-            cursor: pointer; letter-spacing: 0.02em;
-            transition: var(--transition);
-            box-shadow: 0 4px 18px rgba(201,168,76,.2);
-        }
-        .btn-login:hover {
-            background: var(--gold-warm);
-            box-shadow: 0 6px 24px rgba(201,168,76,.32);
-            transform: translateY(-1px);
-        }
-        .btn-login:active { transform: scale(0.98); }
-        .btn-login svg { width: 16px; height: 16px; }
-
-        .login-footer-note {
-            text-align: center;
-            font-size: 11px; color: var(--text-muted);
-            margin: 20px 0 0;
-            font-family: var(--font-body);
-            letter-spacing: 0.04em;
-        }
-
-        /* Ambient blobs */
-        .blob {
-            position: fixed; border-radius: 50%;
-            pointer-events: none; filter: blur(80px); opacity: 0.07;
-        }
-        .blob-1 {
-            width: 480px; height: 480px;
-            background: var(--gold);
-            top: -120px; left: -120px;
-        }
-        .blob-2 {
-            width: 380px; height: 380px;
-            background: var(--signal-blue);
-            bottom: -80px; right: -80px;
-        }
-    </style>
+    <link rel="stylesheet" href="../assets/css/admin-login.css">
 </head>
 <body class="page-login">
     <div class="blob blob-1"></div>
@@ -232,28 +146,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 
     <script src="../assets/js/main.js"></script>
-    <script>
-    const togglePw = document.getElementById('togglePw');
-    const pwInput  = document.getElementById('password');
-    const eyeIcon  = document.getElementById('eyeIcon');
-
-    const eyeOpen   = `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`;
-    const eyeClosed = `<line x1="17.94" y1="17.94" x2="3.06" y2="3.06" stroke-linecap="round"/>
-        <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
-        <path d="M6.53 6.53A10.02 10.02 0 0 0 1 12s4 8 11 8a10 10 0 0 0 5.47-1.53"/>
-        <circle cx="12" cy="12" r="3"/>`;
-
-    togglePw.addEventListener('click', () => {
-        const isHidden = pwInput.type === 'password';
-        pwInput.type      = isHidden ? 'text' : 'password';
-        eyeIcon.innerHTML = isHidden ? eyeClosed : eyeOpen;
-    });
-
-    ['username', 'password'].forEach(id => {
-        document.getElementById(id).addEventListener('input', () => {
-            document.getElementById('errorMsg').classList.remove('show');
-        });
-    });
-    </script>
+    <script src="../assets/js/admin-login.js"></script>
 </body>
 </html>

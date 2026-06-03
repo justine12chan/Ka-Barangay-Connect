@@ -24,14 +24,14 @@
     width:  48px;
     height: 48px;
     border-radius: 50%;
-    border: 2px solid rgba(245, 204, 0, 0.35);
-    background: linear-gradient(135deg, var(--blue-main, #0800a0), var(--blue-deep, #04005a));
-    color: var(--yellow-vivid, #f5cc00);
+    border: 2px solid rgba(212, 169, 106, 0.35);
+    background: linear-gradient(135deg, var(--blue-main, #9b1f1f), var(--blue-deep, #5c0a0a));
+    color: var(--yellow-vivid, #d4a96a);
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    box-shadow: 0 6px 20px rgba(8, 0, 160, 0.40);
+    box-shadow: 0 6px 20px rgba(155, 31, 31, 0.40);
     transition: transform  0.22s cubic-bezier(0.22, 0.68, 0, 1.2),
                 box-shadow 0.22s ease,
                 background 0.22s ease,
@@ -43,7 +43,7 @@
 
 #adminDarkToggle:hover {
     transform: scale(1.12) rotate(-15deg);
-    box-shadow: 0 10px 30px rgba(8, 0, 160, 0.55);
+    box-shadow: 0 10px 30px rgba(155, 31, 31, 0.55);
 }
 
 #adminDarkToggle:active {
@@ -52,14 +52,14 @@
 
 /* When dark mode is ON — flip to yellow/gold background */
 body.dark-mode #adminDarkToggle {
-    background: linear-gradient(135deg, var(--yellow-vivid, #f5cc00), #d4a800);
-    color: var(--blue-deep, #04005a);
-    border-color: rgba(245, 204, 0, 0.65);
-    box-shadow: 0 6px 20px rgba(245, 204, 0, 0.35);
+    background: linear-gradient(135deg, var(--yellow-vivid, #d4a96a), #c49a45);
+    color: var(--blue-deep, #5c0a0a);
+    border-color: rgba(212, 169, 106, 0.65);
+    box-shadow: 0 6px 20px rgba(212, 169, 106, 0.35);
 }
 
 body.dark-mode #adminDarkToggle:hover {
-    box-shadow: 0 10px 30px rgba(245, 204, 0, 0.50);
+    box-shadow: 0 10px 30px rgba(212, 169, 106, 0.50);
 }
 
 /* Sun icon (shown in dark mode) / Moon icon (shown in light mode) */
@@ -98,16 +98,16 @@ body.dark-mode #statusConfirmModal > div,
 body.dark-mode #logoutModal > div,
 body.dark-mode #editModal > div,
 body.dark-mode #saveConfirmModal > div {
-    background: #12142a !important;
+    background: #180606 !important;
     color: #c8cbed !important;
-    border: 1px solid #1e2040;
+    border: 1px solid #3a1010;
 }
 
 body.dark-mode #statusConfirmModal > div [style*="background:#fff"],
 body.dark-mode #logoutModal > div [style*="background:#fff"],
 body.dark-mode #statusConfirmModal > div [style*="background: #fff"],
 body.dark-mode #logoutModal > div [style*="background: #fff"] {
-    background: #12142a !important;
+    background: #180606 !important;
 }
 
 /* Modal inline text overrides */
@@ -127,8 +127,8 @@ body.dark-mode #logoutModal [style*="color:#4a5280"] {
 /* Modal Cancel button in dark */
 body.dark-mode #statusConfirmModal button[onclick*="display='none'"],
 body.dark-mode #logoutModal       button[onclick*="display='none'"] {
-    background: #1a1c38 !important;
-    border-color: #2a2d52 !important;
+    background: #260606 !important;
+    border-color: #5c1a1a !important;
     color: #c8cbed !important;
 }
 

@@ -96,7 +96,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_program'])) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_announcement'])) {
     $title     = mysqli_real_escape_string($conn, trim($_POST['ann_title']  ?? ''));
     $body      = mysqli_real_escape_string($conn, trim($_POST['ann_body']   ?? ''));
-    $posted_by = mysqli_real_escape_string($conn, trim($_POST['posted_by'] ?? 'Barangay Admin'));
+    $posted_by = mysqli_real_escape_string($conn, trim($_POST['posted_by'] ?? 'Barangay San Bartolome'));
     $is_urgent = (!empty($_POST['is_urgent']) && $_POST['is_urgent'] === '1') ? 1 : 0;
     $image_path = null;
     if (!empty($_FILES['ann_image']['name'])) {
@@ -115,11 +115,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_announcement'])) 
     header('Location: admin_program.php'); exit;
 }
 
+// ─── Ensure programs table has created_at column (MUST run before ORDER BY created_at) ──
+$col_prog = executeQuery("SHOW COLUMNS FROM `programs` LIKE 'created_at'");
+if ($col_prog && mysqli_num_rows($col_prog) === 0) {
+    executeQuery("ALTER TABLE `programs` ADD COLUMN `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP");
+}
+
+// ─── Ensure announcements table has created_at column ────────────────────────
+$col_ann = executeQuery("SHOW COLUMNS FROM `announcements` LIKE 'created_at'");
+if ($col_ann && mysqli_num_rows($col_ann) === 0) {
+    executeQuery("ALTER TABLE `announcements` ADD COLUMN `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP");
+}
+
 // ─── Stats ───────────────────────────────────────────────────────────────────
-$p_planned   = mysqli_fetch_row(executeQuery("SELECT COUNT(*) FROM programs WHERE status='planned'"))[0]   ?? 0;
-$p_ongoing   = mysqli_fetch_row(executeQuery("SELECT COUNT(*) FROM programs WHERE status='ongoing'"))[0]   ?? 0;
-$p_completed = mysqli_fetch_row(executeQuery("SELECT COUNT(*) FROM programs WHERE status='completed'"))[0] ?? 0;
-$ann_total   = mysqli_fetch_row(executeQuery("SELECT COUNT(*) FROM announcements"))[0] ?? 0;
+$res_planned   = executeQuery("SELECT COUNT(*) FROM programs WHERE status='planned'");
+$res_ongoing   = executeQuery("SELECT COUNT(*) FROM programs WHERE status='ongoing'");
+$res_completed = executeQuery("SELECT COUNT(*) FROM programs WHERE status='completed'");
+$res_ann_cnt   = executeQuery("SELECT COUNT(*) FROM announcements");
+$p_planned   = $res_planned   ? (mysqli_fetch_row($res_planned)[0]   ?? 0) : 0;
+$p_ongoing   = $res_ongoing   ? (mysqli_fetch_row($res_ongoing)[0]   ?? 0) : 0;
+$p_completed = $res_completed ? (mysqli_fetch_row($res_completed)[0] ?? 0) : 0;
+$ann_total   = $res_ann_cnt   ? (mysqli_fetch_row($res_ann_cnt)[0]   ?? 0) : 0;
 
 // ─── Fetch programs ──────────────────────────────────────────────────────────
 $programs_list = [];
@@ -149,7 +165,17 @@ if ($ann_result) {
 
 // ─── Merge + sort by date ────────────────────────────────────────────────────
 $posts = array_merge($programs_list, $announcements_list);
-usort($posts, fn($a, $b) => strtotime($b['created_at']) - strtotime($a['created_at']));
+usort($posts, function($a, $b) {
+    return strtotime($b['created_at']) - strtotime($a['created_at']);
+});
+
+// Fix malformed UTF-8 characters from DB (em-dashes, special chars stored as latin1)
+array_walk_recursive($posts, function(&$val) {
+    if (is_string($val)) {
+        $val = mb_convert_encoding($val, 'UTF-8', 'UTF-8');
+        $val = iconv('UTF-8', 'UTF-8//IGNORE', $val);
+    }
+});
 
 $current_page = 'admin_program';
 ?>
@@ -158,14 +184,19 @@ $current_page = 'admin_program';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ka-Barangay Connect — Programs</title>
+    <title>Ka-Barangay Connect — Projects</title>
     <link rel="icon" href="../assets/img/logo.png" type="image/x-icon">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="../assets/css/admin.css">
     <style>
         body { background: #f0f2f8; min-height: 100vh; }
-        .page-wrap { max-width: 1100px; margin: 0 auto; padding: 28px 24px; }
+        .page-wrap { max-width: 1100px; margin: 0 auto; padding: 28px 24px; box-sizing: border-box; }
+        @media (max-width:480px) {
+            .page-wrap  { padding: 14px 12px; }
+            .page-title { font-size: 22px !important; }
+            .page-sub   { font-size: 13px !important; }
+        }
 
         /* ── Spin ── */
         @keyframes fa-spin { 0%{transform:rotate(0deg)} 100%{transform:rotate(360deg)} }
@@ -178,11 +209,15 @@ $current_page = 'admin_program';
 
         /* ── Stats row (3 boxes matching report style) ── */
         .stats-row { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:24px; }
-        @media (max-width:560px) { .stats-row { grid-template-columns:1fr; } }
-        .stat-box  { background:#fff; border-radius:14px; padding:16px 20px; border:1.5px solid #e8eaf0; border-left:4px solid #e8eaf0; box-shadow:0 2px 10px rgba(0,0,0,.05); }
-        .stat-label { font-size:13px; font-weight:700; color:#8890b8; text-transform:uppercase; letter-spacing:.06em; margin-bottom:4px; }
-        .stat-num  { font-family:'Sora',sans-serif; font-size:32px; font-weight:800; color:#0d0e2e; }
+        @media (max-width:560px) { .stats-row { gap:8px; } }
+        .stat-box  { background:#fff; border-radius:14px; padding:16px 20px; border:1.5px solid #e8eaf0; border-left:4px solid #e8eaf0; box-shadow:0 2px 10px rgba(0,0,0,.05); min-width:0; }
+        .stat-label { font-size:13px; font-weight:700; color:#8890b8; text-transform:uppercase; letter-spacing:.06em; margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .stat-num  { font-family:'Sora',sans-serif; font-size:clamp(20px, 5vw, 32px); font-weight:800; color:#0d0e2e; }
         .stat-sub  { font-size:13px; color:#b0b8d8; margin-top:2px; }
+        @media (max-width:480px) {
+            .stat-box  { padding:12px 10px; border-left-width:3px; border-radius:10px; }
+            .stat-label { font-size:10px; letter-spacing:.03em; }
+        }
 
         /* ── Main card ── */
         .main-card { background:#fff; border-radius:16px; border:1.5px solid #e8eaf0; box-shadow:0 2px 10px rgba(0,0,0,.05); }
@@ -203,7 +238,7 @@ $current_page = 'admin_program';
         .prog-social-card:first-child { border-radius: 14px 14px 0 0; }
         .prog-social-card:hover { background: #fafbff; }
 
-        .prog-social-header { display:flex; align-items:center; gap:10px; padding:14px 18px 10px; }
+        .prog-social-header { display:flex; align-items:flex-start; gap:10px; padding:14px 18px 10px; flex-wrap:nowrap; }
         .prog-reporter-avatar {
             width:42px; height:42px; border-radius:50%;
             font-family:'Sora',sans-serif; font-size:11px; font-weight:700;
@@ -211,12 +246,12 @@ $current_page = 'admin_program';
             flex-shrink:0; border:2px solid var(--border); text-align:center; line-height:1.2;
         }
         .prog-reporter-meta { flex:1; min-width:0; }
-        .prog-reporter-name { font-family:'Sora',sans-serif; font-size:17px; font-weight:700; color:var(--text-main); margin:0 0 2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-        .prog-reporter-time { font-size:14px; color:var(--muted); margin:0; }
+        .prog-reporter-name { font-family:'Sora',sans-serif; font-size:15px; font-weight:700; color:var(--text-main); margin:0 0 2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .prog-reporter-time { font-size:12px; color:var(--muted); margin:0; white-space:normal; word-break:break-word; }
 
-        .prog-status-pill { font-size:13px; font-weight:700; padding:5px 14px; border-radius:20px; flex-shrink:0; letter-spacing:.03em; text-transform:uppercase; border:1px solid transparent; }
+        .prog-status-pill { font-size:11px; font-weight:700; padding:4px 10px; border-radius:20px; flex-shrink:0; letter-spacing:.03em; text-transform:uppercase; border:1px solid transparent; white-space:nowrap; max-width:120px; overflow:hidden; text-overflow:ellipsis; }
         .pill-planned   { background:#f3e8ff; color:#7c3aed; border-color:#c4b5fd; }
-        .pill-ongoing   { background:#e8f0fe; color:#1a56db; border-color:#93b4f7; }
+        .pill-ongoing   { background:#fdeaea; color:#9b1f1f; border-color:#d4a0a0; }
         .pill-completed { background:#e6faed; color:#128548; border-color:#6dd98d; }
 
         .prog-social-body { padding:0 18px 16px; }
@@ -242,6 +277,17 @@ $current_page = 'admin_program';
         .prog-dots-btn:hover { background:var(--faint); color:var(--blue-main); }
         .prog-dropdown { position:absolute; top:48px; right:14px; background:white; border:1px solid var(--border); border-radius:10px; box-shadow:0 8px 28px rgba(0,0,0,.13); z-index:200; min-width:130px; display:none; overflow:hidden; }
         .prog-dropdown.open { display:block; }
+
+        /* ── Mobile card header fixes ── */
+        @media (max-width:520px) {
+            .prog-social-header { gap:8px; padding:12px 12px 8px; }
+            .prog-reporter-avatar { width:36px; height:36px; font-size:10px; }
+            .prog-reporter-name { font-size:13px; }
+            .prog-reporter-time { font-size:11px; }
+            .prog-status-pill { font-size:10px; padding:3px 8px; max-width:100px; }
+            .prog-social-body { padding:0 12px 12px; }
+            .prog-social-desc { font-size:14px; }
+        }
         .prog-dropdown-item { display:flex; align-items:center; gap:8px; padding:10px 16px; font-size:15px; font-weight:600; color:var(--text-main); cursor:pointer; transition:background .13s; border:none; background:none; width:100%; text-align:left; }
         .prog-dropdown-item:hover { background:var(--faint); }
         .prog-dropdown-item i { font-size:13px; color:var(--blue-main); }
@@ -289,7 +335,7 @@ $current_page = 'admin_program';
         #editSaveConfirm { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:9999; align-items:center; justify-content:center; }
         #editSaveConfirm.open { display:flex; }
         .save-confirm-box { background:white; border-radius:18px; padding:28px 28px 22px; max-width:340px; width:90%; box-shadow:0 8px 40px rgba(0,0,0,.18); text-align:center; }
-        .save-confirm-icon { width:52px; height:52px; border-radius:50%; background:#e8f0fe; display:flex; align-items:center; justify-content:center; margin:0 auto 14px; }
+        .save-confirm-icon { width:52px; height:52px; border-radius:50%; background:#fdeaea; display:flex; align-items:center; justify-content:center; margin:0 auto 14px; }
         .save-confirm-icon i { font-size:22px; color:var(--blue-main); }
         .save-confirm-title { font-size:16px; font-weight:800; color:#1a2340; margin-bottom:6px; }
         .save-confirm-sub   { font-size:13px; color:#8890b8; margin-bottom:20px; }
@@ -311,13 +357,13 @@ $current_page = 'admin_program';
             height: 48px;
             border-radius: 50%;
             border: 2px solid rgba(245, 204, 0, 0.35);
-            background: linear-gradient(135deg, #0800a0, #04005a);
-            color: #f5cc00;
+            background: linear-gradient(135deg, #9b1f1f, #5c0a0a);
+            color: #d4a96a;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            box-shadow: 0 6px 20px rgba(8, 0, 160, 0.40);
+            box-shadow: 0 6px 20px rgba(155, 31, 31, 0.40);
             transition: transform  0.22s cubic-bezier(0.22, 0.68, 0, 1.2),
                         box-shadow 0.22s ease,
                         background 0.22s ease,
@@ -327,7 +373,7 @@ $current_page = 'admin_program';
         }
         #adminDarkToggle:hover {
             transform: scale(1.12) rotate(-15deg);
-            box-shadow: 0 10px 30px rgba(8, 0, 160, 0.55);
+            box-shadow: 0 10px 30px rgba(155, 31, 31, 0.55);
         }
         #adminDarkToggle:active { transform: scale(0.94); }
         body.dark-mode #adminDarkToggle {
@@ -357,12 +403,12 @@ $current_page = 'admin_program';
     <!-- Page header -->
     <div class="page-header">
         <div>
-            <h1 class="page-title"><i class="fa fa-briefcase" style="color:#1a56db; margin-right:8px;"></i>Programs & Announcements</h1>
-            <p class="page-sub">Manage barangay programs, projects and public announcements</p>
+            <h1 class="page-title"><i class="fa fa-briefcase" style="color:#9b1f1f; margin-right:8px;"></i>Projects & Announcements</h1>
+            <p class="page-sub">Manage barangay projects and public announcements</p>
         </div>
         <div style="display:flex; gap:8px; align-items:center;">
             <button onclick="openUnifiedModal()"
-                    style="display:flex; align-items:center; gap:6px; padding:8px 16px; border-radius:9px; background:#1a56db; color:#fff; border:none; font-size:12.5px; font-weight:700; cursor:pointer;">
+                    style="display:flex; align-items:center; gap:6px; padding:8px 16px; border-radius:9px; background:#9b1f1f; color:#fff; border:none; font-size:12.5px; font-weight:700; cursor:pointer;">
                 <i class="fa fa-plus"></i> New Post
             </button>
         </div>
@@ -373,9 +419,9 @@ $current_page = 'admin_program';
         <div class="stat-box" style="border-left-color:#7c3aed;">
             <div class="stat-label">Planned</div>
             <div class="stat-num" style="color:#7c3aed;"><?= $p_planned ?></div>
-            <div class="stat-sub">Upcoming programs</div>
+            <div class="stat-sub">Upcoming projects</div>
         </div>
-        <div class="stat-box" style="border-left-color:#1a56db;">
+        <div class="stat-box" style="border-left-color:#9b1f1f;">
             <div class="stat-label">Ongoing</div>
             <div class="stat-num"><?= $p_ongoing ?></div>
             <div class="stat-sub">Currently active</div>
@@ -383,7 +429,7 @@ $current_page = 'admin_program';
         <div class="stat-box" style="border-left-color:#22cc77;">
             <div class="stat-label">Completed</div>
             <div class="stat-num" style="color:#22cc77;"><?= $p_completed ?></div>
-            <div class="stat-sub">Finished programs</div>
+            <div class="stat-sub">Finished projects</div>
         </div>
     </div>
 
@@ -391,7 +437,7 @@ $current_page = 'admin_program';
     <div class="main-card">
         <div class="main-card-header">
             <div class="main-card-title">
-                <i class="fa fa-list-ul" style="color:#1a56db;"></i> All Posts
+                <i class="fa fa-list-ul" style="color:#9b1f1f;"></i> All Posts
             </div>
             <div style="display:flex; gap:6px; flex-wrap:wrap;">
                 <select class="rpt-filter-select" id="sortFilter"   onchange="renderPrograms()">
@@ -441,7 +487,7 @@ $current_page = 'admin_program';
                         <div class="u-type-sub">Post an official notice to residents</div>
                     </button>
                     <button type="button" class="u-type-tile" onclick="chooseType('program')">
-                        <div class="u-type-icon" style="background:#e8f0fe; color:#1a56db;"><i class="fa fa-briefcase"></i></div>
+                        <div class="u-type-icon" style="background:#fdeaea; color:#9b1f1f;"><i class="fa fa-briefcase"></i></div>
                         <div class="u-type-label">Project</div>
                         <div class="u-type-sub">Add a new barangay project</div>
                     </button>
@@ -471,7 +517,7 @@ $current_page = 'admin_program';
                     </div>
                     <div class="field-group">
                         <label class="field-label">Posted By</label>
-                        <input type="text" class="field-input" name="posted_by" value="Barangay Admin">
+                        <input type="text" class="field-input" name="posted_by" value="Barangay San Bartolome">
                     </div>
                     <div class="field-group">
                         <label class="field-label">Image (optional)</label>
@@ -503,7 +549,7 @@ $current_page = 'admin_program';
             <div class="rpt-modal-header">
                 <div style="display:flex; align-items:center; gap:10px;">
                     <button type="button" class="u-back-btn" onclick="backToTypePicker()"><i class="fa fa-arrow-left"></i></button>
-                    <div><div class="rpt-modal-eyebrow">Admin Action</div><div class="rpt-modal-title">Add New Program</div></div>
+                    <div><div class="rpt-modal-eyebrow">Admin Action</div><div class="rpt-modal-title">Add New Project</div></div>
                 </div>
                 <button type="button" class="rpt-modal-close" onclick="closeUnifiedModal()"><i class="fa fa-times"></i></button>
             </div>
@@ -511,8 +557,8 @@ $current_page = 'admin_program';
                 <input type="hidden" name="add_program" value="1">
                 <div class="rpt-modal-body">
                     <div class="field-group">
-                        <label class="field-label">Program Title</label>
-                        <input type="text" class="field-input" name="title" placeholder="Enter program title..." required>
+                        <label class="field-label">Project Title</label>
+                        <input type="text" class="field-input" name="title" placeholder="Enter project title..." required>
                     </div>
                     <div class="field-group">
                         <label class="field-label">Department</label>
@@ -520,7 +566,7 @@ $current_page = 'admin_program';
                     </div>
                     <div class="field-group">
                         <label class="field-label">Description</label>
-                        <textarea class="field-input" name="description" placeholder="Describe the program..." required style="resize:vertical;"></textarea>
+                        <textarea class="field-input" name="description" placeholder="Describe the project..." required style="resize:vertical;"></textarea>
                     </div>
                     <div class="field-group">
                         <label class="field-label">Start Date</label>
@@ -538,7 +584,7 @@ $current_page = 'admin_program';
                 </div>
                 <div class="rpt-modal-footer">
                     <button type="button" class="rpt-modal-cancel" onclick="closeUnifiedModal()">Cancel</button>
-                    <button type="submit" class="rpt-modal-submit"><i class="fa fa-paper-plane"></i> Add Program</button>
+                    <button type="submit" class="rpt-modal-submit"><i class="fa fa-paper-plane"></i> Add Project</button>
                 </div>
             </form>
         </div>
@@ -668,7 +714,7 @@ $current_page = 'admin_program';
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    window.PROGRAMS_DATA = <?= json_encode(array_values($posts)) ?>;
+    window.PROGRAMS_DATA = <?= json_encode(array_values($posts), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) ?: '[]' ?>;
 </script>
 <!-- Guard: tell main.js this is an admin page so it skips resident dark-mode logic -->
 <script>window.__isAdminPage = true;</script>

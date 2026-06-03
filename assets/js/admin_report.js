@@ -13,6 +13,10 @@
 
 const reports = window.REPORTS_DATA || [];
 
+/* ── New-report notification tracking ── */
+let knownReportIds       = new Set();
+let newReportDismissTimer = null;
+
 /* ── Date filter state ── */
 let activeDateFilter = 'all';   // 'all' | 'today' | 'YYYY-MM-DD'
 
@@ -44,9 +48,13 @@ function catStyle(raw)   { return catColors[catGroup(raw)] || {bg:'#f1f5f9',colo
 /* ── Helpers ── */
 function fmtDate(str) {
     if (!str) return '—';
-    return new Date(str).toLocaleString('en-US', {
+    // MySQL stores timestamps in PH time (Asia/Manila, +08:00).
+    // Appending +08:00 tells the browser the value is already PH time,
+    // then timeZone:'Asia/Manila' ensures it displays without re-shifting.
+    const phStr = str.includes('T') ? str : str.replace(' ', 'T') + '+08:00';
+    return new Date(phStr).toLocaleString('en-PH', {
         month: 'short', day: 'numeric', year: 'numeric',
-        hour: 'numeric', minute: '2-digit'
+        hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Manila'
     });
 }
 
@@ -109,7 +117,8 @@ function buildDetailHtml(r) {
             const isAdmin = parseInt(c.is_admin);
             const name    = isAdmin ? (c.commenter_name || 'Barangay Admin') : (c.resident_name || 'Resident');
             const initStr = isAdmin ? 'BA' : name.split(' ').map(w=>w[0]||'').join('').toUpperCase().slice(0,2);
-            const dt      = c.created_at ? new Date(c.created_at).toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'}) : '';
+            const _phCt   = c.created_at ? (c.created_at.includes('T') ? c.created_at : c.created_at.replace(' ', 'T') + '+08:00') : null;
+            const dt      = _phCt ? new Date(_phCt).toLocaleString('en-PH',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',timeZone:'Asia/Manila'}) : '';
             return `
             <div style="display:flex; gap:9px; margin-bottom:12px;">
                 <div style="width:30px; height:30px; border-radius:50%; flex-shrink:0;
@@ -231,7 +240,9 @@ function renderReports() {
         if (activeDateFilter && activeDateFilter !== 'all' && activeDateFilter !== 'pick') {
             if (!r.created_at) { dateOk = false; }
             else {
-                const rd  = new Date(r.created_at);
+                // DB stores PH time; tag with +08:00 so browser parses it correctly
+                const utcStr = r.created_at.includes('T') ? r.created_at : r.created_at.replace(' ', 'T') + '+08:00';
+                const rd  = new Date(utcStr);
                 const now = new Date();
                 if (activeDateFilter === 'today') {
                     dateOk = rd.toDateString() === now.toDateString();
@@ -449,10 +460,13 @@ function getReportDatesSet() {
     const set = new Set();
     reports.forEach(r => {
         if (r.created_at) {
-            const d = new Date(r.created_at);
-            set.add(d.getFullYear() + '-' +
-                    String(d.getMonth()+1).padStart(2,'0') + '-' +
-                    String(d.getDate()).padStart(2,'0'));
+            // DB stores PH time; tag with +08:00 so the date lands on the correct calendar day
+            const utcStr = r.created_at.includes('T') ? r.created_at : r.created_at.replace(' ', 'T') + '+08:00';
+            const d = new Date(utcStr);
+            const phDate = new Date(d.toLocaleString('en-US', { timeZone: 'Asia/Manila' }));
+            set.add(phDate.getFullYear() + '-' +
+                    String(phDate.getMonth()+1).padStart(2,'0') + '-' +
+                    String(phDate.getDate()).padStart(2,'0'));
         }
     });
     return set;
@@ -615,12 +629,9 @@ function refreshStatCounts() {
     const pending    = reports.filter(r => r.status === 'pending').length;
     const inProgress = reports.filter(r => r.status === 'in-progress').length;
     const resolved   = reports.filter(r => r.status === 'resolved').length;
-    const pEl = document.querySelector('.stat-box:nth-child(1) .stat-num');
-    const iEl = document.querySelector('.stat-box:nth-child(2) .stat-num');
-    const rEl = document.querySelector('.stat-box:nth-child(3) .stat-num');
-    if (pEl) pEl.textContent = pending;
-    if (iEl) iEl.textContent = inProgress;
-    if (rEl) rEl.textContent = resolved;
+    updateStatBox('stat-pending',  pending);
+    updateStatBox('stat-progress', inProgress);
+    updateStatBox('stat-resolved', resolved);
 }
 
 /* ── Lightbox ── */
@@ -663,10 +674,34 @@ function closeLightbox() {
 
 /* ── Init ── */
 document.addEventListener('DOMContentLoaded', function () {
+    // Seed known IDs from the initial PHP-rendered data so the
+    // first AJAX refresh doesn't false-trigger a "new report" notification.
+    reports.forEach(r => knownReportIds.add(parseInt(r.id)));
     renderReports();
     calInit();
     startAutoRefresh();
+
+    // Auto-open a specific report if ?id= is in the URL (e.g. from navbar notification)
+    const urlId = parseInt(new URLSearchParams(window.location.search).get('id') || '0');
+    if (urlId > 0) {
+        openDetailId = urlId;
+        renderReports();
+        setTimeout(() => {
+            const el = document.querySelector(`.rpt-inline-card[data-id="${urlId}"]`);
+            if (!el) return;
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // Highlight pulse
+            el.style.transition  = 'border-color 0.3s, box-shadow 0.3s';
+            el.style.borderColor = 'var(--blue-main)';
+            el.style.boxShadow   = '0 0 0 3px rgba(26,86,219,0.25), 0 4px 20px rgba(0,0,0,0.1)';
+            setTimeout(() => {
+                el.style.borderColor = '';
+                el.style.boxShadow   = '';
+            }, 2000);
+        }, 80);
+    }
 });
+
 /* ── Dark Mode ──
    Handled by the inline <script> in admin_report.php (toggleAdminDarkMode).
    BroadcastChannel listener is set up there too.
@@ -683,7 +718,7 @@ let autoRefreshTimer = null;
 let isRefreshing     = false;
 
 function startAutoRefresh() {
-    autoRefreshTimer = setInterval(fetchLatestData, 30000);
+    autoRefreshTimer = setInterval(fetchLatestData, 12000);
 }
 
 function fetchLatestData() {
@@ -691,41 +726,60 @@ function fetchLatestData() {
     isRefreshing = true;
     showRefreshIndicator();
 
-    fetch(window.location.href, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
-        .then(res => res.text())
+    fetch(window.location.href, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        redirect: 'follow',
+        credentials: 'same-origin'
+    })
+        .then(res => {
+            // InfinityFree may redirect or block — check we got a real page
+            if (!res.ok) throw new Error('Bad response: ' + res.status);
+            return res.text();
+        })
         .then(html => {
-            const parser = new DOMParser();
-            const doc    = parser.parseFromString(html, 'text/html');
+            // Safety check: must look like our actual page, not a redirect/error page.
+            // If session expired we get the login page — hide quietly, don't show an error.
+            if (!html.includes('REPORTS_DATA') || !html.includes('STAT_PENDING')) {
+                hideRefreshIndicator(true);
+                return;
+            }
 
-            // Pull fresh data from the new page's inline script globals
-            const scripts = doc.querySelectorAll('script:not([src])');
-            scripts.forEach(s => {
-                const t = s.textContent;
-                if (t.includes('REPORTS_DATA'))  {
-                    try { eval(t.replace(/window\./g, 'window.')); } catch(e) {}
-                }
-            });
-
-            // Re-inject fresh reports + stats
+            // Re-inject fresh reports + stats (NO eval — parse only)
             const newReports = extractGlobal(html, 'REPORTS_DATA');
             const newPending = extractStat(html, 'STAT_PENDING');
             const newProg    = extractStat(html, 'STAT_PROGRESS');
             const newRes     = extractStat(html, 'STAT_RESOLVED');
 
-            if (newReports !== null) {
+            // Only update if we actually got valid non-empty data
+            if (newReports !== null && newReports.length > 0) {
+                // Detect truly new reports (IDs not seen before) BEFORE overwriting
+                const incoming = newReports.filter(r => !knownReportIds.has(parseInt(r.id)));
+
                 reports.length = 0;
-                newReports.forEach(r => reports.push(r));
+                newReports.forEach(r => {
+                    reports.push(r);
+                    knownReportIds.add(parseInt(r.id));  // mark all as known
+                });
+
                 renderReports();
+
+                // Show notification if new reports came in
+                if (incoming.length > 0) {
+                    showNewReportNotif(incoming.length, incoming[0]);
+                }
             }
 
-            // Update stat boxes
+            // Update stat boxes only if values look valid
             if (newPending !== null) updateStatBox('stat-pending',  newPending);
             if (newProg    !== null) updateStatBox('stat-progress', newProg);
             if (newRes     !== null) updateStatBox('stat-resolved', newRes);
 
             hideRefreshIndicator(true);
         })
-        .catch(() => hideRefreshIndicator(false))
+        .catch(err => {
+            console.warn('[AutoRefresh] fetch failed:', err);
+            hideRefreshIndicator(false);
+        })
         .finally(() => { isRefreshing = false; });
 }
 
@@ -771,6 +825,97 @@ function hideRefreshIndicator(success) {
             if (!success) ind.style.background = 'var(--blue-main)';
         }, 400);
     }, 1800);
+}
+
+/* ── New Report Notification Toast ── */
+function showNewReportNotif(count, firstReport) {
+    // Remove any existing notification first
+    const existing = document.getElementById('newReportNotif');
+    if (existing) existing.remove();
+    if (newReportDismissTimer) clearTimeout(newReportDismissTimer);
+
+    const label = count === 1
+        ? `New report: "<strong>${firstReport.title || 'Untitled'}</strong>"`
+        : `<strong>${count} new reports</strong> submitted`;
+
+    const catColor = firstReport ? catStyle(firstReport.category).color : '#9b1f1f';
+
+    const notif = document.createElement('div');
+    notif.id = 'newReportNotif';
+    notif.style.cssText = [
+        'position:fixed',
+        'bottom:28px',
+        'right:28px',
+        'z-index:9999',
+        'background:#fff',
+        'border:1.5px solid ' + catColor,
+        'border-left:5px solid ' + catColor,
+        'border-radius:12px',
+        'padding:14px 18px 14px 16px',
+        'box-shadow:0 6px 28px rgba(0,0,0,0.15)',
+        'font-family:"Sora",sans-serif',
+        'max-width:320px',
+        'width:calc(100vw - 56px)',
+        'display:flex',
+        'align-items:flex-start',
+        'gap:12px',
+        'opacity:0',
+        'transform:translateY(14px)',
+        'transition:opacity .3s ease, transform .3s ease'
+    ].join(';');
+
+    notif.innerHTML = `
+        <div style="flex-shrink:0; width:38px; height:38px; border-radius:50%;
+                    background:${catColor}18; display:flex; align-items:center;
+                    justify-content:center; margin-top:1px;">
+            <i class="fa fa-bell" style="color:${catColor}; font-size:17px;"></i>
+        </div>
+        <div style="flex:1; min-width:0;">
+            <div style="font-size:10px; font-weight:800; text-transform:uppercase;
+                        letter-spacing:.09em; color:${catColor}; margin-bottom:4px;">
+                New Report Submitted
+            </div>
+            <div style="font-size:13px; color:#1a1a2e; line-height:1.5;">${label}</div>
+            <button onclick="dismissNewReportNotif()"
+                    style="margin-top:9px; font-size:11px; font-weight:700;
+                           color:${catColor}; background:none; border:none;
+                           cursor:pointer; padding:0; font-family:'Sora',sans-serif;
+                           text-decoration:underline; text-underline-offset:2px;">
+                Dismiss
+            </button>
+        </div>
+        <button onclick="dismissNewReportNotif()"
+                style="background:none; border:none; cursor:pointer; color:#aaa;
+                       font-size:18px; padding:0; line-height:1; flex-shrink:0;
+                       margin-top:-2px;">&#x2715;</button>
+    `;
+
+    document.body.appendChild(notif);
+
+    // Animate in after paint
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            notif.style.opacity  = '1';
+            notif.style.transform = 'translateY(0)';
+        });
+    });
+
+    // Auto-dismiss after 1 hour (3,600,000 ms)
+    newReportDismissTimer = setTimeout(dismissNewReportNotif, 3600000);
+}
+
+function dismissNewReportNotif() {
+    const notif = document.getElementById('newReportNotif');
+    if (!notif) return;
+    notif.style.opacity   = '0';
+    notif.style.transform = 'translateY(14px)';
+    setTimeout(() => {
+        if (notif.parentNode) notif.parentNode.removeChild(notif);
+    }, 320);
+    if (newReportDismissTimer) {
+        clearTimeout(newReportDismissTimer);
+        newReportDismissTimer = null;
+    }
 }
 
 /* ── Unified Modal (same as program page) ── */

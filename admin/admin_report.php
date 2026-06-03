@@ -1,7 +1,10 @@
 <?php
 session_start();
+date_default_timezone_set('Asia/Manila');
 if (!isset($_SESSION['userID'])) { header("Location: admin_login.php"); exit(); }
 include __DIR__ . '/../connection.php';
+// Force MySQL session timezone to PH time so CURRENT_TIMESTAMP defaults store the correct time
+mysqli_query($conn, "SET time_zone = '+08:00'");
 
 // --- Ensure resolved_at column exists ---
 $col_rat = @mysqli_query($conn, "SHOW COLUMNS FROM `reports` LIKE 'resolved_at'");
@@ -25,6 +28,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_status'])) {
             executeQuery("UPDATE reports SET status='$status', resolved_at = NULL WHERE id=$id");
         }
         $ok = true;
+
+        // ── Notify the resident ──────────────────────────────────
+        $rpt_row = mysqli_fetch_assoc(executeQuery("SELECT resident_id, title FROM reports WHERE id=$id"));
+        if ($rpt_row && (int)$rpt_row['resident_id'] > 0) {
+            $notif_res_id = (int)$rpt_row['resident_id'];
+            $notif_title  = mysqli_real_escape_string($conn, mb_strimwidth($rpt_row['title'], 0, 60, '…'));
+            $label_map    = ['pending' => 'Pending', 'in-progress' => 'In Progress', 'resolved' => 'Resolved'];
+            $status_label = $label_map[$status] ?? ucfirst($status);
+            $notif_msg    = mysqli_real_escape_string($conn, "Your report \"$notif_title\" status changed to $status_label.");
+            executeQuery("INSERT INTO resident_notifications (resident_id, report_id, type, message)
+                          VALUES ($notif_res_id, $id, 'status_change', '$notif_msg')");
+        }
     }
     if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
         header('Content-Type: application/json');
@@ -46,22 +61,33 @@ if ($col_chk && mysqli_num_rows($col_chk) === 0) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admin_comment'])) {
     $report_id   = (int) ($_POST['report_id'] ?? 0);
     $comment_txt = trim($_POST['comment_text'] ?? '');
-    $admin_name  = mysqli_real_escape_string($conn, 'Barangay Admin');
+    $admin_name  = mysqli_real_escape_string($conn, 'Barangay San Bartolome');
     $new_comment = null;
     if ($report_id > 0 && $comment_txt !== '') {
         $comm_esc = mysqli_real_escape_string($conn, $comment_txt);
         executeQuery("INSERT INTO report_comments (report_id, resident_id, resident_name, comment_text, is_admin, commenter_name)
-                      VALUES ($report_id, 0, 'Barangay Admin', '$comm_esc', 1, '$admin_name')");
+                      VALUES ($report_id, 0, 'Barangay San Bartolome', '$comm_esc', 1, '$admin_name')");
         $new_id = mysqli_insert_id($conn);
         $new_comment = [
             'id'             => $new_id,
             'report_id'      => $report_id,
-            'resident_name'  => 'Barangay Admin',
+            'resident_name'  => 'Barangay San Bartolome',
             'comment_text'   => $comment_txt,
             'is_admin'       => 1,
-            'commenter_name' => 'Barangay Admin',
-            'created_at'     => date('Y-m-d H:i:s'),
+            'commenter_name' => 'Barangay San Bartolome',
+            'created_at'     => date('Y-m-d H:i:s'),  // PH time (timezone set at top)
         ];
+
+        // ── Notify the resident ──────────────────────────────────
+        $rpt_row = mysqli_fetch_assoc(executeQuery("SELECT resident_id, title FROM reports WHERE id=$report_id"));
+        if ($rpt_row && (int)$rpt_row['resident_id'] > 0) {
+            $notif_res_id = (int)$rpt_row['resident_id'];
+            $notif_title  = mysqli_real_escape_string($conn, mb_strimwidth($rpt_row['title'], 0, 60, '…'));
+            $short_cmt    = mysqli_real_escape_string($conn, mb_strimwidth($comment_txt, 0, 80, '…'));
+            $notif_msg    = mysqli_real_escape_string($conn, "Admin commented on \"$notif_title\": $short_cmt");
+            executeQuery("INSERT INTO resident_notifications (resident_id, report_id, type, message)
+                          VALUES ($notif_res_id, $report_id, 'admin_comment', '$notif_msg')");
+        }
     }
     if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
         header('Content-Type: application/json');
@@ -76,7 +102,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admin_comment'])) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_announcement'])) {
     $title      = mysqli_real_escape_string($conn, trim($_POST['ann_title']  ?? ''));
     $body       = mysqli_real_escape_string($conn, trim($_POST['ann_body']   ?? ''));
-    $posted_by  = mysqli_real_escape_string($conn, trim($_POST['posted_by'] ?? 'Barangay Admin'));
+    $posted_by  = mysqli_real_escape_string($conn, trim($_POST['posted_by'] ?? 'Barangay San Bartolome'));
     $is_urgent  = (!empty($_POST['is_urgent']) && $_POST['is_urgent'] === '1') ? 1 : 0;
     $image_path = null;
 
@@ -140,7 +166,12 @@ $current_page = 'admin_report';
     <link rel="stylesheet" href="../assets/css/admin.css">
     <style>
         body { background: #f0f2f8; min-height: 100vh; }
-        .page-wrap { max-width: 1100px; margin: 0 auto; padding: 24px; }
+        .page-wrap { max-width: 1100px; margin: 0 auto; padding: 24px; box-sizing: border-box; }
+        @media (max-width:480px) {
+            .page-wrap { padding: 14px 12px; }
+            .page-title { font-size: 22px !important; }
+            .page-sub   { font-size: 13px !important; }
+        }
 
         @keyframes fa-spin { 0%{transform:rotate(0deg)} 100%{transform:rotate(360deg)} }
         #refreshBtn.spinning .fa { animation: fa-spin 0.7s linear infinite; }
@@ -169,15 +200,26 @@ $current_page = 'admin_report';
 
         /* Stats row */
         .stats-row { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:24px; }
-        .stat-box   { background:#fff; border-radius:14px; padding:16px 20px; border:1.5px solid #e8eaf0; border-left:4px solid #e8eaf0; box-shadow:0 2px 10px rgba(0,0,0,.05); }
-        .stat-label { font-size:13px; font-weight:700; color:#8890b8; text-transform:uppercase; letter-spacing:.06em; margin-bottom:4px; }
-        .stat-num   { font-family:'Sora',sans-serif; font-size:32px; font-weight:800; color:#1a1c2e; }
+        .stat-box   { background:#fff; border-radius:14px; padding:16px 20px; border:1.5px solid #e8eaf0; border-left:4px solid #e8eaf0; box-shadow:0 2px 10px rgba(0,0,0,.05); min-width:0; }
+        .stat-label { font-size:13px; font-weight:700; color:#8890b8; text-transform:uppercase; letter-spacing:.06em; margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .stat-num   { font-family:'Sora',sans-serif; font-size:clamp(20px, 5vw, 32px); font-weight:800; color:#1a1c2e; }
+        @media (max-width:480px) {
+            .stats-row { gap:8px; }
+            .stat-box  { padding:12px 10px; border-left-width:3px; border-radius:10px; }
+            .stat-label { font-size:10px; letter-spacing:.03em; }
+        }
 
         /* Main card */
         .main-card { background:#fff; border-radius:16px; border:1.5px solid #e8eaf0; box-shadow:0 2px 10px rgba(0,0,0,.05); }
         .main-card-header { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; padding:16px 20px; border-bottom:1.5px solid #e8eaf0; }
         .main-card-title  { font-family:'Sora',sans-serif; font-size:17px; font-weight:800; color:#1a1c2e; display:flex; align-items:center; gap:8px; }
         .main-card-body   { padding:16px 20px; }
+        @media (max-width:480px) {
+            .main-card-header { padding:12px 14px; gap:8px; }
+            .main-card-body   { padding:12px 12px; }
+            .main-card-title  { font-size:14px; }
+            .rpt-filter-tab   { font-size:11px; padding:5px 9px; }
+        }
 
         /* Filter tab buttons */
         .rpt-filter-tab {
@@ -189,13 +231,13 @@ $current_page = 'admin_report';
             transition: all .18s; white-space: nowrap;
         }
         .rpt-filter-tab--active {
-            background: #1a56db; color: #fff; border-color: #1a56db;
+            background: #9b1f1f; color: #fff; border-color: #9b1f1f;
         }
         .rpt-filter-tab--today-active {
             background: #f59c23; color: #fff; border-color: #f59c23;
         }
         .rpt-filter-tab:hover:not(.rpt-filter-tab--active):not(.rpt-filter-tab--today-active) {
-            border-color: #1a56db; color: #1a56db;
+            border-color: #9b1f1f; color: #9b1f1f;
         }
         /* Calendar day cells */
         .cal-day {
@@ -205,7 +247,7 @@ $current_page = 'admin_report';
         }
         .cal-day.has-reports { cursor: pointer; font-weight: 700; }
         .cal-day.has-reports:hover { transform: scale(1.1); }
-        .cal-day.is-selected { background: #1a56db !important; color: #fff !important; }
+        .cal-day.is-selected { background: #9b1f1f !important; color: #fff !important; }
         .cal-day.is-today:not(.is-selected) { color: #f59c23; font-weight: 800; outline: 1.5px solid #f59c23; outline-offset: -1px; }
 
         /* ── Admin Dark Mode Toggle ── */
@@ -218,13 +260,13 @@ $current_page = 'admin_report';
             height: 48px;
             border-radius: 50%;
             border: 2px solid rgba(245, 204, 0, 0.35);
-            background: linear-gradient(135deg, #0800a0, #04005a);
-            color: #f5cc00;
+            background: linear-gradient(135deg, #9b1f1f, #5c0a0a);
+            color: #d4a96a;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            box-shadow: 0 6px 20px rgba(8, 0, 160, 0.40);
+            box-shadow: 0 6px 20px rgba(155, 31, 31, 0.40);
             transition: transform  0.22s cubic-bezier(0.22, 0.68, 0, 1.2),
                         box-shadow 0.22s ease,
                         background 0.22s ease,
@@ -234,7 +276,7 @@ $current_page = 'admin_report';
         }
         #adminDarkToggle:hover {
             transform: scale(1.12) rotate(-15deg);
-            box-shadow: 0 10px 30px rgba(8, 0, 160, 0.55);
+            box-shadow: 0 10px 30px rgba(155, 31, 31, 0.55);
         }
         #adminDarkToggle:active { transform: scale(0.94); }
         body.dark-mode #adminDarkToggle {
@@ -269,7 +311,7 @@ $current_page = 'admin_report';
         </div>
         <div style="display:flex; gap:8px; align-items:center;">
             <button onclick="openUnifiedModal()"
-                    style="display:flex; align-items:center; gap:6px; padding:8px 16px; border-radius:9px; background:#1a56db; color:#fff; border:none; font-size:12.5px; font-weight:700; cursor:pointer;">
+                    style="display:flex; align-items:center; gap:6px; padding:8px 16px; border-radius:9px; background:#9b1f1f; color:#fff; border:none; font-size:12.5px; font-weight:700; cursor:pointer;">
                 <i class="fa fa-plus"></i> New Post
             </button>
         </div>
@@ -277,15 +319,15 @@ $current_page = 'admin_report';
 
     <!-- Stats -->
     <div class="stats-row">
-        <div class="stat-box" style="border-left-color:#f59c23;">
+        <div class="stat-box stat-pending" style="border-left-color:#f59c23;">
             <div class="stat-label">Pending</div>
             <div class="stat-num" style="color:#f59c23;"><?= $r_pending ?></div>
         </div>
-        <div class="stat-box" style="border-left-color:#1a56db;">
+        <div class="stat-box stat-progress" style="border-left-color:#1a56db;">
             <div class="stat-label">In Progress</div>
-            <div class="stat-num"><?= $r_progress ?></div>
+            <div class="stat-num" style="color:#1a56db;"><?= $r_progress ?></div>
         </div>
-        <div class="stat-box" style="border-left-color:#22cc77;">
+        <div class="stat-box stat-resolved" style="border-left-color:#22cc77;">
             <div class="stat-label">Resolved</div>
             <div class="stat-num" style="color:#22cc77;"><?= $r_resolved ?></div>
         </div>
@@ -295,7 +337,7 @@ $current_page = 'admin_report';
     <div class="main-card">
         <div class="main-card-header">
             <div class="main-card-title">
-                <i class="fa fa-flag" style="color:#1a56db;"></i>
+                <i class="fa fa-flag" style="color:#9b1f1f;"></i>
                 <span id="reportsListTitle">All Reports</span>
             </div>
             <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
@@ -315,7 +357,7 @@ $current_page = 'admin_report';
                 <div id="calDropdown" style="display:none; position:absolute; z-index:9999;
                             background:var(--white); border:1.5px solid var(--border); border-radius:14px;
                             box-shadow:0 8px 32px rgba(0,0,0,.14); width:252px; overflow:hidden;">
-                    <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 13px; background:linear-gradient(135deg,#0800a0,#1a56db);">
+                    <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 13px; background:linear-gradient(135deg,#9b1f1f,#5c0a0a);">
                         <button onclick="calNav(-1);event.stopPropagation();" style="border:none; background:rgba(255,255,255,0.15); color:#fff; cursor:pointer; width:26px; height:26px; border-radius:7px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
                             <i class="fa fa-chevron-left" style="font-size:10px;"></i>
                         </button>
@@ -329,12 +371,12 @@ $current_page = 'admin_report';
                     </div>
                     <div style="display:flex; align-items:center; gap:10px; padding:8px 12px 10px; border-top:1px solid var(--border); margin-top:6px;">
                         <div style="display:flex; align-items:center; gap:4px; font-size:10px; color:var(--muted); font-weight:600;">
-                            <span style="width:6px; height:6px; border-radius:50%; background:#1a56db; display:inline-block;"></span> Reports
+                            <span style="width:6px; height:6px; border-radius:50%; background:#9b1f1f; display:inline-block;"></span> Reports
                         </div>
                         <div style="display:flex; align-items:center; gap:4px; font-size:10px; color:var(--muted); font-weight:600;">
                             <span style="width:6px; height:6px; border-radius:50%; background:#f59c23; display:inline-block;"></span> Today
                         </div>
-                        <button onclick="applyDateFilter('all')" style="margin-left:auto; font-size:10px; font-weight:700; color:#1a56db; background:none; border:none; cursor:pointer; padding:0;">Clear</button>
+                        <button onclick="applyDateFilter('all')" style="margin-left:auto; font-size:10px; font-weight:700; color:#9b1f1f; background:none; border:none; cursor:pointer; padding:0;">Clear</button>
                     </div>
                 </div>
 
@@ -354,10 +396,10 @@ $current_page = 'admin_report';
                 </select>
 
                 <!-- Active date chip (shown when a specific day is picked) -->
-                <div id="activeDateLabel" style="display:none; align-items:center; gap:5px; padding:5px 10px; background:#e8f0fe; border:1.5px solid #90aef8; border-radius:8px; font-size:11.5px; font-weight:700; color:#1a56db;">
+                <div id="activeDateLabel" style="display:none; align-items:center; gap:5px; padding:5px 10px; background:#fdeaea; border:1.5px solid #d4a0a0; border-radius:8px; font-size:11.5px; font-weight:700; color:#9b1f1f;">
                     <i class="fa fa-calendar" style="font-size:10px;"></i>
                     <span id="activeDateText"></span>
-                    <button onclick="applyDateFilter('all')" style="border:none; background:none; color:#1a56db; cursor:pointer; font-size:11px; padding:0; margin-left:1px; line-height:1;"><i class="fa fa-times"></i></button>
+                    <button onclick="applyDateFilter('all')" style="border:none; background:none; color:#9b1f1f; cursor:pointer; font-size:11px; padding:0; margin-left:1px; line-height:1;"><i class="fa fa-times"></i></button>
                 </div>
 
             </div>
@@ -392,7 +434,7 @@ $current_page = 'admin_report';
                         <div class="u-type-sub">Post an official notice to residents</div>
                     </button>
                     <button type="button" class="u-type-tile" onclick="chooseType('program')">
-                        <div class="u-type-icon" style="background:#e8f0fe; color:#1a56db;"><i class="fa fa-briefcase"></i></div>
+                        <div class="u-type-icon" style="background:#fdeaea; color:#9b1f1f;"><i class="fa fa-briefcase"></i></div>
                         <div class="u-type-label">Project</div>
                         <div class="u-type-sub">Add a new barangay project</div>
                     </button>
@@ -422,7 +464,7 @@ $current_page = 'admin_report';
                     </div>
                     <div class="field-group">
                         <label class="field-label">Posted By</label>
-                        <input type="text" class="field-input" name="posted_by" placeholder="e.g. Barangay Admin" value="Barangay Admin">
+                        <input type="text" class="field-input" name="posted_by" placeholder="e.g. Barangay San Bartolome" value="Barangay San Bartolome">
                     </div>
                     <div class="field-group">
                         <label class="field-label">Image (optional)</label>
@@ -453,7 +495,7 @@ $current_page = 'admin_report';
             <div class="rpt-modal-header">
                 <div style="display:flex; align-items:center; gap:10px;">
                     <button type="button" class="u-back-btn" onclick="backToTypePicker()"><i class="fa fa-arrow-left"></i></button>
-                    <div><div class="rpt-modal-eyebrow">Admin Action</div><div class="rpt-modal-title">Add New Program</div></div>
+                    <div><div class="rpt-modal-eyebrow">Admin Action</div><div class="rpt-modal-title">Add New Project</div></div>
                 </div>
                 <button type="button" class="rpt-modal-close" onclick="closeUnifiedModal()"><i class="fa fa-times"></i></button>
             </div>
@@ -461,8 +503,8 @@ $current_page = 'admin_report';
                 <input type="hidden" name="add_program" value="1">
                 <div class="rpt-modal-body">
                     <div class="field-group">
-                        <label class="field-label">Program Title</label>
-                        <input type="text" class="field-input" name="title" placeholder="Enter program title..." required>
+                        <label class="field-label">Project Title</label>
+                        <input type="text" class="field-input" name="title" placeholder="Enter project title..." required>
                     </div>
                     <div class="field-group">
                         <label class="field-label">Department</label>
@@ -470,7 +512,7 @@ $current_page = 'admin_report';
                     </div>
                     <div class="field-group">
                         <label class="field-label">Description</label>
-                        <textarea class="field-input" name="description" placeholder="Describe the program and its goals..." required style="resize:vertical;"></textarea>
+                        <textarea class="field-input" name="description" placeholder="Describe the project and its goals..." required style="resize:vertical;"></textarea>
                     </div>
                     <div class="field-group">
                         <label class="field-label">Start Date</label>
@@ -488,7 +530,7 @@ $current_page = 'admin_report';
                 </div>
                 <div class="rpt-modal-footer">
                     <button type="button" class="rpt-modal-cancel" onclick="closeUnifiedModal()">Cancel</button>
-                    <button type="submit" class="rpt-modal-submit"><i class="fa fa-paper-plane"></i> Add Program</button>
+                    <button type="submit" class="rpt-modal-submit"><i class="fa fa-paper-plane"></i> Add Project</button>
                 </div>
             </form>
         </div>
@@ -505,15 +547,15 @@ $current_page = 'admin_report';
 <!-- Status Confirmation Modal -->
 <div id="statusConfirmModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:9999; align-items:center; justify-content:center;">
     <div style="background:#fff; border-radius:18px; padding:28px 28px 22px; max-width:340px; width:90%; box-shadow:0 8px 40px rgba(0,0,0,.18); text-align:center;">
-        <div style="width:52px; height:52px; border-radius:50%; background:#e8f0fe; display:flex; align-items:center; justify-content:center; margin:0 auto 14px;">
-            <i class="fa fa-refresh" style="font-size:22px; color:#1a56db;"></i>
+        <div style="width:52px; height:52px; border-radius:50%; background:#fdeaea; display:flex; align-items:center; justify-content:center; margin:0 auto 14px;">
+            <i class="fa fa-refresh" style="font-size:22px; color:#9b1f1f;"></i>
         </div>
         <div style="font-size:16px; font-weight:800; color:#1a2340; margin-bottom:6px;">Change Status?</div>
         <div style="font-size:13px; color:#8890b8; margin-bottom:4px;">Set status to <strong id="confirmStatusLabel"></strong> for</div>
         <div style="font-size:13px; color:#4a5280; font-weight:600; margin-bottom:18px;" id="confirmReportTitle"></div>
         <div style="display:flex; gap:10px; justify-content:center;">
             <button onclick="document.getElementById('statusConfirmModal').style.display='none'" style="flex:1; padding:10px; border-radius:10px; border:1.5px solid #e0e4f0; background:#f7f8fc; color:#4a5280; font-weight:700; cursor:pointer; font-size:13px;">Cancel</button>
-            <button onclick="confirmStatusChange()" style="flex:1; padding:10px; border-radius:10px; background:#1a56db; color:#fff; font-weight:700; cursor:pointer; font-size:13px; border:none;">Confirm</button>
+            <button onclick="confirmStatusChange()" style="flex:1; padding:10px; border-radius:10px; background:#9b1f1f; color:#fff; font-weight:700; cursor:pointer; font-size:13px; border:none;">Confirm</button>
         </div>
     </div>
 </div>

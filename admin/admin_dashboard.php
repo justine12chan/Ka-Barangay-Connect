@@ -92,284 +92,7 @@ $current_page = 'admin_dashboard';
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="../assets/css/admin.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <style>
-        body { background: #f0f2f8; min-height: 100vh; }
-
-        .dash-wrap { max-width: 1200px; margin: 0 auto; padding: 28px 24px; }
-
-        /* ── Page header ── */
-        .dash-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 28px; }
-        .dash-title  { font-family: 'Sora', sans-serif; font-size: 30px; font-weight: 800; color: #0d0e2e; margin: 0 0 3px; }
-        .dash-sub    { font-size: 16px; color: #8890b8; margin: 0; }
-        @keyframes fa-spin { 0%{transform:rotate(0deg)} 100%{transform:rotate(360deg)} }
-
-        /* ── Hero stat cards ── */
-        .stats-hero { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
-        @media (max-width: 900px) { .stats-hero { grid-template-columns: repeat(2, 1fr); } }
-        @media (max-width: 500px) { .stats-hero { grid-template-columns: 1fr; } }
-
-        .stat-hero-card {
-            position: relative; overflow: hidden;
-            border-radius: 18px; padding: 24px 22px 20px;
-            border: 1.5px solid transparent;
-            box-shadow: 0 4px 20px rgba(0,0,0,.07);
-            transition: transform .2s, box-shadow .2s;
-        }
-        .stat-hero-card:hover { transform: translateY(-3px); box-shadow: 0 8px 28px rgba(0,0,0,.12); }
-
-        /* Pending — amber */
-        .stat-hero-card.pending {
-            background: linear-gradient(135deg, #fff8ed 0%, #fff3dc 100%);
-            border-color: #fcd97a;
-        }
-        /* In Progress — blue */
-        .stat-hero-card.inprogress {
-            background: linear-gradient(135deg, #f0f4ff 0%, #e5ecff 100%);
-            border-color: #a3bdf7;
-        }
-        /* Resolved — green */
-        .stat-hero-card.resolved {
-            background: linear-gradient(135deg, #f0fdf5 0%, #e3faea 100%);
-            border-color: #86e0a9;
-        }
-
-        .stat-hero-icon {
-            width: 48px; height: 48px; border-radius: 14px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 20px; margin-bottom: 16px;
-        }
-        .pending   .stat-hero-icon { background: #f59c23; color: #fff; box-shadow: 0 4px 14px rgba(245,156,35,.35); }
-        .inprogress .stat-hero-icon { background: #1a56db; color: #fff; box-shadow: 0 4px 14px rgba(26,86,219,.35); }
-        .resolved  .stat-hero-icon { background: #22cc77; color: #fff; box-shadow: 0 4px 14px rgba(34,204,119,.35); }
-
-        .stat-hero-value {
-            font-family: 'Sora', sans-serif; font-size: 56px; font-weight: 800; line-height: 1;
-            margin-bottom: 6px;
-        }
-        .pending   .stat-hero-value  { color: #c47200; }
-        .inprogress .stat-hero-value { color: #1a56db; }
-        .resolved  .stat-hero-value  { color: #128548; }
-
-        .stat-hero-label { font-size: 17px; font-weight: 700; color: #0d0e2e; margin-bottom: 3px; }
-        .stat-hero-sub   { font-size: 14px; color: #8890b8; }
-
-        /* Decorative blob */
-        .stat-hero-card::after {
-            content: '';
-            position: absolute; bottom: -18px; right: -18px;
-            width: 90px; height: 90px; border-radius: 50%;
-            opacity: .12;
-        }
-        .pending::after    { background: #f59c23; }
-        .inprogress::after { background: #1a56db; }
-        .resolved::after   { background: #22cc77; }
-        /* Turnaround — purple */
-        .stat-hero-card.turnaround {
-            background: linear-gradient(135deg, #f6f0ff 0%, #ede5ff 100%);
-            border-color: #c4a0f7;
-        }
-        .turnaround .stat-hero-icon { background: #8b00c7; color: #fff; box-shadow: 0 4px 14px rgba(139,0,199,.35); }
-        .turnaround .stat-hero-value { color: #6b00a0; font-size: 36px; line-height: 1.1; padding-top: 4px; }
-        .turnaround::after { background: #8b00c7; }
-        .turnaround .stat-hero-bar-fill { background: #8b00c7; }
-        .tat-trend-pill {
-            display: inline-flex; align-items: center; gap: 4px;
-            font-size: 11px; font-weight: 800; padding: 2px 9px;
-            border-radius: 20px; margin-top: 6px;
-        }
-        .tat-trend-faster { background: #e3faee; color: #128548; border: 1px solid #a3e8c0; }
-        .tat-trend-slower { background: #fff0f0; color: #c0001a; border: 1px solid #f7a0aa; }
-        .tat-trend-same   { background: #f0f2f8; color: #8890b8; border: 1px solid #d0d4e8; }
-
-        /* Progress bar under stats */
-        .stat-hero-bar { margin-top: 14px; }
-        .stat-hero-bar-track { height: 5px; border-radius: 99px; background: rgba(0,0,0,.08); overflow: hidden; }
-        .stat-hero-bar-fill  { height: 100%; border-radius: 99px; transition: width .6s ease; }
-        .pending   .stat-hero-bar-fill  { background: #f59c23; }
-        .inprogress .stat-hero-bar-fill { background: #1a56db; }
-        .resolved  .stat-hero-bar-fill  { background: #22cc77; }
-        .stat-hero-bar-label { font-size: 13px; color: #8890b8; margin-top: 5px; }
-
-        /* ── Chart card ── */
-        .chart-card {
-            background: #fff; border: 1.5px solid #e8eaf0;
-            border-radius: 16px; padding: 22px;
-            box-shadow: 0 2px 12px rgba(0,0,0,.05);
-            margin-bottom: 24px;
-        }
-        .chart-card-header {
-            display: flex; align-items: center; justify-content: space-between;
-            flex-wrap: wrap; gap: 10px; margin-bottom: 18px;
-        }
-        .chart-card-title {
-            font-family: 'Sora', sans-serif; font-size: 18px; font-weight: 800;
-            color: #0d0e2e; display: flex; align-items: center; gap: 8px;
-        }
-        .chart-tabs { display: flex; gap: 4px; background: #f0f2f8; border-radius: 10px; padding: 3px; }
-        .chart-tab {
-            padding: 5px 14px; border-radius: 7px; font-size: 14px; font-weight: 700;
-            border: none; cursor: pointer; color: #8890b8; background: transparent;
-            transition: background .18s, color .18s;
-        }
-        .chart-tab.active { background: #fff; color: #0800a0; box-shadow: 0 1px 4px rgba(0,0,0,.1); }
-
-        /* ── Bottom row ── */
-        .section-card {
-            background: #fff; border: 1.5px solid #e8eaf0;
-            border-radius: 16px; padding: 20px;
-            box-shadow: 0 2px 12px rgba(0,0,0,.05);
-            height: 100%;
-        }
-        .section-title {
-            font-family: 'Sora', sans-serif; font-size: 17px; font-weight: 800;
-            color: #0d0e2e; margin-bottom: 16px;
-            display: flex; align-items: center; gap: 8px;
-        }
-        .section-title-icon {
-            width: 32px; height: 32px; border-radius: 8px;
-            display: flex; align-items: center; justify-content: center; font-size: 15px;
-        }
-
-        .rpt-row {
-            display: flex; align-items: center; gap: 10px;
-            padding: 9px 0; border-bottom: 1px solid #f4f5fb;
-        }
-        .rpt-row:last-child { border-bottom: none; }
-
-        .rpt-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
-        .rpt-title {
-            font-size: 16px; font-weight: 600; color: #0d0e2e;
-            flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-        }
-        .rpt-badge {
-            display: inline-flex; align-items: center;
-            padding: 3px 12px; border-radius: 20px;
-            font-size: 13px; font-weight: 700; flex-shrink: 0;
-        }
-        .rpt-date { font-size: 13px; color: #b0b8d8; white-space: nowrap; flex-shrink: 0; }
-
-        .view-all-link {
-            display: block; text-align: right;
-            margin-top: 14px; font-size: 15px;
-            color: #1a56db; font-weight: 700; text-decoration: none;
-        }
-        .view-all-link:hover { text-decoration: underline; }
-
-        /* Announcement pill */
-        .ann-row {
-            display: flex; align-items: flex-start; gap: 10px;
-            padding: 9px 0; border-bottom: 1px solid #f4f5fb;
-        }
-        .ann-row:last-child { border-bottom: none; }
-        .ann-icon {
-            width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
-            display: flex; align-items: center; justify-content: center; font-size: 15px;
-        }
-        .ann-title { font-size: 16px; font-weight: 600; color: #0d0e2e; margin-bottom: 2px; }
-        .ann-meta  { font-size: 13px; color: #8890b8; }
-
-        /* Total badge in header */
-        .total-pill {
-            display: inline-flex; align-items: center; gap: 5px;
-            padding: 5px 14px; border-radius: 20px;
-            background: #e8f0fe; color: #1a56db;
-            font-size: 14px; font-weight: 700;
-        }
-
-        /* ── Admin Dark Mode Toggle ── */
-        #adminDarkToggle {
-            position: fixed;
-            bottom: 28px;
-            left: 28px;
-            z-index: 9001;
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            border: 2px solid rgba(245, 204, 0, 0.35);
-            background: linear-gradient(135deg, #0800a0, #04005a);
-            color: #f5cc00;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            box-shadow: 0 6px 20px rgba(8, 0, 160, 0.40);
-            transition: transform  0.22s cubic-bezier(0.22, 0.68, 0, 1.2),
-                        box-shadow 0.22s ease,
-                        background 0.22s ease,
-                        border-color 0.22s ease;
-            -webkit-tap-highlight-color: transparent;
-            font-size: 18px;
-        }
-        #adminDarkToggle:hover {
-            transform: scale(1.12) rotate(-15deg);
-            box-shadow: 0 10px 30px rgba(8, 0, 160, 0.55);
-        }
-        #adminDarkToggle:active { transform: scale(0.94); }
-        body.dark-mode #adminDarkToggle {
-            background: linear-gradient(135deg, #f5cc00, #d4a800);
-            color: #04005a;
-            border-color: rgba(245, 204, 0, 0.65);
-            box-shadow: 0 6px 20px rgba(245, 204, 0, 0.35);
-        }
-        body.dark-mode #adminDarkToggle:hover {
-            box-shadow: 0 10px 30px rgba(245, 204, 0, 0.50);
-        }
-        #adminDarkToggle .adt-moon { display: block; }
-        #adminDarkToggle .adt-sun  { display: none;  }
-        body.dark-mode #adminDarkToggle .adt-moon { display: none;  }
-        body.dark-mode #adminDarkToggle .adt-sun  { display: block; }
-        .dark-mode-fab { display: none !important; }
-
-        /* ── Dark Mode overrides ── */
-        body.dark-mode {
-            background: #0c0d1e !important;
-            color: #e0e2f5;
-        }
-        body.dark-mode .dash-title       { color: #e8eaf5; }
-        body.dark-mode .dash-sub         { color: #6a72a8; }
-        body.dark-mode .refresh-btn      { background: #181934; border-color: #2a2d52; color: #9ca3d4; }
-        body.dark-mode .refresh-btn:hover{ border-color: #5b5fd4; color: #a0a8f0; }
-        body.dark-mode .total-pill       { background: #1a1d3a; color: #7b8ef7; }
-
-        body.dark-mode .stat-hero-card.pending    { background: linear-gradient(135deg,#1e1400 0%,#201700 100%); border-color: #5a3a00; }
-        body.dark-mode .stat-hero-card.inprogress { background: linear-gradient(135deg,#0b1330 0%,#0d1640 100%); border-color: #1e3a7a; }
-        body.dark-mode .stat-hero-card.resolved   { background: linear-gradient(135deg,#001810 0%,#001e14 100%); border-color: #0e4d28; }
-        body.dark-mode .stat-hero-card.turnaround { background: linear-gradient(135deg,#140020 0%,#1a002a 100%); border-color: #4a007a; }
-        body.dark-mode .turnaround .stat-hero-value { color: #c97aff; }
-        body.dark-mode .turnaround .stat-hero-icon  { background: #6a00a8; box-shadow: 0 4px 14px rgba(139,0,199,.5); }
-        body.dark-mode .turnaround .stat-hero-bar-fill { background: #a040e8; }
-        body.dark-mode .turnaround::after           { background: #a040e8; opacity: .18; }
-
-        /* Trend pills — dark mode */
-        body.dark-mode .tat-trend-faster { background: #0a2e1a; color: #4ade80; border: 1px solid #166534; }
-        body.dark-mode .tat-trend-slower { background: #2e0a0a; color: #f87171; border: 1px solid #7f1d1d; }
-        body.dark-mode .tat-trend-same   { background: #1a1d38; color: #8890b8; border: 1px solid #2a2d52; }
-
-        body.dark-mode .stat-hero-label           { color: #cdd0ef; }
-        body.dark-mode .stat-hero-sub             { color: #5a6090; }
-        body.dark-mode .stat-hero-bar-label       { color: #5a6090; }
-
-        body.dark-mode .chart-card,
-        body.dark-mode .section-card { background: #12142a; border-color: #1e2040; box-shadow: 0 2px 12px rgba(0,0,0,.4); }
-        body.dark-mode .chart-card-title,
-        body.dark-mode .section-title { color: #c8cbed; }
-        body.dark-mode .chart-tabs    { background: #0c0d1e; }
-        body.dark-mode .chart-tab     { color: #4a5290; }
-        body.dark-mode .chart-tab.active { background: #1a1d3c; color: #8890f8; box-shadow: 0 1px 4px rgba(0,0,0,.4); }
-
-        body.dark-mode .rpt-row       { border-bottom-color: #1a1d38; }
-        body.dark-mode .rpt-title     { color: #c8cbed; }
-        body.dark-mode .rpt-date      { color: #3e4468; }
-        body.dark-mode .ann-row       { border-bottom-color: #1a1d38; }
-        body.dark-mode .ann-title     { color: #c8cbed; }
-        body.dark-mode .ann-meta      { color: #4a5290; }
-        body.dark-mode .view-all-link { color: #6a7aef; }
-
-        body.dark-mode #logoutModal > div { background: #12142a; }
-        body.dark-mode #logoutModal div[style*="font-size:16px"] { color: #e0e2f5 !important; }
-        body.dark-mode #logoutModal div[style*="font-size:13px"] { color: #6a72a8 !important; }
-        body.dark-mode #logoutModal button { background: #1a1d38 !important; border-color: #2a2d52 !important; color: #8890c8 !important; }
-    </style>
+    <link rel="stylesheet" href="../assets/css/admin-dashboard.css">
 </head>
 <body>
 <script>/* dark mode resets on refresh */</script>
@@ -474,7 +197,7 @@ $current_page = 'admin_dashboard';
     <div class="chart-card">
         <div class="chart-card-header">
             <div class="chart-card-title">
-                <i class="fa fa-line-chart" style="color:#0800a0;"></i>
+                <i class="fa fa-line-chart" style="color:#9b1f1f;"></i>
                 Reports Overview
             </div>
             <div class="chart-tabs">
@@ -485,7 +208,7 @@ $current_page = 'admin_dashboard';
                 <button class="chart-tab"         id="tab-turnaround" onclick="switchChartView('turnaround',this)">Turnaround</button>
             </div>
         </div>
-        <div style="height:270px; position:relative;">
+        <div style="height:270px; position:relative;" id="chartWrap">
             <canvas id="reportsChart"></canvas>
         </div>
     </div>
@@ -533,7 +256,7 @@ $current_page = 'admin_dashboard';
                     $is_urgent = !empty($a['is_urgent']);
                 ?>
                 <div class="ann-row">
-                    <div class="ann-icon" style="background:<?= $is_urgent ? '#fff0f0' : '#f0f4ff' ?>; color:<?= $is_urgent ? '#c0001a' : '#0800a0' ?>;">
+                    <div class="ann-icon" style="background:<?= $is_urgent ? '#fff0f0' : '#fdeaea' ?>; color:<?= $is_urgent ? '#c0001a' : '#9b1f1f' ?>;">
                         <i class="fa <?= $is_urgent ? 'fa-exclamation-triangle' : 'fa-info-circle' ?>"></i>
                     </div>
                     <div style="flex:1; min-width:0;">
@@ -591,43 +314,6 @@ window.AVG_TAT_MIN    = <?= round($avg_tat_min, 1) ?>;
     <svg class="adt-moon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z"/></svg>
     <svg class="adt-sun"  xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
 </button>
-<script>
-// ── Admin Dark Mode Controller ─────────────────────────────────────────────
-// Uses sessionStorage so dark mode persists when navigating between admin
-// pages (dashboard → report → program) but resets when browser is closed.
-// Resident side controls it via BroadcastChannel('kbc-theme').
-// ──────────────────────────────────────────────────────────────────────────
-(function () {
-    var SESSION_KEY = 'kbc_admin_dark';
-
-    function applyDark(on) {
-        document.body.classList.toggle('dark-mode', on);
-        try { sessionStorage.setItem(SESSION_KEY, on ? '1' : '0'); } catch(e) {}
-    }
-
-    // Apply saved session state immediately on load
-    try {
-        if (sessionStorage.getItem(SESSION_KEY) === '1') {
-            document.body.classList.add('dark-mode');
-        }
-    } catch(e) {}
-
-    // Manual toggle from FAB
-    window.toggleAdminDarkMode = function () {
-        applyDark(!document.body.classList.contains('dark-mode'));
-    };
-    window.toggleDarkMode = window.toggleAdminDarkMode;
-
-    // Listen for resident-side broadcasts
-    try {
-        var ch = new BroadcastChannel('kbc-theme');
-        ch.onmessage = function (e) {
-            if (e.data && typeof e.data.dark !== 'undefined') {
-                applyDark(!!e.data.dark);
-            }
-        };
-    } catch(e) {}
-})();
-</script>
+<script src="../assets/js/admin-dark-mode.js"></script>
 </body>
 </html>

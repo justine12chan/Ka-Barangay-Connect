@@ -1,4 +1,7 @@
-const programs = window.PROGRAMS_DATA || [];
+// assets/js/admin_program.js
+// FIX: changed `const programs` to a getter function so it always reads
+// the latest window.PROGRAMS_DATA instead of capturing [] at parse time.
+function getPrograms() { return window.PROGRAMS_DATA || []; }
 
 const catColors = {
     'Infrastructure':   { bg: '#fff3e0', color: '#c47200', border: '#ffd580' },
@@ -24,6 +27,15 @@ function fmtDateTime(str) {
     if (!str) return '';
     return new Date(str).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
 }
+function escapeAttr(str) {
+    return (str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
+
 function getCatInitials(cat) {
     if (!cat) return '??';
     const w = cat.split(' ');
@@ -74,7 +86,7 @@ function buildCard(r, isLatest) {
     const imgHtml     = buildImageGrid(r.image_path, r.id);
 
     const typeBadge = `<span class="prog-status-pill" style="background:${tc.bg}; color:${tc.color};
-                        border:1.5px solid ${tc.border}; display:inline-flex; align-items:center; gap:5px;">
+                        border:1.5px solid ${tc.border}; display:inline-flex; align-items:center; gap:5px; flex-shrink:0;">
         <i class="fa ${tc.icon}" style="font-size:9px;"></i>${tc.label}
     </span>`;
 
@@ -95,7 +107,7 @@ function buildCard(r, isLatest) {
                <i class="fa fa-pencil"></i> Edit
            </button>
            <button class="prog-dropdown-item delete-item"
-                   data-id="${r.id}" data-type="${postType}" data-title="${(r.title||'').replace(/"/g,'&quot;')}"
+                   data-id="${r.id}" data-type="${postType}" data-title="${escapeAttr(r.title)}"
                    onclick="openDeleteModal(event,this)">
                <i class="fa fa-trash"></i> Delete
            </button>`;
@@ -110,42 +122,61 @@ function buildCard(r, isLatest) {
                 <p class="prog-reporter-time">${cat}${dateStr ? ' · ' + dateStr : ''}</p>
             </div>
             ${typeBadge} ${statusBadge}
-            <button class="prog-dots-btn" title="More options"
-                    onclick="toggleDropdown(event,${r.id})">&#8942;</button>
-            <div class="prog-dropdown" id="dropdown-${r.id}">
-                ${dropdownItems}
+            <div style="position:relative; flex-shrink:0; z-index:10;">
+                <button class="prog-dots-btn" title="More options"
+                        onclick="toggleDropdown(event,${r.id})">&#8942;</button>
+                <div class="prog-dropdown" id="dropdown-${r.id}">
+                    ${dropdownItems}
+                </div>
             </div>
         </div>
         ${latestTag}
         <div class="prog-social-body">
-            <p class="prog-social-desc">${r.description || ''}</p>
+            <p class="prog-social-desc">${(r.description || '').replace(/\n/g, '<br>')}</p>
             ${imgHtml}
             <div class="prog-social-meta">
-                <span><i class="fa fa-calendar" style="margin-right:4px;"></i>${fmtDate(r.start_date)}</span>
+                ${postType !== 'announcement' ? `<span><i class="fa fa-calendar" style="margin-right:4px;"></i>${fmtDate(r.start_date)}</span>` : ''}
             </div>
         </div>
     </div>`;
 }
 
 function renderPrograms() {
-    const statusVal = document.getElementById('statusFilter').value;
-    const sortVal   = document.getElementById('sortFilter').value;
-    const typeVal   = document.getElementById('typeFilter').value;
+    const programs  = getPrograms(); // FIX: read fresh every render
+    const statusEl  = document.getElementById('statusFilter');
+    const sortEl    = document.getElementById('sortFilter');
+    const typeEl    = document.getElementById('typeFilter');
+    const statusVal = statusEl ? statusEl.value : 'all';
+    const sortVal   = sortEl   ? sortEl.value   : 'newest';
+    const typeVal   = typeEl   ? typeEl.value   : 'all';
     const list      = document.getElementById('programsList');
     const empty     = document.getElementById('emptyState');
 
-    let filtered = programs.filter(r =>
-        (typeVal   === 'all' || r.post_type === typeVal) &&
-        (statusVal === 'all' || r.status    === statusVal)
-    );
+    if (!list) return;
+
+    // Safety check: if PROGRAMS_DATA was never set (e.g. PHP error), show a notice
+    if (typeof window.PROGRAMS_DATA === 'undefined') {
+        list.innerHTML = '<div style="padding:32px 20px; text-align:center; color:#c0001a; font-size:13px;">'
+            + '<i class="fa fa-exclamation-triangle" style="font-size:24px; margin-bottom:8px; display:block;"></i>'
+            + 'Could not load data. Check server logs for PHP errors.</div>';
+        if (empty) empty.style.display = 'none';
+        return;
+    }
+
+    let filtered = programs.filter(r => {
+        if (typeVal !== 'all' && r.post_type !== typeVal) return false;
+        // Status filter only applies to projects; announcements use 'urgent'/'general' not planned/ongoing/completed
+        if (statusVal !== 'all' && r.post_type !== 'announcement' && r.status !== statusVal) return false;
+        return true;
+    });
 
     filtered.sort((a, b) => {
         const da = new Date(a.created_at || 0), db = new Date(b.created_at || 0);
         return sortVal === 'oldest' ? da - db : db - da;
     });
 
-    if (!filtered.length) { list.innerHTML = ''; empty.style.display = ''; return; }
-    empty.style.display = 'none';
+    if (!filtered.length) { list.innerHTML = ''; if (empty) empty.style.display = ''; return; }
+    if (empty) empty.style.display = 'none';
 
     if (statusVal !== 'all') {
         const iconMap = { planned: 'fa-clock-o', ongoing: 'fa-spinner', completed: 'fa-check-circle' };
@@ -176,8 +207,10 @@ document.addEventListener('click', () => {
 function openEditModal(e, id) {
     e.stopPropagation();
     document.querySelectorAll('.prog-dropdown.open').forEach(d => d.classList.remove('open'));
+    const programs = getPrograms();
     const r = programs.find(x => parseInt(x.id) === id);
     if (!r) return;
+
     const isAnn = (r.post_type || 'project') === 'announcement';
 
     document.getElementById('editFlagProgram').disabled = isAnn;
@@ -189,7 +222,7 @@ function openEditModal(e, id) {
 
     document.getElementById('editTitle').value = r.title || '';
     document.getElementById('editDept').value  = r.department || '';
-    document.getElementById('editDesc').value  = r.description || '';
+    document.getElementById('editDesc').value  = (r.description || '').replace(/<br\s*\/?>/gi, '\n');
     document.getElementById('editFileLabel').textContent = 'Keep current image...';
     document.getElementById('editFileInput').value = '';
 
@@ -200,7 +233,7 @@ function openEditModal(e, id) {
     }
 
     document.getElementById('editModalTitle').innerHTML =
-        `<i class="fa fa-pencil" style="color:var(--blue-main); margin-right:8px;"></i>Edit ${isAnn ? 'Announcement' : 'Program'}`;
+        `<i class="fa fa-pencil" style="color:var(--blue-main); margin-right:8px;"></i>Edit ${isAnn ? 'Announcement' : 'Project'}`;
     document.getElementById('editDeptLabel').textContent = isAnn ? 'Posted By' : 'Department';
     document.getElementById('editDescLabel').textContent = isAnn ? 'Message' : 'Description';
 
@@ -334,8 +367,7 @@ function fetchLatestData() {
         .then(html => {
             const newPrograms = extractGlobal(html, 'PROGRAMS_DATA');
             if (newPrograms !== null) {
-                programs.length = 0;
-                newPrograms.forEach(p => programs.push(p));
+                window.PROGRAMS_DATA = newPrograms; // FIX: update global directly
                 renderPrograms();
             }
             hideRefreshIndicator(true);
@@ -380,13 +412,7 @@ function hideRefreshIndicator(success) {
 /* ── Dark Mode ──
    Handled by the inline <script> in admin_program.php (toggleAdminDarkMode).
    BroadcastChannel listener is set up there too.
-   No localStorage persistence — resets to light on every page load.
    ─────────────────────────────────────────────────────────────── */
-
-function confirmLogout() {
-    document.getElementById('logoutModal').style.display = 'flex';
-    return false;
-}
 
 document.addEventListener('DOMContentLoaded', function () {
     renderPrograms();
